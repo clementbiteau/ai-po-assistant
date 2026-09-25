@@ -7,7 +7,6 @@ into another visitor's (Streamlit serves all sessions from one process).
 
 from __future__ import annotations
 
-import os
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -15,7 +14,7 @@ import streamlit as st
 
 from agents import UsageReport
 from auth import AuthError, AuthService, build_auth_service
-from config import Settings
+from config import Settings, apply_secrets
 from governance import Consumption, CostEstimator, consumption_from_runs, period_starts
 from store import AgentRecord, Profile, Repository, RunRecord, StoreError
 
@@ -23,19 +22,16 @@ _CONSUMPTION_TTL_S = 60
 
 
 def load_secrets_into_env() -> None:
-    """Expose root-level Streamlit secrets as environment variables.
+    """Expose Streamlit secrets to the (environment-driven) configuration.
 
-    Streamlit Community Cloud stores configuration in ``secrets.toml``; the
-    rest of the code base reads the environment only (12-factor). Existing
-    environment variables always win.
+    Called on every run: secrets edited on Streamlit Community Cloud after
+    deployment are applied immediately (see :func:`config.apply_secrets`).
     """
     try:
-        items = dict(st.secrets)
+        secrets = st.secrets.to_dict()
     except Exception:  # noqa: BLE001 — no secrets file is a normal local setup
         return
-    for key, value in items.items():
-        if isinstance(value, str | int | float | bool) and key not in os.environ:
-            os.environ[key] = str(value)
+    apply_secrets(secrets)
 
 
 def auth_service(settings: Settings) -> AuthService:

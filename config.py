@@ -12,9 +12,10 @@ Anthropic SDK**: it can be imported by tests, scripts, or another frontend.
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping, MutableMapping
 from dataclasses import dataclass, field, replace
 from functools import lru_cache
-from typing import Literal
+from typing import Any, Literal
 
 from dotenv import load_dotenv
 
@@ -165,6 +166,58 @@ class Settings:
         return self.anthropic_api_key.strip()  # type: ignore[union-attr]
 
 
+#: Values this module copied from Streamlit secrets into the environment.
+_INJECTED: dict[str, str] = {}
+
+
+def _flatten_secrets(secrets: Mapping[str, Any]) -> dict[str, str]:
+    """Root-level scalars as-is, ``[section] key`` as ``SECTION_KEY`` — all upper-cased."""
+    flat: dict[str, str] = {}
+    for key, value in secrets.items():
+        if isinstance(value, Mapping):
+            for sub_key, sub_value in value.items():
+                if isinstance(sub_value, str | int | float | bool):
+                    flat[f"{key}_{sub_key}".upper()] = str(sub_value).strip()
+        elif isinstance(value, str | int | float | bool):
+            flat[str(key).upper()] = str(value).strip()
+    return flat
+
+
+def apply_secrets(secrets: Mapping[str, Any], environ: MutableMapping[str, str] | None = None) -> bool:
+    """Copy Streamlit secrets into the environment the app reads from.
+
+    * Accepts root-level keys (``SUPABASE_URL = "..."``), lower-case keys and
+      sections (``[supabase]`` + ``url`` / ``key`` → ``SUPABASE_URL`` / ``SUPABASE_KEY``).
+    * Variables set outside the app (shell, platform) keep precedence; values
+      injected earlier from secrets are refreshed when the secrets change.
+    * When anything changes, the cached :func:`get_settings` is invalidated,
+      so secrets added *after* deployment are picked up without a reboot.
+
+    Returns:
+        Whether the environment changed.
+    """
+    env = os.environ if environ is None else environ
+    changed = False
+    for key, value in _flatten_secrets(secrets).items():
+        if key in env and _INJECTED.get(key) != env[key]:
+            continue  # defined outside the app: it wins
+        if env.get(key) != value:
+            env[key] = value
+            changed = True
+        _INJECTED[key] = value
+    if changed:
+        get_settings.cache_clear()
+    return changed
+
+
+def _supabase_url(raw: str | None) -> str | None:
+    """Normalise a pasted project URL (trailing slash, ``/rest/v1`` suffix)."""
+    url = (raw or "").strip().strip('"').rstrip("/")
+    if url.endswith("/rest/v1"):
+        url = url[: -len("/rest/v1")]
+    return url or None
+
+
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     """Build the settings once from the environment and cache them."""
@@ -182,8 +235,11 @@ def get_settings() -> Settings:
             writer=_env_effort("EFFORT_WRITER", "medium"),
         ),
         auth_mode="local" if auth_mode == "local" else "supabase",
-        supabase_url=(os.getenv("SUPABASE_URL") or "").strip() or None,
-        supabase_key=(os.getenv("SUPABASE_KEY") or os.getenv("SUPABASE_ANON_KEY") or "").strip() or None,
+        supabase_url=_supabase_url(os.getenv("SUPABASE_URL")),
+        supabase_key=(
+            os.getenv("SUPABASE_KEY") or os.getenv("SUPABASE_PUBLISHABLE_KEY") or os.getenv("SUPABASE_ANON_KEY") or ""
+        ).strip()
+        or None,
         local_db_path=os.getenv("LOCAL_DB_PATH", ".data/local.db"),
         local_dev_password=(os.getenv("LOCAL_DEV_PASSWORD") or "").strip() or None,
         usd_to_eur=_env_float("USD_TO_EUR", DEFAULT_USD_TO_EUR),

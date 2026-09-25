@@ -15,6 +15,8 @@ Supabase client and JWT). Never share one across sessions.
 
 from __future__ import annotations
 
+import base64
+import json
 import logging
 import time
 from typing import Protocol
@@ -142,6 +144,18 @@ class LocalAuthService:
         """Nothing to revoke locally."""
 
 
+def _is_privileged(key: str) -> bool:
+    """True for keys that bypass RLS: ``sb_secret_…`` or a legacy JWT with role ``service_role``."""
+    if key.startswith("sb_secret_"):
+        return True
+    try:
+        payload = key.split(".")[1]
+        claims = json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))
+    except (IndexError, ValueError):
+        return False
+    return claims.get("role") == "service_role"
+
+
 def build_auth_service(settings: Settings) -> AuthService:
     """Create the auth service for one browser session.
 
@@ -151,8 +165,18 @@ def build_auth_service(settings: Settings) -> AuthService:
     if settings.auth_mode == "local":
         return LocalAuthService(settings.local_db_path, settings.local_dev_password)
     if not settings.supabase_configured:
+        missing = [name for name, v in (("SUPABASE_URL", settings.supabase_url), ("SUPABASE_KEY", settings.supabase_key))
+                   if not v]  # fmt: skip
         raise AuthError(
-            "Authentification non configurée : renseignez SUPABASE_URL et SUPABASE_KEY "
-            "(secrets Streamlit ou fichier .env). L'application reste verrouillée tant que ce n'est pas fait."
+            f"Authentification non configurée — secret(s) manquant(s) : {', '.join(missing)}. "
+            "Streamlit Cloud : Manage app › ⋮ › Settings › Secrets. En local : fichier .env. "
+            "L'application reste verrouillée tant que ce n'est pas fait."
+        )
+    if not settings.supabase_url.startswith("https://"):  # type: ignore[union-attr]
+        raise AuthError("SUPABASE_URL invalide : attendu https://<project-ref>.supabase.co")
+    if settings.supabase_key.startswith(("sb_secret_", "eyJ")) and _is_privileged(settings.supabase_key):  # type: ignore[union-attr]
+        raise AuthError(
+            "SUPABASE_KEY est une clé secrète (service_role) : elle contourne la sécurité RLS. "
+            "Utilisez la clé publishable (sb_publishable_…) ou anon, puis révoquez la clé exposée."
         )
     return SupabaseAuthService(settings.supabase_url, settings.supabase_key)  # type: ignore[arg-type]
