@@ -14,7 +14,7 @@ from governance import CostEstimator
 from samples import DEMO_SAMPLE_KEY, SAMPLES
 from ui.style import euros, render_html
 
-_STEPS = ("Découvrir", "Choisir un cas", "Lancer")
+_STEPS = ("Le cas d'usage", "Les agents", "Choisir un cas", "Lancer")
 
 _CSS = """
 <style>
@@ -29,6 +29,12 @@ _CSS = """
 .ob-card .n {font-family: 'Geist Mono', ui-monospace, monospace; font-size: .7rem; color: #2F9477;}
 .ob-card .t {font-family: 'Newsreader', Georgia, serif; font-size: 1.2rem; margin: 6px 0 4px;}
 .ob-card .d {font-size: .86rem; opacity: .7; line-height: 1.5;}
+.ob-facts {display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 4px 0 6px;}
+.ob-fact {border-top: 1px solid rgba(127,127,127,.25); padding-top: 8px;}
+.ob-fact .v {font-family: 'Geist Mono', ui-monospace, monospace; font-size: 1.2rem;}
+.ob-fact .l {font-size: .8rem; opacity: .65;}
+.ob-quote {font-family: 'Newsreader', Georgia, serif; font-style: italic; font-size: 1.05rem; opacity: .85;
+  border-left: 2px solid #2F9477; padding-left: 14px; margin: 14px 0 6px;}
 </style>
 """
 
@@ -61,18 +67,45 @@ def onboarding_dialog(settings: Settings, top_n: int) -> None:
         + "</div>"
     )
     if step == 0:
-        _discover()
+        _use_case()
     elif step == 1:
+        _discover()
+    elif step == 2:
         _choose()
     else:
         _launch(settings, top_n)
 
 
+def _use_case() -> None:
+    render_html(
+        '<div class="ob-title">Vous êtes Product Owner chez Orbit.</div>'
+        '<div class="ob-lead">Orbit est une startup SaaS qui édite une <b>plateforme de gestion de projets</b> : '
+        "planification, diagrammes de Gantt, charge des équipes. Ses clients sont des PME et des ETI. Chaque "
+        "semaine, les retours clients arrivent de partout : emails, tickets du support, enquêtes NPS, remontées "
+        "des équipes Customer Success et Sales, avis sur les stores. Le PO est submergé : il doit tout lire, "
+        "décider quoi construire en priorité et écrire des user stories exploitables par l'équipe.</div>"
+        '<div class="ob-facts">'
+        '<div class="ob-fact"><div class="v">10</div><div class="l">messages dans l\'inbox de démo</div></div>'
+        '<div class="ob-fact"><div class="v">6</div><div class="l">canaux différents, 2 langues</div></div>'
+        '<div class="ob-fact"><div class="v">5</div><div class="l">besoins cachés à faire émerger</div></div>'
+        "</div>"
+        '<div class="ob-quote">L\'assistant fait le travail de fond : lire, trier, prioriser, rédiger. '
+        "Le PO garde la décision.</div>"
+    )
+    st.caption("Orbit et tous les clients cités sont fictifs.")
+    left, right = st.columns([1, 1])
+    if left.button("Passer l'introduction", type="tertiary", key="ob_skip0"):
+        _done()
+        st.rerun()  # a full rerun is what closes a dialog
+    right.button("Continuer", type="primary", width="stretch", on_click=_go, args=(1,), key="ob_next_uc")
+
+
 def _discover() -> None:
     render_html(
-        '<div class="ob-title">Un assistant pour Product Owners débordés.</div>'
-        '<div class="ob-lead">Collez un mélange brut de retours clients. Trois agents spécialisés en tirent un '
-        "backlog argumenté, que vous pouvez corriger avant de l'exporter dans Jira.</div>"
+        '<div class="ob-title">Trois agents, un backlog argumenté.</div>'
+        '<div class="ob-lead">Chaque agent a une seule mission et un format de sortie strict. Le calcul des scores '
+        "et le classement sont faits par du code, pas par l'IA : ils sont reproductibles et vous pouvez les "
+        "corriger.</div>"
     )
     cols = st.columns(3)
     cards = [
@@ -86,8 +119,8 @@ def _discover() -> None:
                         f'<div class="d">{text}</div></div>')  # fmt: skip
     st.write("")
     left, right = st.columns([1, 1])
-    left.button("Passer l'introduction", type="tertiary", on_click=_done, key="ob_skip")
-    right.button("Commencer", type="primary", width="stretch", on_click=_go, args=(1,), key="ob_next0")
+    left.button("Retour", type="tertiary", on_click=_go, args=(0,), key="ob_back0")
+    right.button("Continuer", type="primary", width="stretch", on_click=_go, args=(2,), key="ob_next0")
 
 
 def _choose() -> None:
@@ -110,8 +143,8 @@ def _choose() -> None:
     st.session_state["_ob_sample"] = choice
     st.write("")
     left, right = st.columns([1, 1])
-    left.button("Retour", type="tertiary", on_click=_go, args=(0,), key="ob_back1")
-    right.button("Continuer", type="primary", width="stretch", on_click=_go, args=(2,), key="ob_next1")
+    left.button("Retour", type="tertiary", on_click=_go, args=(1,), key="ob_back1")
+    right.button("Continuer", type="primary", width="stretch", on_click=_go, args=(3,), key="ob_next1")
 
 
 def _launch(settings: Settings, top_n: int) -> None:
@@ -136,7 +169,7 @@ def _launch(settings: Settings, top_n: int) -> None:
     mode = st.radio("Mode", list(options), format_func=options.get, label_visibility="collapsed", key="ob_mode")
     st.write("")
     left, right = st.columns([1, 1])
-    left.button("Retour", type="tertiary", on_click=_go, args=(1,), key="ob_back2")
+    left.button("Retour", type="tertiary", on_click=_go, args=(2,), key="ob_back2")
     if right.button("Démarrer", type="primary", width="stretch", disabled=not options, key="ob_run"):
         st.session_state["pending_sample"] = sample_key
         st.session_state["pending_run"] = mode

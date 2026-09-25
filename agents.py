@@ -36,7 +36,7 @@ from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Literal, TypeVar
+from typing import Any, Literal, TypeVar
 
 import anthropic
 from pydantic import BaseModel, Field, ValidationError
@@ -120,7 +120,8 @@ class ProductContext(BaseModel):
 
     product_name: str = "Orbit"
     product_description: str = (
-        "SaaS B2B de gestion de projets et de planification d'équipes (PME et ETI, 50 à 2 000 salariés)."
+        "Plateforme SaaS B2B de gestion de projets et de planification d'équipes, éditée par une startup "
+        "(clients PME et ETI, 50 à 2 000 salariés)."
     )
     active_users: int = Field(default=12_000, description="Monthly active users, used to anchor Reach.")
     strategic_goal: str = "Réduire le churn des comptes Mid-Market de 20 % d'ici la fin de l'année."
@@ -299,12 +300,35 @@ class AgentUsage(BaseModel):
     seconds: float = 0.0
 
 
+class CallLog(BaseModel):
+    """One request sent to Claude — the unit of the admin "agent journal".
+
+    ``thinking`` holds the *summarised* reasoning returned by the API
+    (``thinking.display = "summarized"``): Claude's raw chain of thought is
+    never exposed, only a readable summary of it.
+    """
+
+    seq: int
+    agent: str
+    started_at: str  # ISO 8601, UTC
+    duration_s: float
+    attempt: int
+    status: Literal["success", "retry", "error"]
+    stop_reason: str | None = None
+    input_tokens: int = 0
+    output_tokens: int = 0
+    thinking: str = ""
+    output_excerpt: str = ""
+    error: str | None = None
+
+
 class UsageReport(BaseModel):
     """Aggregated telemetry for one pipeline run."""
 
     per_agent: dict[str, AgentUsage] = Field(default_factory=dict)
     wall_clock_s: float = 0.0
     estimated_cost_usd: float | None = None
+    calls: list[CallLog] = Field(default_factory=list)
 
     @property
     def total_tokens(self) -> int:
@@ -324,6 +348,34 @@ class PipelineResult(BaseModel):
     model: str
     generated_at: str
     is_demo: bool = False
+    source_text: str = ""
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# Grounding check — are the "verbatim" quotes really in the source?
+# ══════════════════════════════════════════════════════════════════════════
+
+_TYPOGRAPHY = str.maketrans({"’": "'", "‘": "'", "“": '"', "”": '"', "«": '"', "»": '"', "\u00a0": " "})
+_MIN_FRAGMENT = 8
+
+
+def _normalise_for_match(text: str) -> str:
+    """Lower-case, unify typographic quotes and collapse whitespace."""
+    return re.sub(r"\s+", " ", text.translate(_TYPOGRAPHY).lower()).strip()
+
+
+def quote_in_source(quote: str, source: str) -> bool:
+    """True when ``quote`` appears word for word in ``source``.
+
+    The model may shorten a quote with an ellipsis ("…" or "..."): every
+    fragment between ellipses must then be found. Case, typographic quotes
+    and whitespace are ignored; anything else must match exactly. This is a
+    deterministic guard against paraphrased or invented evidence.
+    """
+    haystack = _normalise_for_match(source)
+    fragments = [_normalise_for_match(f).strip(" \"'.,;:!?") for f in re.split(r"…|\.\.\.", quote)]
+    fragments = [f for f in fragments if len(f) >= _MIN_FRAGMENT]
+    return bool(fragments) and all(f in haystack for f in fragments)
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -432,6 +484,12 @@ class UsageTracker:
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._per_agent: dict[str, AgentUsage] = {}
+        self._calls: list[CallLog] = []
+
+    def log_call(self, **fields: Any) -> None:
+        """Append one :class:`CallLog` (sequence number assigned here, thread-safe)."""
+        with self._lock:
+            self._calls.append(CallLog(seq=len(self._calls) + 1, **fields))
 
     def record(self, agent: str, usage: anthropic.types.Usage | None, seconds: float) -> None:
         """Add one API call to the running totals."""
@@ -461,9 +519,30 @@ class UsageTracker:
         """Freeze the totals into a serialisable :class:`UsageReport`."""
         with self._lock:
             per_agent = {name: usage.model_copy() for name, usage in self._per_agent.items()}
+            calls = [call.model_copy() for call in self._calls]
         return UsageReport(
-            per_agent=per_agent, wall_clock_s=wall_clock_s, estimated_cost_usd=self._cost(per_agent, pricing)
+            per_agent=per_agent,
+            wall_clock_s=wall_clock_s,
+            estimated_cost_usd=self._cost(per_agent, pricing),
+            calls=calls,
         )
+
+
+_EXCERPT_CHARS = 2_000
+_THINKING_CHARS = 6_000
+
+
+def _input_tokens(usage: Any) -> int:
+    """Input tokens including prompt-cache reads and writes."""
+    if usage is None:
+        return 0
+    return usage.input_tokens + (usage.cache_creation_input_tokens or 0) + (usage.cache_read_input_tokens or 0)
+
+
+def _thinking_summary(response: Any) -> str:
+    """Concatenate the summarised thinking blocks of a response."""
+    parts = [getattr(b, "thinking", "") for b in response.content if b.type == "thinking"]
+    return "\n\n".join(p for p in parts if p)[:_THINKING_CHARS]
 
 
 class ClaudeGateway:
@@ -545,15 +624,38 @@ class ClaudeGateway:
         last_error = ""
 
         for attempt in range(self.VALIDATION_RETRIES + 1):
-            response = self._create(agent=agent, system=system, messages=messages, output_config=output_config)
-            text = self._extract_text(agent, response)
+            started_at = datetime.now(timezone.utc).isoformat(timespec="milliseconds")
+            clock = time.perf_counter()
+            log = {"agent": agent, "started_at": started_at, "attempt": attempt + 1}
+            try:
+                response = self._create(agent=agent, system=system, messages=messages, output_config=output_config)
+            except AgentError as exc:
+                self.tracker.log_call(**log, duration_s=time.perf_counter() - clock, status="error",
+                                      error=exc.user_message)  # fmt: skip
+                raise
+            log |= {
+                "duration_s": round(time.perf_counter() - clock, 3),
+                "stop_reason": response.stop_reason,
+                "input_tokens": _input_tokens(response.usage),
+                "output_tokens": response.usage.output_tokens if response.usage else 0,
+                "thinking": _thinking_summary(response),
+            }
+            try:
+                text = self._extract_text(agent, response)
+            except AgentError as exc:
+                self.tracker.log_call(**log, status="error", error=exc.user_message)
+                raise
+            log["output_excerpt"] = text[:_EXCERPT_CHARS]
             try:
                 parsed = schema.model_validate_json(text)
                 if validator is not None:
                     validator(parsed)
+                self.tracker.log_call(**log, status="success")
                 return parsed
             except (ValidationError, ValueError) as exc:
                 last_error = str(exc)
+                final = attempt == self.VALIDATION_RETRIES
+                self.tracker.log_call(**log, status="error" if final else "retry", error=last_error[:500])
                 logger.warning("%s: invalid answer (attempt %d): %s", agent, attempt + 1, last_error)
                 messages = [
                     *messages,
@@ -596,7 +698,9 @@ class ClaudeGateway:
                 max_tokens=self.settings.max_tokens,
                 system=system,
                 messages=messages,
-                thinking={"type": "adaptive"},
+                # "summarized" returns a readable summary of the reasoning for the
+                # admin agent journal (the raw chain of thought is never exposed).
+                thinking={"type": "adaptive", "display": "summarized"},
                 output_config=output_config,  # type: ignore[arg-type]
             )
         except anthropic.AuthenticationError as exc:
@@ -1108,6 +1212,7 @@ class POAssistantPipeline:
             usage=self.tracker.report(time.perf_counter() - started, self.settings.pricing),
             model=self.settings.model,
             generated_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            source_text=raw_feedback,
         )
 
     def write_stories(self, targets: Sequence[ScoredFeature], context: ProductContext) -> dict[str, UserStory]:

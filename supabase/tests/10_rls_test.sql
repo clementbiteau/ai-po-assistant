@@ -22,6 +22,8 @@ set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-00000000000b"}'
 insert into public.runs (id, user_id, kind, status, model, cost_eur)
 values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-00000000000b', 'pipeline', 'success', 'm', 0.2);
 insert into public.run_agents (run_id, agent, calls) values ('10000000-0000-0000-0000-000000000001', 'FeedbackAnalyst', 1);
+insert into public.agent_calls (run_id, seq, agent, started_at, status, thinking)
+values ('10000000-0000-0000-0000-000000000001', 1, 'FeedbackAnalyst', now(), 'success', 'summary');
 
 do $$ begin
     assert (select count(*) from public.profiles) = 1, 'member sees only own profile';
@@ -60,6 +62,7 @@ set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-00000000000c"}'
 do $$ begin
     assert (select count(*) from public.runs) = 0, 'Bob must not see Alice runs';
     assert (select count(*) from public.run_agents) = 0, 'Bob must not see Alice agent rows';
+    assert (select count(*) from public.agent_calls) = 0, 'Bob must not see Alice agent journal';
 end $$;
 
 -- ── as admin ─────────────────────────────────────────────────────────────
@@ -68,6 +71,7 @@ do $$ begin
     assert (select public.is_admin()), 'admin detected';
     assert (select count(*) from public.profiles) = 3, 'admin sees all profiles';
     assert (select count(*) from public.runs) = 1, 'admin sees all runs';
+    assert (select count(*) from public.agent_calls) = 1, 'admin sees the agent journal';
 end $$;
 update public.profiles set daily_eur_limit = 3.5 where email = 'alice@test.dev';
 insert into public.runs (user_id, kind, status, model, cost_eur, is_synthetic)

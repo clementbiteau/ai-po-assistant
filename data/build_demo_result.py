@@ -1,4 +1,10 @@
-"""Builds data/demo_result.json from typed models (schema-valid by construction)."""
+"""Builds data/demo_result.json from typed models (schema-valid by construction).
+
+This is a hand-written *reference* result for the "Notifications & churn"
+sample, used by the offline demo mode. To replace it with a real Claude run:
+run the pipeline live on that sample, download "JSON typé" from the Export
+tab and save it as data/demo_result.json (the app flags it as a demo).
+"""
 
 import sys
 from pathlib import Path
@@ -18,8 +24,10 @@ from agents import (  # noqa: E402
     Theme,
     UsageReport,
     UserStory,
+    quote_in_source,
     score_portfolio,
 )
+from samples import SAMPLES  # noqa: E402
 
 ctx = ProductContext()
 
@@ -459,7 +467,13 @@ result = PipelineResult(
     model="claude-sonnet-5",
     generated_at="2026-09-25T09:00:00+00:00",
     is_demo=True,
+    source_text=SAMPLES["notifications"].text,
 )
+
+# Every "verbatim" must really be in the source (same check as the app).
+for feature in analysis.feature_requests:
+    for quote in feature.evidence_quotes:
+        assert quote_in_source(quote, result.source_text), quote
 
 out = ROOT / "data" / "demo_result.json"
 out.parent.mkdir(exist_ok=True)

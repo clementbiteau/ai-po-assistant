@@ -94,3 +94,32 @@ def test_queries_survive_empty_tables(repo: SQLiteRepository) -> None:
     )
     kpi = sql.run(sql.KPIS, runs=runs, agents=agents, profiles=profiles_df, tz="Europe/Paris")
     assert kpi.loc[0, "spend_eur"] == 0
+
+
+def test_agent_journal_roundtrip(repo: SQLiteRepository) -> None:
+    from store import CallRecord
+
+    uid = repo.ensure_user("a@test.dev", "pw")
+    start = datetime(2026, 9, 25, 9, tzinfo=timezone.utc)
+    run = RunRecord(
+        user_id=uid, kind="pipeline", status="success", model="m",
+        calls=(
+            CallRecord(1, "FeedbackAnalyst", start, 12.5, 1, "success", "end_turn", 4000, 3000, "Je segmente…", "{}"),
+            CallRecord(2, "PrioritizationStrategist", start, 20.0, 1, "retry", "end_turn", 5000, 4000, "", "{}", "bad"),
+        ),
+    )  # fmt: skip
+    repo.record_run(run)
+    calls = repo.fetch_calls([run.id])
+    assert list(calls["agent"]) == ["FeedbackAnalyst", "PrioritizationStrategist"]
+    assert calls.loc[0, "thinking"] == "Je segmente…" and calls.loc[1, "status"] == "retry"
+    assert repo.fetch_calls([]).empty
+
+
+def test_synthetic_runs_come_with_a_journal(repo: SQLiteRepository) -> None:
+    repo.ensure_user("a@test.dev", "pw")
+    runs = generate_runs(repo.list_profiles(), today=date.today(), days=5)
+    repo.insert_runs(runs)
+    pipeline = next(r for r in runs if r.kind == "pipeline" and r.status == "success")
+    calls = repo.fetch_calls([pipeline.id])
+    assert list(calls["agent"])[:2] == ["FeedbackAnalyst", "PrioritizationStrategist"]
+    assert (calls["agent"] == "UserStoryWriter").sum() == pipeline.stories_count

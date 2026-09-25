@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 
 import numpy as np
 
-from store import AgentRecord, Profile, RunRecord
+from store import AgentRecord, CallRecord, Profile, RunRecord
 
 AGENT_SPLIT = {"FeedbackAnalyst": 0.28, "PrioritizationStrategist": 0.30, "UserStoryWriter": 0.42}
 
@@ -104,6 +104,7 @@ def _one_run(
         for name, share in split.items()
         if status != "blocked"
     )
+    calls = _synthetic_calls(rng, created_at, agents, duration, stories) if status != "blocked" else ()
     return RunRecord(
         user_id=profile.id,
         kind="story" if is_story else "pipeline",
@@ -121,4 +122,34 @@ def _one_run(
         is_synthetic=True,
         created_at=created_at,
         agents=agents,
+        calls=calls,
     )
+
+
+_NO_THINKING = "Donnée synthétique : aucune réflexion enregistrée."
+
+
+def _synthetic_calls(
+    rng: np.random.Generator, start: datetime, agents: tuple[AgentRecord, ...], duration: float, stories: int
+) -> tuple[CallRecord, ...]:
+    """Plausible per-request timeline: analyst, then strategist, then writers in parallel."""
+    by_name = {a.agent: a for a in agents}
+    calls: list[CallRecord] = []
+    offset = 0.0
+    for name in ("FeedbackAnalyst", "PrioritizationStrategist"):
+        if name in by_name:
+            share = 0.28 if name == "FeedbackAnalyst" else 0.32
+            seconds = max(duration * share, 1.0)
+            a = by_name[name]
+            calls.append(CallRecord(len(calls) + 1, name, start + timedelta(seconds=offset), seconds, 1, "success",
+                                    "end_turn", a.input_tokens, a.output_tokens, _NO_THINKING))  # fmt: skip
+            offset += seconds
+    writer = by_name.get("UserStoryWriter")
+    if writer:
+        n = max(stories, 1)
+        for _ in range(n):
+            seconds = max(duration * 0.4 * float(rng.uniform(0.75, 1.0)), 1.0)
+            calls.append(CallRecord(len(calls) + 1, "UserStoryWriter", start + timedelta(seconds=offset), seconds, 1,
+                                    "success", "end_turn", writer.input_tokens // n, writer.output_tokens // n,
+                                    _NO_THINKING))  # fmt: skip
+    return tuple(calls)

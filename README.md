@@ -3,7 +3,11 @@
 > **Du feedback client brut au backlog Jira priorisé — en une minute.**
 > Trois agents Claude transforment un mélange d'emails, de tickets Zendesk, de verbatims NPS et de notes d'appel en **priorités RICE justifiées** et en **user stories Gherkin** prêtes pour le sprint.
 
-POC réalisé pour **Thiga**. Stack : Python · Streamlit · API Anthropic (Claude Sonnet 5) · Supabase (Auth + PostgreSQL/RLS) · DuckDB.
+POC réalisé pour **Thiga**. Cas d'usage : une startup SaaS qui édite une plateforme de gestion de projets (« Orbit », fictive), dont le Product Owner est submergé de retours clients.
+
+L'architecture et **les raisons de chaque décision** sont détaillées dans **[HOWHY.md](HOWHY.md)**, qui contient aussi un glossaire.
+
+ Stack : Python · Streamlit · API Anthropic (Claude Sonnet 5) · Supabase (Auth + PostgreSQL/RLS) · DuckDB.
 
 ---
 
@@ -58,7 +62,8 @@ flowchart LR
 | [`ui/`](ui/) | Écrans : `login`, `admin`, `theme` (bascule clair/sombre), `session`, `style` |
 | [`supabase/`](supabase/) | Migration SQL (tables, RLS, trigger) + tests des policies |
 | [`config.py`](config.py) · [`exporters.py`](exporters.py) · [`samples.py`](samples.py) | Configuration, exports Jira / Markdown / Gherkin / JSON, feedbacks de démo |
-| [`tests/`](tests/) | 47 tests hors-ligne (LLM simulé, UI via `AppTest`) + tests SQL des policies RLS en CI |
+| [`triage.py`](triage.py) | Tri instantané de l'Inbox par règles (canal, urgence), sans IA |
+| [`tests/`](tests/) | 56 tests hors-ligne (LLM simulé, UI via `AppTest`) + tests SQL des policies RLS en CI |
 
 `agents.py` ne dépend pas de Streamlit : le même pipeline peut tourner dans un job batch, une API FastAPI ou un bot Slack.
 
@@ -112,7 +117,12 @@ Tokens, latence et coût estimé par agent sont affichés dans l'onglet Export.
 - **Quotas** : un tableau éditable par utilisateur (€/requête, €/jour, €/semaine, €/mois, vide = illimité).
 - **Données de démo** : 60 jours d'usage synthétique (flag `is_synthetic`, exclu des quotas, purgeable en un clic).
 
-**12. Design et thème clair / sombre.**
+**12. Journal des agents et vérification des verbatims.**
+- **Journal des agents** (onglet Admin › Agents) : chaque lancement est visualisé comme un processus (01 Analyste, 02 Stratège, 03 Rédacteurs en parallèle), avec une chronologie et un journal par requête : agent, horodatage, utilisateur, durée, tentative, tokens, **réflexion résumée** renvoyée par Claude et extrait de la sortie.
+- **Vérification des verbatims** : chaque citation est recherchée mot pour mot dans les messages d'origine, par du code et non par l'IA. L'écran indique si elle est vérifiée ou introuvable (possible paraphrase).
+- **Inbox** : les messages sont listés avec leur canal et un indicateur d'urgence, calculés par des règles avant tout appel à l'IA. Le message d'accueil (« Bonjour … tu as 10 notifications, dont 5 en urgence ») s'appuie sur ce tri.
+
+**13. Design et thème clair / sombre.**
 Direction éditoriale et sobre : fond papier, un seul accent vert profond, titres en serif (Newsreader), interface en Geist, chiffres en Geist Mono, aucun emoji. Les couleurs des graphiques ont été validées pour les daltonismes et le contraste, dans les deux thèmes. Une bascule Clair / Sombre se trouve dans la barre latérale et sur l'écran de connexion. Elle pilote le sélecteur de thème natif de Streamlit : pas de rechargement, la session est conservée, le choix est mémorisé. Les deux palettes sont définies dans `.streamlit/config.toml` et le CSS custom s'adapte aux deux thèmes.
 
 ---
@@ -121,7 +131,7 @@ Direction éditoriale et sobre : fond papier, un seul accent vert profond, titre
 
 **1. Supabase (≈ 5 min)**
 1. Créez un projet sur [supabase.com](https://supabase.com).
-2. *SQL Editor* : collez [`supabase/migrations/20260925000000_init.sql`](supabase/migrations/20260925000000_init.sql), puis *Run*.
+2. *SQL Editor* : exécutez **dans l'ordre** les fichiers de [`supabase/migrations/`](supabase/migrations/) (`20260925000000_init.sql`, puis `20260926000000_agent_calls.sql`). Chaque fichier peut être relancé sans risque.
 3. *Authentication › Sign In / Providers* : désactivez **Allow new users to sign up**.
 4. *Authentication › Users › Add user* : créez votre compte et ceux des relecteurs (cochez *Auto Confirm User*).
 5. Promouvez-vous admin (*SQL Editor*) :
@@ -166,7 +176,7 @@ Sur Streamlit Community Cloud, déclarez ces variables dans *Secrets* : elles so
 
 ```bash
 pip install -r requirements-dev.txt
-pytest -q                          # 47 tests : LLM simulé, UI via AppTest, aucune clé ni aucun coût
+pytest -q                          # 56 tests : LLM simulé, UI via AppTest, aucune clé ni aucun coût
 ruff check . && ruff format --check .
 DATABASE_URL=postgresql://postgres@localhost:5432/scratch scripts/test_schema.sh   # migration + RLS
 ```

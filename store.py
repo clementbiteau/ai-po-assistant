@@ -35,6 +35,10 @@ RUN_COLUMNS = [
     "stories_count", "input_tokens", "output_tokens", "cost_usd", "cost_eur", "duration_s", "error", "is_synthetic",
 ]  # fmt: skip
 AGENT_COLUMNS = ["run_id", "agent", "calls", "input_tokens", "output_tokens", "cost_eur", "seconds"]
+CALL_COLUMNS = [
+    "run_id", "seq", "agent", "started_at", "duration_s", "attempt", "status", "stop_reason", "input_tokens",
+    "output_tokens", "thinking", "output_excerpt", "error",
+]  # fmt: skip
 _NUMERIC = [
     "input_chars", "features_count", "stories_count", "input_tokens", "output_tokens", "cost_usd", "cost_eur",
     "duration_s", "calls", "seconds",
@@ -67,6 +71,24 @@ class AgentRecord:
 
 
 @dataclass(frozen=True)
+class CallRecord:
+    """One request sent to Claude within a run (admin agent journal)."""
+
+    seq: int
+    agent: str
+    started_at: datetime
+    duration_s: float
+    attempt: int
+    status: str  # "success" | "retry" | "error"
+    stop_reason: str | None = None
+    input_tokens: int = 0
+    output_tokens: int = 0
+    thinking: str = ""
+    output_excerpt: str = ""
+    error: str | None = None
+
+
+@dataclass(frozen=True)
 class RunRecord:
     """One Claude-backed execution, as persisted."""
 
@@ -86,6 +108,7 @@ class RunRecord:
     is_synthetic: bool = False
     created_at: datetime | None = None
     agents: tuple[AgentRecord, ...] = ()
+    calls: tuple[CallRecord, ...] = ()
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
     def row(self) -> dict[str, Any]:
@@ -109,6 +132,27 @@ class RunRecord:
             "error": (self.error or None) and self.error[:500],
             "is_synthetic": bool(self.is_synthetic),
         }
+
+    def call_rows(self) -> list[dict[str, Any]]:
+        """Rows for the ``agent_calls`` table."""
+        return [
+            {
+                "run_id": self.id,
+                "seq": int(c.seq),
+                "agent": c.agent,
+                "started_at": c.started_at.astimezone(timezone.utc).isoformat(),
+                "duration_s": round(float(c.duration_s), 3),
+                "attempt": int(c.attempt),
+                "status": c.status,
+                "stop_reason": c.stop_reason,
+                "input_tokens": int(c.input_tokens),
+                "output_tokens": int(c.output_tokens),
+                "thinking": (c.thinking or "")[:6000],
+                "output_excerpt": (c.output_excerpt or "")[:2000],
+                "error": (c.error or None) and c.error[:500],
+            }
+            for c in self.calls
+        ]
 
     def agent_rows(self) -> list[dict[str, Any]]:
         """Rows for the ``run_agents`` table."""
@@ -149,6 +193,14 @@ def _typed_runs(rows: list[dict[str, Any]]) -> pd.DataFrame:
     frame["is_synthetic"] = frame["is_synthetic"].astype(bool)
     frame["email"] = frame["email"].fillna("—")
     return frame
+
+
+def _typed_calls(rows: list[dict[str, Any]]) -> pd.DataFrame:
+    frame = pd.DataFrame(rows, columns=CALL_COLUMNS)
+    frame["started_at"] = pd.to_datetime(frame["started_at"], utc=True, format="ISO8601")
+    for column in ("seq", "attempt", "input_tokens", "output_tokens", "duration_s"):
+        frame[column] = pd.to_numeric(frame[column], errors="coerce").fillna(0)
+    return frame.sort_values(["run_id", "seq"]).reset_index(drop=True)
 
 
 def _typed_agents(rows: list[dict[str, Any]]) -> pd.DataFrame:
@@ -199,6 +251,10 @@ class Repository(Protocol):
         ...
 
     def fetch_usage(self, since: datetime) -> tuple[pd.DataFrame, pd.DataFrame]: ...
+    def fetch_calls(self, run_ids: Sequence[str]) -> pd.DataFrame:
+        """Agent journal (one row per Claude request) for the given runs."""
+        ...
+
     def total_real_cost_usd(self) -> float:
         """All-time API spend of real runs (USD) — basis of the remaining-credit estimate."""
         ...
@@ -269,15 +325,28 @@ class SupabaseRepository:
         from postgrest.types import ReturnMethod  # supabase dependency, imported lazily
 
         run_rows = [r.row() for r in runs]
-        agent_rows = [a for r in runs for a in r.agent_rows()]
+        children = {
+            "run_agents": [a for r in runs for a in r.agent_rows()],
+            "agent_calls": [c for r in runs for c in r.call_rows()],
+        }
         with self._errors("enregistrement de l'usage"):
             # `minimal`: no read-back, so inserting never depends on SELECT rights.
             for i in range(0, len(run_rows), self.BATCH):
                 self.client.table("runs").insert(run_rows[i : i + self.BATCH], returning=ReturnMethod.minimal).execute()
-            for i in range(0, len(agent_rows), self.BATCH):
-                batch = agent_rows[i : i + self.BATCH]
-                self.client.table("run_agents").insert(batch, returning=ReturnMethod.minimal).execute()
+            for table, rows in children.items():
+                for i in range(0, len(rows), self.BATCH):
+                    self.client.table(table).insert(rows[i : i + self.BATCH], returning=ReturnMethod.minimal).execute()
         return len(run_rows)
+
+    def fetch_calls(self, run_ids: Sequence[str]) -> pd.DataFrame:
+        """Agent journal for the given runs (RLS: own runs, or all for admins)."""
+        rows: list[dict[str, Any]] = []
+        ids = list(run_ids)
+        with self._errors("lecture du journal des agents"):
+            for i in range(0, len(ids), 80):  # keep the query string short
+                chunk = ids[i : i + 80]
+                rows.extend(self.client.table("agent_calls").select("*").in_("run_id", chunk).execute().data)
+        return _typed_calls(rows)
 
     def purge_synthetic(self) -> int:
         """Delete synthetic runs (admin only — enforced by RLS)."""
@@ -352,6 +421,12 @@ create index if not exists runs_user_created on runs(user_id, created_at);
 create table if not exists run_agents (
     run_id text not null references runs(id) on delete cascade, agent text not null, calls integer,
     input_tokens integer, output_tokens integer, cost_eur real, seconds real, primary key (run_id, agent)
+);
+create table if not exists agent_calls (
+    run_id text not null references runs(id) on delete cascade, seq integer not null, agent text not null,
+    started_at text not null, duration_s real, attempt integer, status text, stop_reason text,
+    input_tokens integer, output_tokens integer, thinking text, output_excerpt text, error text,
+    primary key (run_id, seq)
 );
 """
 
@@ -466,12 +541,26 @@ class SQLiteRepository:
                 con.execute(
                     f"insert into runs ({', '.join(row)}) values ({', '.join('?' * len(row))})", tuple(row.values())
                 )
-                for agent in run.agent_rows():
-                    con.execute(
-                        f"insert into run_agents ({', '.join(agent)}) values ({', '.join('?' * len(agent))})",
-                        tuple(agent.values()),
-                    )
+                for table, rows in (("run_agents", run.agent_rows()), ("agent_calls", run.call_rows())):
+                    for child in rows:
+                        con.execute(
+                            f"insert into {table} ({', '.join(child)}) values ({', '.join('?' * len(child))})",
+                            tuple(child.values()),
+                        )
         return len(runs)
+
+    def fetch_calls(self, run_ids: Sequence[str]) -> pd.DataFrame:
+        """Agent journal for the given runs."""
+        ids = list(run_ids)
+        if not ids:
+            return _typed_calls([])
+        rows: list[dict[str, Any]] = []
+        with self._conn() as con:
+            for i in range(0, len(ids), 500):  # SQLite caps bound parameters
+                chunk = ids[i : i + 500]
+                query = f"select * from agent_calls where run_id in ({', '.join('?' * len(chunk))})"
+                rows.extend(dict(r) for r in con.execute(query, tuple(chunk)).fetchall())
+        return _typed_calls(rows)
 
     def purge_synthetic(self) -> int:
         """Delete synthetic runs."""

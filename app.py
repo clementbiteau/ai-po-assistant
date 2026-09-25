@@ -27,6 +27,7 @@ from agents import (
     ScoredFeature,
     UserStory,
     backlog_order,
+    quote_in_source,
     score_portfolio,
 )
 from config import Settings, get_settings
@@ -34,8 +35,10 @@ from exporters import to_feature_files, to_jira_csv, to_json, to_markdown
 from governance import evaluate_quota
 from samples import DEMO_SAMPLE_KEY, SAMPLES
 from store import Profile, StoreError
+from triage import triage
 from ui import session
 from ui.admin import render_admin
+from ui.greeting import render_greeting
 from ui.login import render_login
 from ui.onboarding import onboarding_dialog, reopen
 from ui.style import (
@@ -173,7 +176,11 @@ def current_result() -> PipelineResult | None:
 @st.cache_data(show_spinner=False)
 def load_demo_result() -> PipelineResult:
     """Load the pre-computed offline demo run (validated against the schemas)."""
-    return PipelineResult.model_validate_json(DEMO_RESULT_PATH.read_text(encoding="utf-8"))
+    result = PipelineResult.model_validate_json(DEMO_RESULT_PATH.read_text(encoding="utf-8"))
+    # A real run exported from the Export tab ("JSON typé") can be dropped in as the demo.
+    return result.model_copy(
+        update={"is_demo": True, "source_text": result.source_text or SAMPLES[DEMO_SAMPLE_KEY].text}
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -358,23 +365,6 @@ def render_sidebar(base_settings: Settings, profile: Profile) -> tuple[Settings,
 # ══════════════════════════════════════════════════════════════════════════
 
 
-def render_hero(result: PipelineResult | None) -> None:
-    """Editorial header: promise + the three agents as numbered steps."""
-    done = " done" if result else ""
-    steps = "".join(
-        f'<div class="step{done}"><div class="n">0{i} — {esc(name)}</div><div class="t">{esc(label)}</div>'
-        f'<div class="d">{esc(desc)}</div></div>'
-        for i, (_key, name, label, desc) in enumerate(AGENTS_META, start=1)
-    )
-    render_html(
-        '<div class="hero"><div class="eyebrow">AI Product Owner Assistant</div>'
-        "<h1>Du feedback client au <em>backlog priorisé</em>.</h1>"
-        '<p class="sub">Emails, tickets, verbatims NPS, notes d\'appel : trois agents Claude en tirent des '
-        "priorités argumentées et des user stories prêtes pour le sprint.</p>"
-        f'<div class="steps">{steps}</div></div>'
-    )
-
-
 def render_kpis(result: PipelineResult, scored: list[ScoredFeature]) -> None:
     """Top KPI strip, visible once a run exists."""
     musts = sum(1 for s in scored if s.moscow == "Must")
@@ -408,17 +398,17 @@ def render_inbox(settings: Settings, profile: Profile, context: ProductContext, 
             st.button("Charger ce cas", key=f"load_{sample.key}", on_click=load_sample, args=(sample.key,),
                       width="stretch")  # fmt: skip
 
-    st.markdown("#### Ou collez vos retours bruts")
-    st.text_area(
-        "Feedbacks",
-        key="feedback_text",
-        height=340,
-        label_visibility="collapsed",
-        placeholder="Collez ici un mélange d'emails, tickets, verbatims NPS, notes d'appel…",
-    )
     text = st.session_state.feedback_text or ""
-    words = len(text.split())
-    st.caption(f"{len(text):,} caractères · {words:,} mots".replace(",", " "))
+    render_inbox_list(text)
+    with st.expander("Texte brut — modifier ou coller vos propres retours", expanded=not text.strip()):
+        st.text_area(
+            "Feedbacks",
+            key="feedback_text",
+            height=320,
+            label_visibility="collapsed",
+            placeholder="Collez ici un mélange d'emails, tickets, verbatims NPS, notes d'appel…",
+        )
+        st.caption(f"{len(text):,} caractères · {len(text.split()):,} mots".replace(",", " "))
 
     left, mid, _ = st.columns([2.2, 1, 3])
     run = left.button("Lancer l'analyse", type="primary", width="stretch", disabled=not text.strip())
@@ -431,6 +421,46 @@ def render_inbox(settings: Settings, profile: Profile, context: ProductContext, 
         run_demo(text)
     else:
         run_live(text, settings, profile, context, top_n)
+
+
+_INBOX_CSS = """
+<style>
+.inbox {border: 1px solid rgba(127,127,127,.2); border-radius: 12px; overflow: hidden; margin-bottom: 14px;}
+.inbox .row {display: grid; grid-template-columns: 132px 1fr auto; gap: 14px; align-items: baseline;
+  padding: 11px 16px; border-top: 1px solid rgba(127,127,127,.14);}
+.inbox .row:first-child {border-top: 0;}
+.inbox .ch {font-family: 'Geist Mono', ui-monospace, monospace; font-size: .68rem; letter-spacing: .08em;
+  text-transform: uppercase; opacity: .6;}
+.inbox .ti {font-weight: 600; font-size: .92rem;}
+.inbox .sn {font-size: .84rem; opacity: .66; margin-top: 2px; line-height: 1.45;}
+.inbox .why {font-size: .74rem; opacity: .7; margin-top: 3px;}
+.inbox .urg {font-family: 'Geist Mono', ui-monospace, monospace; font-size: .66rem; letter-spacing: .1em;
+  text-transform: uppercase; color: #B3452C; border: 1px solid rgba(179,69,44,.45); border-radius: 5px;
+  padding: 1px 6px; white-space: nowrap;}
+@media (max-width: 760px) {.inbox .row {grid-template-columns: 1fr;}}
+</style>
+"""
+
+
+def render_inbox_list(text: str) -> None:
+    """The raw dump as an inbox: one row per message, urgent ones first (rule-based, no AI)."""
+    items = triage(text)
+    if not items:
+        st.info("L'inbox est vide. Chargez un cas client ou collez vos retours dans le texte brut ci-dessous.")
+        return
+    urgent = sum(i.urgent for i in items)
+    st.markdown(f"#### Boîte de réception · {len(items)} messages, dont {urgent} urgents")
+    st.caption("Tri instantané par règles (canal, mots-clés, notes NPS et étoiles), avant tout appel à l'IA.")
+    rows = "".join(
+        f'<div class="row"><div class="ch">{esc(i.channel)}</div>'
+        f'<div><div class="ti">{esc(shorten(i.title, 90))}</div><div class="sn">{esc(i.snippet)}</div>'
+        + (f'<div class="why">{esc(", ".join(i.reasons))}</div>' if i.reasons else "")
+        + "</div>"
+        + ('<span class="urg">Urgent</span>' if i.urgent else "<span></span>")
+        + "</div>"
+        for i in items
+    )
+    render_html(_INBOX_CSS + f'<div class="inbox">{rows}</div>')
 
 
 def run_demo(text: str) -> None:
@@ -560,6 +590,17 @@ def show_agent_error(exc: AgentError) -> None:
 # ══════════════════════════════════════════════════════════════════════════
 
 
+def _quote_html(quote: str, source: str) -> str:
+    """A verbatim with its grounding status (found word for word in the source, or not)."""
+    if not source:
+        badge = ""
+    elif quote_in_source(quote, source):
+        badge = chip("vérifié dans la source", STATUS["good"])
+    else:
+        badge = chip("introuvable tel quel : possible paraphrase", STATUS["critical"])
+    return f'<div class="quote">« {esc(quote)} »</div><div style="margin:-2px 0 6px 15px">{badge}</div>'
+
+
 def render_analysis(result: PipelineResult) -> None:
     """Executive summary, themes, feature candidates and other signals."""
     analysis = result.analysis
@@ -578,13 +619,22 @@ def render_analysis(result: PipelineResult) -> None:
         with cols[i % 3]:
             render_html(
                 f'<div class="card" style="margin-bottom:12px"><div class="h">{esc(theme.name)}</div>'
-                f"{chip(label, color)}{chip(f'{theme.mention_count} mention(s)', '#4B5563')}"
+                f"{chip(label, color)}{chip(f'{theme.mention_count} mention(s)', STATUS['neutral'])}"
                 f'<div class="muted">{esc(theme.description)}</div>'
                 f'<div class="bar"><span style="width:{width}%;background:{color}"></span></div></div>'
             )
 
+    source = result.source_text or (SAMPLES[DEMO_SAMPLE_KEY].text if result.is_demo else "")
+    quotes = [q for f in analysis.feature_requests for q in f.evidence_quotes]
+    found = sum(quote_in_source(q, source) for q in quotes) if source else 0
     st.markdown("#### Feature requests isolées")
-    st.caption("Formulées comme des problèmes utilisateurs, dédoublonnées, avec verbatims exacts comme preuve.")
+    check = (
+        f" Contrôle automatique (sans IA) : **{found} verbatims sur {len(quotes)}** retrouvés mot pour mot "
+        "dans les messages d'origine."
+        if source
+        else ""
+    )
+    st.caption("Formulées comme des problèmes utilisateurs, dédoublonnées, avec des verbatims comme preuve." + check)
     for feature in analysis.feature_requests:
         with st.expander(f"**{feature.id} · {feature.title}** — {feature.mention_count} mention(s) · {feature.theme}"):
             left, right = st.columns([3, 2])
@@ -594,7 +644,7 @@ def render_analysis(result: PipelineResult) -> None:
                 render_html('<div class="kicker">Résultat attendu</div>')
                 st.write(feature.desired_outcome)
                 render_html('<div class="kicker">Verbatims</div>')
-                render_html("".join(f'<div class="quote">« {esc(q)} »</div>' for q in feature.evidence_quotes))
+                render_html("".join(_quote_html(q, source) for q in feature.evidence_quotes))
             with right:
                 render_html('<div class="kicker">Segments</div>')
                 render_html(" ".join(chip(s, SERIES[1]) for s in feature.user_segments))
@@ -1070,7 +1120,9 @@ def main() -> None:
     settings, context, top_n, demo_mode = render_sidebar(base_settings, profile)
 
     result = current_result()
-    render_hero(result)
+    if st.session_state.get("onboarded"):
+        items = triage(st.session_state.get("feedback_text", ""))
+        render_greeting(profile.email, len(items), sum(i.urgent for i in items), settings.timezone)
 
     scored: list[ScoredFeature] = []
     modified: set[str] = set()
@@ -1078,7 +1130,6 @@ def main() -> None:
     if result is not None:
         scored, modified = effective_scoring(result)
         view = result.model_copy(update={"scored_features": scored})
-        render_kpis(result, scored)
 
     containers = st.tabs(tabs, key="nav", on_change="rerun")
     inbox, analysis_tab, prio_tab, stories_tab, export_tab = containers[:5]
@@ -1101,6 +1152,7 @@ def main() -> None:
                 empty_state(f"{what} apparaîtr{'ont' if what.startswith('Les') else 'a'} ici.")
         return
     with analysis_tab:
+        render_kpis(result, scored)
         render_analysis(result)
         next_step(TABS[2], "Voir la priorisation")
     with prio_tab:

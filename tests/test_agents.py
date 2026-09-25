@@ -44,10 +44,10 @@ SETTINGS = Settings(anthropic_api_key="sk-ant-test", max_retries=0)
 # ── Fakes ────────────────────────────────────────────────────────────────
 
 
-def fake_message(text: str, stop_reason: str = "end_turn") -> SimpleNamespace:
+def fake_message(text: str, stop_reason: str = "end_turn", thinking: str = "") -> SimpleNamespace:
     """Mimic the attributes of ``anthropic.types.Message`` the gateway reads."""
     return SimpleNamespace(
-        content=[SimpleNamespace(type="thinking", thinking=""), SimpleNamespace(type="text", text=text)],
+        content=[SimpleNamespace(type="thinking", thinking=thinking), SimpleNamespace(type="text", text=text)],
         stop_reason=stop_reason,
         usage=SimpleNamespace(
             input_tokens=100, output_tokens=50, cache_creation_input_tokens=0, cache_read_input_tokens=0
@@ -151,7 +151,7 @@ def test_gateway_self_corrects_after_invalid_answer() -> None:
     assert len(messages.calls) == 2
     assert "not valid" in messages.calls[1]["messages"][-1]["content"]
     assert messages.calls[0]["output_config"]["format"]["type"] == "json_schema"
-    assert messages.calls[0]["thinking"] == {"type": "adaptive"}
+    assert messages.calls[0]["thinking"] == {"type": "adaptive", "display": "summarized"}
 
 
 def test_gateway_gives_up_after_one_retry() -> None:
@@ -244,3 +244,37 @@ def test_budget_cap_stops_the_pipeline() -> None:
     with pytest.raises(AgentBudgetError):
         pipeline.run("x" * 200, DEMO.context)
     assert pipeline.tracker.cost_usd(SETTINGS.pricing) > 0  # the first call was made and is accounted for
+
+
+def test_every_request_is_journaled_with_its_reasoning() -> None:
+    valid = PrioritizationOutput(assessments=[DEMO.scored_features[0].assessment], portfolio_insight="ok")
+    messages = FakeMessages(
+        [fake_message("{}", thinking="first try"), fake_message(valid.model_dump_json(), thinking="fixed it")]
+    )
+    gateway = gateway_with(messages)
+    gateway.structured(
+        agent="PrioritizationStrategist", system="s", prompt="p", schema=PrioritizationOutput, effort="low"
+    )
+    calls = gateway.tracker.report(0.0, None).calls
+    assert [(c.seq, c.attempt, c.status) for c in calls] == [(1, 1, "retry"), (2, 2, "success")]
+    assert calls[1].thinking == "fixed it" and calls[1].input_tokens == 100 and calls[1].output_excerpt
+
+
+def test_pipeline_keeps_the_source_text_and_journal() -> None:
+    pipeline = POAssistantPipeline(SETTINGS)
+    pipeline.gateway._client = SimpleNamespace(messages=FakeMessages(router=demo_router))  # type: ignore[assignment]
+    result = pipeline.run("x" * 200, DEMO.context, top_n=2)
+    assert result.source_text == "x" * 200
+    assert [c.agent for c in result.usage.calls][:2] == ["FeedbackAnalyst", "PrioritizationStrategist"]
+    assert len(result.usage.calls) == 4
+
+
+def test_quote_grounding() -> None:
+    from agents import quote_in_source
+
+    source = "Bonjour, je passe la première heure de ma journée à trier les notifs Orbit. Merci !"
+    assert quote_in_source("je passe la première heure de ma journée à trier les notifs", source)
+    assert quote_in_source("Je passe la première heure… trier les notifs Orbit", source)  # ellipsis
+    assert not quote_in_source("je perds une heure par jour à trier mes notifications", source)  # paraphrase
+    assert not quote_in_source("…", source)
+    assert all(quote_in_source(q, DEMO.source_text) for f in DEMO.analysis.feature_requests for q in f.evidence_quotes)

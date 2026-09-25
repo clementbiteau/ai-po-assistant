@@ -17,7 +17,7 @@ from agents import UsageReport
 from auth import AuthError, AuthService, build_auth_service
 from config import Settings, apply_secrets
 from governance import Consumption, CostEstimator, consumption_from_runs, period_starts
-from store import AgentRecord, Profile, Repository, RunRecord, StoreError
+from store import AgentRecord, CallRecord, Profile, Repository, RunRecord, StoreError
 
 _CONSUMPTION_TTL_S = 60
 
@@ -172,6 +172,23 @@ def record_usage(
         input_tokens += u.input_tokens
         output_tokens += u.output_tokens
     cost_usd = (usage.estimated_cost_usd or 0.0) if usage else 0.0
+    calls = tuple(
+        CallRecord(
+            seq=c.seq,
+            agent=c.agent,
+            started_at=datetime.fromisoformat(c.started_at),
+            duration_s=c.duration_s,
+            attempt=c.attempt,
+            status=c.status,
+            stop_reason=c.stop_reason,
+            input_tokens=c.input_tokens,
+            output_tokens=c.output_tokens,
+            thinking=c.thinking,
+            output_excerpt=c.output_excerpt,
+            error=c.error,
+        )
+        for c in (usage.calls if usage else [])
+    )
     run = RunRecord(
         user_id=profile.id,
         kind=kind,
@@ -187,6 +204,7 @@ def record_usage(
         duration_s=usage.wall_clock_s if usage else 0.0,
         error=error,
         agents=tuple(agents),
+        calls=calls,
     )
     try:
         repository().record_run(run)

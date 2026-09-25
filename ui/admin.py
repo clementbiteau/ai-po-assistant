@@ -125,9 +125,11 @@ def render_admin(settings: Settings, me: Profile) -> None:
             "via **Données de démo**.",
         )
 
-    usage_tab, ml_tab, quota_tab = st.tabs(["Usage et coûts", "Prévisions", "Quotas"])
+    usage_tab, agents_tab, ml_tab, quota_tab = st.tabs(["Usage et coûts", "Agents", "Prévisions", "Quotas"])
     with usage_tab:
         _usage_section(settings, runs, agents, profiles_df)
+    with agents_tab:
+        _agents_section(settings, runs)
     with ml_tab:
         _ml_section(settings, runs, agents, profiles_df, profiles)
     with quota_tab:
@@ -314,6 +316,199 @@ def _usage_section(settings: Settings, runs: pd.DataFrame, agents: pd.DataFrame,
             )
             st.altair_chart(chart, width="stretch")
         _show_sql(sql.BY_USER, tz)
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# Agents — process visualisation and per-run journal
+# ══════════════════════════════════════════════════════════════════════════
+
+_STATUS_FR = {"success": "succès", "retry": "corrigé ensuite", "error": "échec", "blocked": "bloqué"}
+_AGENT_ORDER = ["FeedbackAnalyst", "PrioritizationStrategist", "UserStoryWriter"]
+
+
+def _run_label(row: pd.Series, tz: str) -> str:
+    when = row["created_at"].tz_convert(tz).strftime("%d/%m %H:%M")
+    synthetic = " · synthétique" if row["is_synthetic"] else ""
+    kind = "pipeline complet" if row["kind"] == "pipeline" else "story à la demande"
+    return (
+        f"{when} · {row['email']} · {kind} · {_STATUS_FR.get(row['status'], row['status'])} · "
+        f"{euros(float(row['cost_eur']), digits=3)}{synthetic}"
+    )
+
+
+def _agents_section(settings: Settings, runs: pd.DataFrame) -> None:
+    tz = settings.timezone
+    st.markdown("#### Journal des agents")
+    st.caption(
+        "Chaque lancement enchaîne les agents : FeedbackAnalyst, puis PrioritizationStrategist, puis les "
+        "UserStoryWriter en parallèle. Chaque ligne du journal est une requête envoyée à Claude, avec sa durée, "
+        "ses tokens et la **réflexion résumée** renvoyée par l'API (jamais le raisonnement brut)."
+    )
+    candidates = runs[runs["status"] != "blocked"].sort_values("created_at", ascending=False).head(60)
+    if candidates.empty:
+        st.info("Aucun lancement sur la période. Les runs en direct apparaîtront ici avec leur journal complet.")
+        return
+    labels = {row["id"]: _run_label(row, tz) for _, row in candidates.iterrows()}
+    run_id = st.selectbox("Lancement", list(labels), format_func=labels.get, key="adm_run_pick")
+    run = candidates[candidates["id"] == run_id].iloc[0]
+    try:
+        calls = session.repository().fetch_calls([run_id])
+    except StoreError as exc:
+        st.error(exc.user_message)
+        return
+
+    cols = st.columns(5)
+    cols[0].metric("Utilisateur", run["email"].split("@")[0], border=True)
+    cols[1].metric("Durée totale", f"{float(run['duration_s']):.1f} s", border=True)
+    cols[2].metric("Requêtes", len(calls), border=True)
+    cols[3].metric("Tokens", f"{int(run['input_tokens'] + run['output_tokens']):,}".replace(",", " "), border=True)
+    cols[4].metric("Coût", euros(float(run["cost_eur"]), digits=3), border=True)
+    if calls.empty:
+        st.info(
+            "Pas de journal détaillé pour ce lancement : il date d'avant l'activation du journal, "
+            "ou il s'est arrêté avant le premier appel."
+        )
+        return
+
+    _process_flow(calls)
+    _timeline(calls, tz)
+
+    table = pd.DataFrame(
+        {
+            "#": calls["seq"].astype(int),
+            "Agent": calls["agent"],
+            "Début": calls["started_at"].dt.tz_convert(tz).dt.strftime("%H:%M:%S"),
+            "Durée (s)": calls["duration_s"].round(1),
+            "Tentative": calls["attempt"].astype(int),
+            "Statut": calls["status"].map(_STATUS_FR).fillna(calls["status"]),
+            "Fin (API)": calls["stop_reason"].fillna("—"),
+            "Tokens entrée": calls["input_tokens"].astype(int),
+            "Tokens sortie": calls["output_tokens"].astype(int),
+        }
+    )
+    st.dataframe(table, hide_index=True, width="stretch")
+
+    st.markdown("**Détail par requête**")
+    for _, call in calls.iterrows():
+        title = (
+            f"#{int(call['seq'])} · {call['agent']} · tentative {int(call['attempt'])} · "
+            f"{float(call['duration_s']):.1f} s · {_STATUS_FR.get(call['status'], call['status'])}"
+        )
+        with st.expander(title):
+            left, right = st.columns([1.1, 1], gap="large")
+            with left:
+                render_html('<div class="kicker" style="margin-top:0">Réflexion (résumé fourni par Claude)</div>')
+                st.markdown(call["thinking"] or "_Aucune réflexion renvoyée pour cette requête._")
+            with right:
+                render_html('<div class="kicker" style="margin-top:0">Sortie (extrait du JSON)</div>')
+                st.code(call["output_excerpt"] or "—", language="json", wrap_lines=True, height=260)
+                if call["error"]:
+                    st.warning(f"Motif : {call['error']}")
+
+    with st.expander("Latence par agent sur la période"):
+        _latency_by_agent(runs)
+
+
+def _process_flow(calls: pd.DataFrame) -> None:
+    """The three agents as a left-to-right flow with their call counts, time and tokens."""
+    cells = []
+    for i, name in enumerate(_AGENT_ORDER, start=1):
+        part = calls[calls["agent"] == name]
+        if part.empty:
+            continue
+        span = (part["started_at"].max() - part["started_at"].min()).total_seconds() + float(
+            part.loc[part["started_at"].idxmax(), "duration_s"]
+        )
+        parallel = " en parallèle" if len(part) > 1 and name == "UserStoryWriter" else ""
+        tokens = int(part["input_tokens"].sum() + part["output_tokens"].sum())
+        cells.append(
+            f'<div class="step" style="border-top-color:{AGENT_COLORS[name]}"><div class="n">0{i} — {name}</div>'
+            f'<div class="t">{len(part)} requête{"s" if len(part) > 1 else ""}{parallel}</div>'
+            f'<div class="d">{span:.1f} s · {tokens:,} tokens</div></div>'.replace(",", " ")
+        )
+    render_html(
+        '<div class="steps" style="margin: 8px 0 14px; color: inherit">'
+        + "".join(cells).replace('class="n"', 'class="n" style="color:inherit;opacity:.65"')
+        + "</div>"
+    )
+
+
+def _timeline(calls: pd.DataFrame, tz: str) -> None:
+    """Gantt-style timeline of the requests of one run."""
+    origin = calls["started_at"].min()
+    data = calls.assign(
+        start=(calls["started_at"] - origin).dt.total_seconds(),
+        label=calls.apply(lambda c: f"#{int(c['seq'])} {c['agent']}", axis=1),
+        status_fr=calls["status"].map(_STATUS_FR).fillna(calls["status"]),
+    )
+    data["end"] = data["start"] + data["duration_s"]
+    chart = (
+        alt.Chart(data)
+        .mark_bar(cornerRadius=3, height=16)
+        .encode(
+            x=alt.X("start:Q", title="Secondes depuis le lancement"),
+            x2="end:Q",
+            y=alt.Y("label:N", sort=list(data["label"]), title=None, axis=alt.Axis(labelLimit=220)),
+            color=alt.Color(
+                "agent:N",
+                title=None,
+                scale=alt.Scale(domain=_AGENT_ORDER, range=[AGENT_COLORS[a] for a in _AGENT_ORDER]),
+                legend=alt.Legend(orient="top"),
+            ),
+            opacity=alt.condition("datum.status === 'success'", alt.value(1.0), alt.value(0.45)),
+            tooltip=[
+                alt.Tooltip("label:N", title="Requête"),
+                alt.Tooltip("duration_s:Q", title="Durée (s)", format=".1f"),
+                alt.Tooltip("input_tokens:Q", title="Tokens entrée", format=","),
+                alt.Tooltip("output_tokens:Q", title="Tokens sortie", format=","),
+                alt.Tooltip("status_fr:N", title="Statut"),
+            ],
+        )
+        .properties(height=alt.Step(30))
+    )
+    with st.container(border=True):
+        st.markdown("**Chronologie du lancement**")
+        st.altair_chart(chart, width="stretch")
+        st.caption("Barres pâles : réponse rejetée par la validation puis corrigée, ou échec.")
+
+
+def _latency_by_agent(runs: pd.DataFrame) -> None:
+    ids = runs.loc[runs["status"] != "blocked", "id"].tolist()[-400:]
+    try:
+        calls = session.repository().fetch_calls(ids)
+    except StoreError as exc:
+        st.error(exc.user_message)
+        return
+    if calls.empty:
+        st.caption("Pas encore de journal sur la période.")
+        return
+    stats = (
+        calls.groupby("agent")["duration_s"]
+        .agg(requêtes="count", p50=lambda x: x.quantile(0.5), p95=lambda x: x.quantile(0.95))
+        .reindex([a for a in _AGENT_ORDER if a in set(calls["agent"])])
+        .reset_index()
+    )
+    stats["tokens moyens"] = (
+        calls.assign(t=calls["input_tokens"] + calls["output_tokens"])
+        .groupby("agent")["t"]
+        .mean()
+        .reindex(stats["agent"])
+        .values
+    )
+    st.dataframe(
+        stats.round({"p50": 1, "p95": 1, "tokens moyens": 0}),
+        hide_index=True,
+        width="stretch",
+        column_config={
+            "agent": "Agent",
+            "p50": st.column_config.NumberColumn("Médiane (s)", format="%.1f"),
+            "p95": st.column_config.NumberColumn("95e centile (s)", format="%.1f"),
+            "tokens moyens": st.column_config.NumberColumn(format="%d"),
+        },
+    )
+    st.caption(
+        "Les UserStoryWriter tournant en parallèle, la durée d'un lancement ≈ analyste + stratège + la plus lente des stories."
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════════
