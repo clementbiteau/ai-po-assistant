@@ -23,6 +23,9 @@ def local_mode(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
 
 def login(email: str, password: str = PASSWORD) -> AppTest:
     app = AppTest.from_file("../app.py", default_timeout=60)
+    # AppTest cannot render st.dialog trees: skip the onboarding modal here
+    # (its effect is covered by test_onboarding_launch_runs_the_demo).
+    app.session_state["onboarded"] = True
     app.run()
     app.text_input[0].input(email)
     app.text_input[1].input(password)
@@ -51,16 +54,26 @@ def test_wrong_password_is_rejected() -> None:
 def test_member_has_no_admin_console() -> None:
     app = login("demo@local.dev")
     assert not app.exception
-    assert "📥 Inbox" in tab_labels(app) and "🛡️ Admin" not in tab_labels(app)
+    assert "Inbox" in tab_labels(app) and "Admin" not in tab_labels(app)
 
 
 def test_admin_console_and_demo_run() -> None:
     app = login("admin@local.dev")
     assert not app.exception
-    assert "🛡️ Admin" in tab_labels(app)
+    assert "Admin" in tab_labels(app)
     next(b for b in app.button if b.label == "Générer 60 jours").click().run()
     assert not app.exception
     assert any(m.label == "Dépense du mois" for m in app.metric)
-    next(b for b in app.button if b.label == "Lancer les 3 agents").click().run()  # offline demo replay
+    next(b for b in app.button if b.label == "Lancer l'analyse").click().run()  # offline demo replay
     assert not app.exception
     assert app.session_state["result"] is not None
+
+
+def test_onboarding_launch_runs_the_demo() -> None:
+    app = login("demo@local.dev")
+    # What the dialog's "Démarrer" button records before triggering a rerun:
+    app.session_state["pending_sample"] = "notifications"
+    app.session_state["pending_run"] = "demo"
+    app.run()
+    assert not app.exception
+    assert app.session_state["result"] is not None and app.session_state["result"].is_demo

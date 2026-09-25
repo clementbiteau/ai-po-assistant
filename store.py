@@ -199,6 +199,9 @@ class Repository(Protocol):
         ...
 
     def fetch_usage(self, since: datetime) -> tuple[pd.DataFrame, pd.DataFrame]: ...
+    def total_real_cost_usd(self) -> float:
+        """All-time API spend of real runs (USD) — basis of the remaining-credit estimate."""
+        ...
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -305,6 +308,11 @@ class SupabaseRepository:
             row["email"] = (row.pop("profiles", None) or {}).get("email")
             runs.append(row)
         return _typed_runs(runs), _typed_agents(agents)
+
+    def total_real_cost_usd(self) -> float:
+        """All-time spend of real runs visible to the caller (all runs for an admin)."""
+        rows = self._paginate(lambda q: q.select("cost_usd").eq("is_synthetic", False))
+        return float(sum(float(r["cost_usd"] or 0) for r in rows))
 
     def _paginate(self, build: Any) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
@@ -478,6 +486,12 @@ class SQLiteRepository:
                 (user_id, since.astimezone(timezone.utc).isoformat()),
             ).fetchall()
         return [(datetime.fromisoformat(r["created_at"]), float(r["cost_eur"] or 0)) for r in rows]
+
+    def total_real_cost_usd(self) -> float:
+        """All-time spend of real runs (USD)."""
+        with self._conn() as con:
+            value = con.execute("select coalesce(sum(cost_usd), 0) from runs where is_synthetic = 0").fetchone()[0]
+        return float(value)
 
     def fetch_usage(self, since: datetime) -> tuple[pd.DataFrame, pd.DataFrame]:
         """All runs (+ email) and agent rows since ``since``."""

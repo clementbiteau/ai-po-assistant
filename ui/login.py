@@ -18,61 +18,81 @@ LOCKOUT_S = 60
 _LOGIN_CSS = """
 <style>
 section[data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {display: none;}
-.login-hero {border-radius: 18px; padding: 26px 28px 22px; color: #fff; margin: 4vh 0 14px;
-  background: radial-gradient(900px 260px at 0% 0%, #6366F1 0%, transparent 60%),
-              linear-gradient(135deg, #1E1B4B 0%, #312E81 45%, #4F46E5 100%);
-  box-shadow: 0 10px 30px rgba(49,46,129,.25);}
-.login-hero .eyebrow {font-size: .74rem; letter-spacing: .14em; text-transform: uppercase; opacity: .75;
-  font-weight: 600;}
-.login-hero h1 {color: #fff; font-size: 1.7rem; font-weight: 800; margin: 6px 0 4px; padding: 0;}
-.login-hero p {opacity: .85; margin: 0; font-size: .95rem;}
-.login-foot {font-size: .78rem; opacity: .6; text-align: center; margin-top: 10px;}
+.block-container {max-width: 1120px; padding-top: 7vh;}
+.pitch {padding: 8px 28px 0 0;}
+.pitch h1 {font-family: 'Newsreader', Georgia, serif; font-weight: 500; font-size: 3rem; line-height: 1.05;
+  margin: 14px 0 16px; padding: 0; letter-spacing: -0.015em;}
+.pitch h1 em {font-style: italic; color: #2F9477;}
+.pitch p.lead {font-size: 1.05rem; line-height: 1.6; opacity: .75; max-width: 46ch; margin: 0 0 28px;}
+.pitch ol {list-style: none; padding: 0; margin: 0; counter-reset: s;}
+.pitch li {counter-increment: s; display: grid; grid-template-columns: 44px 1fr; padding: 12px 0;
+  border-top: 1px solid rgba(127,127,127,.2); font-size: .95rem; line-height: 1.45;}
+.pitch li::before {content: "0" counter(s); font-family: 'Geist Mono', ui-monospace, monospace; font-size: .74rem;
+  color: #2F9477; padding-top: 3px;}
+.pitch li b {font-weight: 600;}
+.pitch .sub {opacity: .62;}
+.form-head {font-family: 'Newsreader', Georgia, serif; font-size: 1.6rem; font-weight: 500; margin: 0 0 2px;}
+.form-note {font-size: .86rem; opacity: .62; margin-bottom: 8px;}
+.login-foot {font-family: 'Geist Mono', ui-monospace, monospace; font-size: .68rem; letter-spacing: .12em;
+  text-transform: uppercase; opacity: .5; text-align: right;}
 </style>
+"""
+
+_PITCH = """
+<div class="pitch">
+  <div class="eyebrow">AI Product Owner Assistant</div>
+  <h1>Du feedback client au <em>backlog priorisé</em>.</h1>
+  <p class="lead">Emails, tickets, verbatims NPS, notes d'appel : trois agents Claude les transforment en
+  priorités argumentées et en user stories prêtes pour le sprint.</p>
+  <ol>
+    <li><div><b>Analyser</b> <span class="sub">— thèmes, signaux et demandes isolées, preuves à l'appui.</span></div></li>
+    <li><div><b>Prioriser</b> <span class="sub">— score RICE justifié et arbitrage MoSCoW.</span></div></li>
+    <li><div><b>Rédiger</b> <span class="sub">— user stories et critères Gherkin, exportables dans Jira.</span></div></li>
+  </ol>
+</div>
 """
 
 
 def render_login(settings: Settings) -> None:
-    """Render the sign-in card and handle the form submission.
+    """Render the sign-in page and handle the form submission.
 
     On success the page reruns into the application; failures are counted
     per session and trigger a short lockout to slow down brute force (on top
     of Supabase's own rate limiting).
     """
     render_html(_LOGIN_CSS)
-    _, center, _ = st.columns([1, 1.25, 1])
-    with center:
-        render_html(
-            '<div class="login-hero"><div class="eyebrow">AI Product Owner Assistant</div>'
-            "<h1>🧭 Connexion</h1><p>Accès réservé aux personnes invitées.</p></div>"
-        )
-        try:
-            session.auth_service(settings)
-        except AuthError as exc:
-            st.error(exc.user_message, icon=":material/lock:")
-            st.stop()
-
-        locked_until = st.session_state.get("_locked_until", 0.0)
-        remaining = int(locked_until - time.time())
+    left, right = st.columns([1.2, 1], gap="large")
+    with left:
+        render_html(_PITCH)
+    with right:
         with st.container(border=True):
+            render_html('<div class="form-head">Connexion</div><div class="form-note">Accès sur invitation.</div>')
+            try:
+                session.auth_service(settings)
+            except AuthError as exc:
+                st.error(exc.user_message)
+                st.stop()
+
+            locked_until = st.session_state.get("_locked_until", 0.0)
+            remaining = int(locked_until - time.time())
             with st.form("login", border=False):
                 email = st.text_input("Email", placeholder="prenom.nom@entreprise.com", autocomplete="username")
                 password = st.text_input("Mot de passe", type="password", autocomplete="current-password")
                 submitted = st.form_submit_button(
-                    "Se connecter", type="primary", icon=":material/login:", width="stretch", disabled=remaining > 0
+                    "Se connecter", type="primary", width="stretch", disabled=remaining > 0
                 )
             if remaining > 0:
-                st.warning(f"Trop de tentatives. Réessayez dans {remaining} s.", icon=":material/timer:")
+                st.warning(f"Trop de tentatives. Réessayez dans {remaining} s.")
             elif submitted:
                 _attempt(settings, email, password)
-
             if settings.auth_mode == "local":
                 st.caption("Mode local : `admin@local.dev` ou `demo@local.dev` + `LOCAL_DEV_PASSWORD`.")
 
-        left, right = st.columns([1, 1], vertical_alignment="center")
-        with left:
+        foot_left, foot_right = st.columns([1, 1], vertical_alignment="center")
+        with foot_left:
             theme_toggle("login")
-        with right:
-            render_html('<div class="login-foot">🔒 Supabase Auth · RLS PostgreSQL</div>')
+        with foot_right:
+            render_html('<div class="login-foot">Supabase Auth · PostgreSQL RLS</div>')
 
 
 def _attempt(settings: Settings, email: str, password: str) -> None:
@@ -85,8 +105,8 @@ def _attempt(settings: Settings, email: str, password: str) -> None:
         if failures >= MAX_ATTEMPTS:
             st.session_state["_locked_until"] = time.time() + LOCKOUT_S
             st.session_state["_failures"] = 0
-        st.error(exc.user_message, icon=":material/error:")
+        st.error(exc.user_message)
         return
     st.session_state["_failures"] = 0
-    st.toast(f"Bienvenue {profile.email} 👋")
+    st.toast(f"Connecté en tant que {profile.email}")
     st.rerun()

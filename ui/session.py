@@ -8,6 +8,7 @@ into another visitor's (Streamlit serves all sessions from one process).
 from __future__ import annotations
 
 import time
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 import streamlit as st
@@ -103,6 +104,40 @@ def consumption(settings: Settings, *, force: bool = False) -> Consumption:
     return value
 
 
+@dataclass(frozen=True)
+class CreditStatus:
+    """Estimated Anthropic credit balance (USD)."""
+
+    loaded_usd: float
+    spent_usd: float
+
+    @property
+    def remaining_usd(self) -> float:
+        """Loaded credits minus what the app spent (never below zero)."""
+        return max(self.loaded_usd - self.spent_usd, 0.0)
+
+    @property
+    def ratio_left(self) -> float:
+        """Share of credits left, between 0 and 1."""
+        return self.remaining_usd / self.loaded_usd if self.loaded_usd else 0.0
+
+
+def credit_status(settings: Settings, *, force: bool = False) -> CreditStatus | None:
+    """Remaining-credit estimate, or ``None`` when ``ANTHROPIC_CREDITS_USD`` is unset (cached 60 s)."""
+    if not settings.anthropic_credits_usd:
+        return None
+    cached = st.session_state.get("_credit")
+    if cached and not force and time.monotonic() - cached[0] < _CONSUMPTION_TTL_S:
+        return cached[1]
+    try:
+        spent = repository().total_real_cost_usd()
+    except StoreError:
+        return None
+    status = CreditStatus(loaded_usd=settings.anthropic_credits_usd, spent_usd=spent)
+    st.session_state["_credit"] = (time.monotonic(), status)
+    return status
+
+
 def cost_estimator() -> CostEstimator:
     """Cost model trained on the runs this user can see (own runs, or all for admins)."""
     try:
@@ -156,14 +191,16 @@ def record_usage(
     try:
         repository().record_run(run)
     except StoreError as exc:
-        st.toast(f"Usage non enregistré : {exc.user_message}", icon="⚠️")
+        st.toast(f"Usage non enregistré : {exc.user_message}")
     st.session_state.pop("_consumption", None)
+    st.session_state.pop("_credit", None)
 
 
 __all__ = [
     "AuthError",
     "auth_service",
     "consumption",
+    "credit_status",
     "cost_estimator",
     "current_profile",
     "load_secrets_into_env",

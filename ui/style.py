@@ -1,8 +1,16 @@
 """Design tokens, global CSS and tiny HTML helpers shared by every screen.
 
+Visual direction: editorial and restrained — warm paper surfaces, ink text,
+a single deep-green accent, a serif for headlines (Newsreader), a neutral
+sans for the interface (Geist) and a mono for figures and labels (Geist Mono).
+
 The CSS is theme-agnostic: surfaces use translucent overlays and inherit the
-text colour, so every custom component looks right in both the light and
+text colour, so every custom component reads correctly in both the light and
 the dark Streamlit themes without knowing which one is active.
+
+Chart colours were validated with a colour-vision-deficiency checker (OKLab
+ΔE, lightness band, chroma floor, contrast) against both the light
+(#FBFAF7) and dark (#151513) surfaces, so a single set works in both themes.
 """
 
 from __future__ import annotations
@@ -13,85 +21,121 @@ from typing import Any
 
 import streamlit as st
 
-MOSCOW_COLORS: dict[str, str] = {"Must": "#DC2626", "Should": "#EA580C", "Could": "#2563EB", "Won't": "#9CA3AF"}
-MOSCOW_ORDER: list[str] = ["Must", "Should", "Could", "Won't"]
-MOSCOW_DOTS: dict[str, str] = {"Must": "🔴", "Should": "🟠", "Could": "🔵", "Won't": "⚪"}
+# Categorical (identity) — fixed order, validated all-pairs in both themes.
+SERIES: tuple[str, str, str] = ("#228E6F", "#4271C8", "#B87612")
 AGENT_COLORS: dict[str, str] = {
-    "FeedbackAnalyst": "#6366F1",
-    "PrioritizationStrategist": "#0EA5E9",
-    "UserStoryWriter": "#F59E0B",
+    "FeedbackAnalyst": SERIES[0],
+    "PrioritizationStrategist": SERIES[1],
+    "UserStoryWriter": SERIES[2],
 }
-#: Neutral text colour for chart annotations, readable on light and dark.
-CHART_TEXT = "#8B93A7"
-ACCENT = "#6366F1"
+# MoSCoW is ordinal: one hue, darkest = most important; "Won't" is neutral.
+MOSCOW_COLORS: dict[str, str] = {"Must": "#17664F", "Should": "#2F9477", "Could": "#6FAF98", "Won't": "#A29E94"}
+MOSCOW_ORDER: list[str] = ["Must", "Should", "Could", "Won't"]
+# Status (reserved: never reused as a series colour).
+STATUS = {"good": "#2F9477", "warning": "#B87612", "critical": "#B3452C", "neutral": "#8A867D"}
+ACCENT = "#228E6F"
+#: Neutral ink for chart annotations, readable on light and dark surfaces.
+CHART_TEXT = "#8A867D"
+CONSOLE_BILLING_URL = "https://platform.claude.com/settings/billing"
 
 CSS = """
 <style>
-.block-container {padding-top: 2.2rem; padding-bottom: 4rem; max-width: 1320px;}
+.block-container {padding-top: 2rem; padding-bottom: 4rem; max-width: 1240px;}
 footer {visibility: hidden;}
-h1, h2, h3 {letter-spacing: -0.02em;}
+h1, h2, h3, h4 {letter-spacing: -0.01em;}
+[data-testid="stMetricValue"] {font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 500;
+  letter-spacing: -0.02em;}
+[data-testid="stMetricLabel"] p {font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; opacity: .7;}
 
-.hero {border-radius: 18px; padding: 28px 32px; color: #fff; margin-bottom: 18px;
-  background: radial-gradient(1200px 300px at 0% 0%, #6366F1 0%, transparent 60%),
-              linear-gradient(135deg, #1E1B4B 0%, #312E81 45%, #4F46E5 100%);
-  box-shadow: 0 10px 30px rgba(49,46,129,.25);}
-.hero .eyebrow {font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; opacity: .75; font-weight: 600;}
-.hero h1 {color: #fff; font-size: 2.1rem; font-weight: 800; margin: 6px 0 4px 0; padding: 0;}
-.hero p.sub {opacity: .85; font-size: 1.02rem; margin: 0 0 18px 0;}
-.flow {display: flex; align-items: stretch; gap: 10px; flex-wrap: nowrap;}
-@media (max-width: 900px) {.flow {flex-wrap: wrap;} .flow .arrow {display: none;}}
-.flow .node {flex: 1 1 0; min-width: 150px; position: relative; background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.18); border-radius: 12px; padding: 12px 14px; backdrop-filter: blur(4px);}
-.flow .node.done {background: rgba(34,197,94,.16); border-color: rgba(134,239,172,.55);}
-.flow .node .t {font-weight: 700; font-size: .86rem; padding-right: 18px;}
-.flow .node .ok {position: absolute; top: 10px; right: 12px; color: #86EFAC; font-weight: 800;}
-.flow .node .d {font-size: .8rem; opacity: .8; margin-top: 2px;}
-.flow .arrow {align-self: center; opacity: .6; font-size: 1.2rem;}
-.flow .io {flex: 0 0 auto; align-self: center; font-size: .8rem; padding: 6px 10px; border-radius: 999px;
-  background: rgba(255,255,255,.12); border: 1px dashed rgba(255,255,255,.35);}
+/* ── Hero ─────────────────────────────────────────────────────────────── */
+.hero {position: relative; overflow: hidden; border-radius: 14px; padding: 34px 38px 30px; margin-bottom: 20px;
+  color: #F2EEE4; background-color: #14352C;
+  background-image: radial-gradient(rgba(242,238,228,.075) 1px, transparent 1.2px);
+  background-size: 16px 16px;}
+.hero::after {content: ""; position: absolute; inset: auto -120px -160px auto; width: 420px; height: 420px;
+  border-radius: 50%; border: 1px solid rgba(242,238,228,.12);}
+.eyebrow {font-family: 'Geist Mono', ui-monospace, monospace; font-size: .7rem; letter-spacing: .2em;
+  text-transform: uppercase; opacity: .72;}
+.hero .eyebrow {color: #A9D3C3; opacity: 1;}
+.hero h1 {font-family: 'Newsreader', Georgia, serif; font-weight: 500; font-size: 2.6rem; line-height: 1.08;
+  color: #F2EEE4; margin: 10px 0 10px; padding: 0; max-width: 20ch;}
+.hero h1 em {font-style: italic; color: #A9D3C3;}
+.hero p.sub {color: rgba(242,238,228,.74); font-size: 1rem; line-height: 1.55; max-width: 62ch; margin: 0 0 26px;}
+.steps {display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; position: relative; z-index: 1;}
+@media (max-width: 860px) {.steps {grid-template-columns: 1fr;} .hero h1 {font-size: 2rem;}}
+.step {border-top: 1px solid rgba(242,238,228,.22); padding-top: 12px;}
+.step .n {font-family: 'Geist Mono', ui-monospace, monospace; font-size: .72rem; color: #A9D3C3; letter-spacing: .06em;}
+.step .t {font-weight: 600; margin-top: 4px;}
+.step .d {font-size: .84rem; opacity: .68; margin-top: 2px; line-height: 1.45;}
+.step.done {border-top-color: #A9D3C3;}
+.step.done .n::after {content: "  ·  terminé";}
 
-.card {border: 1px solid rgba(127,127,127,.22); border-radius: 14px; padding: 16px 18px;
-  background: rgba(127,127,127,.04); height: 100%;}
-.card .h {margin: 0 0 6px 0; font-size: 1rem; font-weight: 700;}
-.card .muted, .muted {opacity: .68; font-size: .86rem;}
-.chip {display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .74rem; font-weight: 600;
-  margin: 0 6px 6px 0; border: 1px solid transparent; white-space: nowrap;}
-.bar {height: 6px; border-radius: 99px; background: rgba(127,127,127,.15); margin-top: 10px; overflow: hidden;}
+/* ── Surfaces ─────────────────────────────────────────────────────────── */
+.card {border: 1px solid rgba(127,127,127,.2); border-radius: 12px; padding: 18px 20px;
+  background: rgba(127,127,127,.035); height: 100%;}
+.card .h {font-family: 'Newsreader', Georgia, serif; font-size: 1.18rem; font-weight: 500; margin: 0 0 8px;}
+.muted {opacity: .66; font-size: .88rem; line-height: 1.5;}
+.chip {display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: .72rem; font-weight: 500;
+  margin: 0 6px 6px 0; border: 1px solid transparent; white-space: nowrap; letter-spacing: .01em;}
+.bar {height: 4px; border-radius: 99px; background: rgba(127,127,127,.16); margin-top: 12px; overflow: hidden;}
 .bar > span {display: block; height: 100%; border-radius: 99px;}
 
-.summary {border-left: 4px solid #6366F1; background: rgba(99,102,241,.08); border-radius: 10px;
-  padding: 14px 18px; font-size: 1.02rem; line-height: 1.55;}
-.quote {border-left: 3px solid rgba(99,102,241,.45); padding: 4px 12px; margin: 6px 0; font-style: italic;
-  background: rgba(99,102,241,.05); border-radius: 0 8px 8px 0; font-size: .92rem;}
+.summary {border-left: 2px solid #228E6F; padding: 4px 0 4px 18px; font-family: 'Newsreader', Georgia, serif;
+  font-size: 1.22rem; line-height: 1.5;}
+.quote {border-left: 1px solid rgba(127,127,127,.45); padding: 2px 0 2px 14px; margin: 8px 0;
+  font-family: 'Newsreader', Georgia, serif; font-style: italic; font-size: 1.02rem; opacity: .9;}
+.kicker {font-family: 'Geist Mono', ui-monospace, monospace; font-size: .68rem; letter-spacing: .16em;
+  text-transform: uppercase; opacity: .55; margin: 18px 0 6px;}
 
-.statement {border-radius: 14px; padding: 18px 20px; font-size: 1.08rem; line-height: 1.7;
-  background: linear-gradient(135deg, rgba(99,102,241,.12) 0%, rgba(139,92,246,.08) 100%);
-  border: 1px solid rgba(99,102,241,.25);}
-.statement b {color: #6D6AF5; font-weight: 800;}
-.kicker {font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; opacity: .6; font-weight: 700;
-  margin: 14px 0 6px 0;}
+.statement {border-radius: 12px; padding: 20px 22px; line-height: 1.75; font-size: 1.05rem;
+  background: rgba(34,142,111,.06); border: 1px solid rgba(34,142,111,.22);}
+.statement .k {font-family: 'Geist Mono', ui-monospace, monospace; font-size: .7rem; letter-spacing: .14em;
+  text-transform: uppercase; color: #2F9477; margin-right: 8px;}
 
-.moscow-col {border-radius: 14px; padding: 12px; background: rgba(127,127,127,.05);
+.moscow-col {border-radius: 12px; padding: 14px; background: rgba(127,127,127,.04);
   border: 1px solid rgba(127,127,127,.16); min-height: 150px;}
-.moscow-col .head {font-weight: 800; font-size: .95rem; display: flex; justify-content: space-between;
-  align-items: center;}
-.moscow-col .hint {font-size: .75rem; opacity: .65; margin-bottom: 8px;}
-.mini {background: rgba(127,127,127,.06); border: 1px solid rgba(127,127,127,.2); border-radius: 10px;
-  padding: 8px 10px; margin-top: 8px; font-size: .86rem;}
-.mini .s {opacity: .65; font-size: .76rem; margin-top: 2px;}
+.moscow-col .head {font-family: 'Newsreader', Georgia, serif; font-size: 1.15rem; display: flex;
+  justify-content: space-between; align-items: baseline;}
+.moscow-col .count {font-family: 'Geist Mono', ui-monospace, monospace; font-size: .8rem; opacity: .6;}
+.moscow-col .hint {font-size: .76rem; opacity: .6; margin: 2px 0 8px;}
+.mini {border: 1px solid rgba(127,127,127,.18); border-radius: 8px; padding: 8px 10px; margin-top: 8px;
+  font-size: .86rem; background: rgba(127,127,127,.03);}
+.mini .s {opacity: .6; font-size: .74rem; margin-top: 3px; font-family: 'Geist Mono', ui-monospace, monospace;}
 
-.formula {font-family: 'JetBrains Mono', monospace; background: #111827; color: #E5E7EB; border-radius: 10px;
-  padding: 10px 14px; font-size: .88rem; display: inline-block;}
-.formula em {color: #A5B4FC; font-style: normal;}
+.formula {font-family: 'Geist Mono', ui-monospace, monospace; border: 1px solid rgba(127,127,127,.25);
+  background: rgba(127,127,127,.05); border-radius: 8px; padding: 9px 14px; font-size: .84rem; display: inline-block;}
+.formula em {color: #2F9477; font-style: normal; font-weight: 500;}
 
-.userbox {border: 1px solid rgba(127,127,127,.22); border-radius: 12px; padding: 10px 12px;
-  background: rgba(127,127,127,.05); font-size: .86rem;}
-.userbox .mail {font-weight: 700; overflow-wrap: anywhere;}
-.qrow {display: flex; justify-content: space-between; font-size: .76rem; opacity: .8; margin-top: 8px;}
-.admin-hero {border-radius: 16px; padding: 18px 22px; color: #fff; margin-bottom: 12px;
-  background: linear-gradient(135deg, #0F172A 0%, #1E293B 55%, #334155 100%);}
-.admin-hero h2 {color: #fff; margin: 0; font-size: 1.4rem;}
-.admin-hero p {margin: 4px 0 0 0; opacity: .8; font-size: .92rem;}
+/* ── Guidance ─────────────────────────────────────────────────────────── */
+.intro {display: flex; gap: 14px; align-items: baseline; padding: 12px 16px; margin-bottom: 18px;
+  border-radius: 10px; background: rgba(34,142,111,.06); border: 1px solid rgba(34,142,111,.18);}
+.intro .n {font-family: 'Geist Mono', ui-monospace, monospace; font-size: .7rem; letter-spacing: .14em;
+  text-transform: uppercase; color: #2F9477; white-space: nowrap;}
+.intro .t {font-size: .92rem; line-height: 1.5;}
+
+/* ── Sidebar account ──────────────────────────────────────────────────── */
+.brand {font-family: 'Newsreader', Georgia, serif; font-size: 1.35rem; font-weight: 500; margin: 0;}
+.userbox {border: 1px solid rgba(127,127,127,.2); border-radius: 10px; padding: 12px 14px;
+  background: rgba(127,127,127,.04); font-size: .84rem;}
+.userbox .mail {font-weight: 600; overflow-wrap: anywhere; margin-bottom: 4px;}
+.qrow {display: flex; justify-content: space-between; font-size: .74rem; opacity: .78; margin-top: 9px;
+  font-family: 'Geist Mono', ui-monospace, monospace;}
+
+/* ── Admin ────────────────────────────────────────────────────────────── */
+.admin-hero {border-radius: 14px; padding: 22px 26px; margin-bottom: 14px; color: #EDE9DF;
+  background-color: #23221F; background-image: radial-gradient(rgba(237,233,223,.06) 1px, transparent 1.2px);
+  background-size: 16px 16px;}
+.admin-hero h2 {font-family: 'Newsreader', Georgia, serif; font-weight: 500; color: #EDE9DF; margin: 6px 0 2px;
+  padding: 0; font-size: 1.7rem;}
+.admin-hero p {margin: 0; opacity: .7; font-size: .92rem;}
+.credit {border: 1px solid rgba(127,127,127,.2); border-radius: 12px; padding: 18px 22px; margin-bottom: 14px;
+  background: rgba(127,127,127,.035);}
+.credit .big {font-family: 'Geist Mono', ui-monospace, monospace; font-size: 2rem; font-weight: 500;
+  letter-spacing: -0.02em;}
+.credit .row {display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-end;}
+.credit .lbl {font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; opacity: .62;}
+.credit .val {font-family: 'Geist Mono', ui-monospace, monospace; font-size: 1.05rem;}
+.credit a {color: #2F9477;}
 </style>
 """
 
@@ -102,14 +146,14 @@ def esc(value: Any) -> str:
 
 
 def chip(label: str, color: str, *, solid: bool = False) -> str:
-    """Return a coloured pill as HTML."""
+    """Return a small tag as HTML."""
     if solid:
         return f'<span class="chip" style="background:{color};color:#fff">{esc(label)}</span>'
-    return f'<span class="chip" style="background:{color}1f;color:{color};border-color:{color}55">{esc(label)}</span>'
+    return f'<span class="chip" style="background:{color}17;color:{color};border-color:{color}45">{esc(label)}</span>'
 
 
 def moscow_chip(bucket: str) -> str:
-    """MoSCoW pill with its canonical colour."""
+    """MoSCoW tag with its ordinal colour."""
     return chip(bucket, MOSCOW_COLORS[bucket], solid=True)
 
 
@@ -128,8 +172,18 @@ def render_html(markup: str) -> None:
     st.markdown(markup, unsafe_allow_html=True)
 
 
+def intro(step: str, text: str) -> None:
+    """One-line guidance banner at the top of a tab (demo walkthrough)."""
+    render_html(f'<div class="intro"><span class="n">{esc(step)}</span><span class="t">{text}</span></div>')
+
+
 def euros(value: float | None, *, digits: int = 2) -> str:
-    """French-formatted euro amount (``1 234,56 €``); ``∞`` for no limit."""
+    """French-formatted euro amount (``1 234,56 €``); ``illimité`` for no limit."""
     if value is None:
-        return "∞"
+        return "illimité"
     return f"{value:,.{digits}f} €".replace(",", " ").replace(".", ",")
+
+
+def dollars(value: float, *, digits: int = 2) -> str:
+    """US dollar amount, as displayed in the Claude Console."""
+    return f"{value:,.{digits}f} $".replace(",", " ").replace(".", ",")

@@ -20,15 +20,15 @@ _TEMPLATE = """
 <style>
 #{id} {{display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px;
   border: 1px solid rgba(127,127,127,.3); background: rgba(127,127,127,.08);}}
-#{id} button {{all: unset; cursor: pointer; font-family: inherit; font-size: .78rem; font-weight: 600;
+#{id} button {{all: unset; cursor: pointer; font-family: inherit; font-size: .76rem; font-weight: 500;
   line-height: 1; white-space: nowrap; padding: 6px 11px; border-radius: 999px; color: inherit; opacity: .7;
   transition: all .15s ease;}}
 #{id} button:hover {{opacity: 1;}}
-#{id} button.on {{background: #6366F1; color: #fff; opacity: 1; box-shadow: 0 1px 4px rgba(99,102,241,.45);}}
+#{id} button.on {{background: #1F6E57; color: #F2EEE4; opacity: 1;}}
 </style>
 <div id="{id}" role="group" aria-label="Thème">
-  <button type="button" data-mode="Light" aria-label="Thème clair">☀️ Clair</button>
-  <button type="button" data-mode="Dark" aria-label="Thème sombre">🌙 Sombre</button>
+  <button type="button" data-mode="Light" aria-label="Thème clair">Clair</button>
+  <button type="button" data-mode="Dark" aria-label="Thème sombre">Sombre</button>
 </div>
 <script>
 (() => {{
@@ -63,5 +63,5 @@ _TEMPLATE = """
 
 
 def theme_toggle(key: str = "sidebar") -> None:
-    """Render the ☀️ / 🌙 toggle. ``key`` must be unique per page location."""
+    """Render the Clair / Sombre toggle. ``key`` must be unique per page location."""
     st.html(_TEMPLATE.format(id=f"po-theme-{key}"), unsafe_allow_javascript=True)

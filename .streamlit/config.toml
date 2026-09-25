@@ -1,29 +1,50 @@
+# Editorial, restrained palette: warm paper, ink, one deep-green accent.
+# Chart colours are defined in ui/style.py (validated for both themes).
+
 [theme]
-font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-codeFont = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
-baseRadius = "0.6rem"
+font = "Geist:https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap"
+headingFont = "Newsreader:https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..600&display=swap"
+headingFontWeights = 500
+codeFont = "Geist Mono:https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap"
+baseRadius = "0.5rem"
 
 [theme.light]
-primaryColor = "#4F46E5"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F6F7FB"
-textColor = "#111827"
-borderColor = "#E5E7EB"
-chartCategoricalColors = ["#6366F1", "#0EA5E9", "#F59E0B", "#DC2626", "#9CA3AF"]
+primaryColor = "#1F6E57"
+backgroundColor = "#FBFAF7"
+secondaryBackgroundColor = "#F2F0EA"
+textColor = "#1C1B19"
+borderColor = "#E4E0D7"
+linkColor = "#1F6E57"
+redColor = "#B3452C"
+orangeColor = "#B87612"
+yellowColor = "#A8841C"
+greenColor = "#2F9477"
+blueColor = "#4271C8"
+violetColor = "#6B5CA8"
+grayColor = "#8A867D"
+chartCategoricalColors = ["#228E6F", "#4271C8", "#B87612"]
 
 [theme.light.sidebar]
-backgroundColor = "#F6F7FB"
+backgroundColor = "#F4F2EC"
 
 [theme.dark]
-primaryColor = "#818CF8"
-backgroundColor = "#0B0F19"
-secondaryBackgroundColor = "#151B2B"
-textColor = "#E5E7EB"
-borderColor = "#262E42"
-chartCategoricalColors = ["#818CF8", "#38BDF8", "#FBBF24", "#F87171", "#9CA3AF"]
+primaryColor = "#4FA98B"
+backgroundColor = "#151513"
+secondaryBackgroundColor = "#1F1E1B"
+textColor = "#ECE8DF"
+borderColor = "#2F2D29"
+linkColor = "#6FBFA3"
+redColor = "#D06A52"
+orangeColor = "#CF8F2E"
+yellowColor = "#C9A43F"
+greenColor = "#4FA98B"
+blueColor = "#6A8FD8"
+violetColor = "#9A8CD6"
+grayColor = "#8A867D"
+chartCategoricalColors = ["#228E6F", "#4271C8", "#B87612"]
 
 [theme.dark.sidebar]
-backgroundColor = "#10152A"
+backgroundColor = "#1A1A17"
 
 [client]
 # "viewer" keeps the main menu (with the native Light/Dark switcher driven by

@@ -22,7 +22,17 @@ from governance import CostEstimator, Quota, consumption_from_runs, forecast_spe
 from store import Profile, StoreError
 from synthetic import generate_runs
 from ui import session
-from ui.style import ACCENT, AGENT_COLORS, CHART_TEXT, euros, render_html
+from ui.style import (
+    ACCENT,
+    AGENT_COLORS,
+    CHART_TEXT,
+    CONSOLE_BILLING_URL,
+    SERIES,
+    STATUS,
+    dollars,
+    euros,
+    render_html,
+)
 
 _CACHE_TTL_S = 120
 _ROLES = ["member", "admin"]
@@ -71,7 +81,7 @@ def _profiles_frame(profiles: list[Profile]) -> pd.DataFrame:
 
 
 def _show_sql(query: sql.Query, tz: str) -> None:
-    with st.expander("🧾 Voir la requête SQL"):
+    with st.expander("Voir la requête SQL"):
         st.code(sql.render_sql(query, tz), language="sql")
 
 
@@ -83,7 +93,7 @@ def _show_sql(query: sql.Query, tz: str) -> None:
 def render_admin(settings: Settings, me: Profile) -> None:
     """Render the whole admin console."""
     render_html(
-        '<div class="admin-hero"><h2>🛡️ Console d\'administration</h2>'
+        '<div class="admin-hero"><div class="eyebrow">Administration</div><h2>Console d\'administration</h2>'
         "<p>Consommation Claude en euros, prévisions de coûts et quotas par utilisateur.</p></div>"
     )
 
@@ -95,13 +105,13 @@ def render_admin(settings: Settings, me: Profile) -> None:
         "Inclure les données synthétiques", value=True, key="adm_synth",
         help="Jeu de démonstration généré (flag is_synthetic). Il ne compte jamais dans les quotas.",
     )  # fmt: skip
-    with c3.popover("🧪 Données de démo", width="stretch"):
+    with c3.popover("Données de démo", width="stretch"):
         _demo_data_controls(settings)
 
     try:
         runs, agents, profiles = _load(int(days))
     except StoreError as exc:
-        st.error(exc.user_message, icon=":material/database:")
+        st.error(exc.user_message)
         return
 
     if not include_synthetic:
@@ -112,11 +122,10 @@ def render_admin(settings: Settings, me: Profile) -> None:
     if runs.empty:
         st.info(
             "Aucun usage enregistré sur la période. Lancez quelques analyses, ou générez un jeu de démo "
-            "via **🧪 Données de démo**.",
-            icon=":material/insights:",
+            "via **Données de démo**.",
         )
 
-    usage_tab, ml_tab, quota_tab = st.tabs(["💶 Usage & coûts", "🤖 Prévisions ML", "🎚️ Quotas"])
+    usage_tab, ml_tab, quota_tab = st.tabs(["Usage et coûts", "Prévisions", "Quotas"])
     with usage_tab:
         _usage_section(settings, runs, agents, profiles_df)
     with ml_tab:
@@ -130,7 +139,7 @@ def _demo_data_controls(settings: Settings) -> None:
         "Génère 60 jours d'usage réaliste (saisonnalité, croissance, gros/petits utilisateurs) pour tous "
         "les profils. Ces lignes sont marquées `is_synthetic` et n'impactent **jamais** les quotas."
     )
-    if st.button("Générer 60 jours", icon=":material/auto_awesome:", width="stretch"):
+    if st.button("Générer 60 jours", width="stretch"):
         repo = session.repository()
         try:
             with st.spinner("Génération…"):
@@ -144,27 +153,49 @@ def _demo_data_controls(settings: Settings) -> None:
             st.error(exc.user_message)
             return
         _invalidate()
-        st.toast(f"{count} runs synthétiques ajoutés", icon="🧪")
+        st.toast(f"{count} runs synthétiques ajoutés")
         st.rerun()
 
     st.divider()
     confirm = st.checkbox("Je confirme la suppression des données synthétiques", key="adm_confirm_purge")
-    if st.button(
-        "Purger les données synthétiques", icon=":material/delete_sweep:", width="stretch", disabled=not confirm
-    ):
+    if st.button("Purger les données synthétiques", width="stretch", disabled=not confirm):
         try:
             deleted = session.repository().purge_synthetic()
         except StoreError as exc:
             st.error(exc.user_message)
             return
         _invalidate()
-        st.toast(f"{deleted} runs synthétiques supprimés", icon="🧹")
+        st.toast(f"{deleted} runs synthétiques supprimés")
         st.rerun()
 
 
 # ══════════════════════════════════════════════════════════════════════════
 # Usage & costs
 # ══════════════════════════════════════════════════════════════════════════
+
+
+def _credit_block(settings: Settings) -> None:
+    """Estimated Anthropic credit left, from the app's own usage log."""
+    credit = session.credit_status(settings)
+    if credit is None:
+        st.info(
+            "Pour suivre le crédit Anthropic restant, ajoutez dans les secrets le montant chargé sur la Console, "
+            'par exemple `ANTHROPIC_CREDITS_USD = "10"`. '
+            f"Le solde exact reste consultable dans la [Console Claude › Facturation]({CONSOLE_BILLING_URL})."
+        )
+        return
+    width = f"{credit.ratio_left * 100:.0f}%"
+    render_html(
+        '<div class="credit"><div class="row">'
+        f'<div><div class="lbl">Crédit Anthropic restant (estimé)</div><div class="big">{dollars(credit.remaining_usd)}</div></div>'
+        f'<div><div class="lbl">Chargé</div><div class="val">{dollars(credit.loaded_usd)}</div></div>'
+        f'<div><div class="lbl">Consommé via l\'app</div><div class="val">{dollars(credit.spent_usd, digits=3)}</div></div>'
+        "</div>"
+        f'<div class="bar" style="margin-top:14px"><span style="width:{width};background:{ACCENT}"></span></div>'
+        '<div class="muted" style="margin-top:10px">Estimation calculée à partir des tokens de chaque run réel. '
+        f'Solde exact : <a href="{CONSOLE_BILLING_URL}" target="_blank">Console Claude › Facturation</a>.</div>'
+        "</div>"
+    )  # fmt: skip
 
 
 def _usage_section(settings: Settings, runs: pd.DataFrame, agents: pd.DataFrame, profiles_df: pd.DataFrame) -> None:
@@ -174,6 +205,7 @@ def _usage_section(settings: Settings, runs: pd.DataFrame, agents: pd.DataFrame,
     today = datetime.now(ZoneInfo(tz)).date()
     forecast = forecast_spend(daily[["day", "cost_eur"]] if not daily.empty else daily, today)
 
+    _credit_block(settings)
     cols = [*st.columns(3), *st.columns(3)]
     cols[0].metric("Dépense du mois", euros(float(kpi["spend_eur"])), border=True)
     cols[1].metric(
@@ -233,7 +265,7 @@ def _usage_section(settings: Settings, runs: pd.DataFrame, agents: pd.DataFrame,
                         "type:N",
                         title=None,
                         legend=alt.Legend(orient="top"),
-                        scale=alt.Scale(range=[ACCENT, "#F59E0B"]),
+                        scale=alt.Scale(range=[SERIES[0], SERIES[1]]),
                     ),
                     tooltip=[alt.Tooltip("day:T", format="%d/%m/%Y"), "type:N", alt.Tooltip("value:Q", format=",")],
                 )  # fmt: skip
@@ -261,11 +293,13 @@ def _usage_section(settings: Settings, runs: pd.DataFrame, agents: pd.DataFrame,
                             "quota_used:Q",
                             title="% quota mensuel",
                             scale=alt.Scale(
-                                domain=[0, 0.5, 0.8, 1], range=["#22C55E", "#84CC16", "#F59E0B", "#DC2626"], clamp=True
+                                domain=[0, 0.7, 0.9],
+                                range=[STATUS["good"], STATUS["warning"], STATUS["critical"]],
+                                clamp=True,
                             ),
                             legend=alt.Legend(format="%", orient="top"),
                         ),
-                        alt.value("#94A3B8"),
+                        alt.value(STATUS["neutral"]),
                     ),
                     tooltip=[
                         "email:N",
@@ -322,11 +356,10 @@ def _ml_section(
             limit = float(max(drivers["cost_eur"].max(), drivers["predicted"].max()) * 1.05)
             points = (
                 alt.Chart(drivers)
-                .mark_circle(size=60, opacity=0.7)
+                .mark_circle(size=64, opacity=0.75, color=ACCENT, stroke="#FFFFFF", strokeWidth=0.8)
                 .encode(
                     x=alt.X("predicted:Q", title="Coût prédit (€)", scale=alt.Scale(domain=[0, limit])),
                     y=alt.Y("cost_eur:Q", title="Coût réel (€)", scale=alt.Scale(domain=[0, limit])),
-                    color=alt.Color("stories_count:O", title="Stories", scale=alt.Scale(scheme="purples")),
                     tooltip=[
                         "email:N",
                         alt.Tooltip("input_chars:Q", format=","),
@@ -344,7 +377,7 @@ def _ml_section(
             st.altair_chart((diagonal + points).properties(height=280), width="stretch")
         _show_sql(sql.COST_DRIVERS, tz)
     with right, st.container(border=True):
-        st.markdown("**🧮 Simulateur**")
+        st.markdown("**Simulateur**")
         chars = st.slider("Taille des feedbacks (caractères)", 1_000, 30_000, 6_000, step=500, key="sim_chars")
         stories = st.slider("User stories générées", 1, 6, 3, key="sim_stories")
         estimate = model.predict(chars, stories)
@@ -356,7 +389,7 @@ def _ml_section(
         ]
         if member_limits:
             limit = min(member_limits)
-            verdict = "✅ passe" if estimate.point_eur <= limit else "⛔ serait bloqué"
+            verdict = "le run passe" if estimate.point_eur <= limit else "le run serait bloqué"
             st.caption(f"Avec la limite par requête la plus stricte ({euros(limit)}) : {verdict}.")
 
     st.markdown("#### 2 · Anticiper la facture du mois")
@@ -391,7 +424,7 @@ def _forecast_chart(frame: pd.DataFrame, today: date) -> None:
     )
     bars = (
         alt.Chart(data[~data["is_forecast"]])
-        .mark_bar(color="#94A3B8", opacity=0.75, cornerRadiusTopLeft=2, cornerRadiusTopRight=2)
+        .mark_bar(color=STATUS["neutral"], opacity=0.55, cornerRadiusTopLeft=2, cornerRadiusTopRight=2)
         .encode(
             x="day:T",
             y="actual:Q",
@@ -484,9 +517,7 @@ def _quota_section(settings: Settings, me: Profile, profiles: list[Profile], run
             changes.append(after)
 
     left, right = st.columns([1, 3], vertical_alignment="center")
-    save = left.button(
-        f"Enregistrer ({len(changes)})", type="primary", icon=":material/save:", disabled=not changes, width="stretch"
-    )
+    save = left.button(f"Enregistrer ({len(changes)})", type="primary", disabled=not changes, width="stretch")
     right.caption("Les modifications s'appliquent dès le prochain run des utilisateurs concernés.")
     if not save:
         return
@@ -505,7 +536,7 @@ def _quota_section(settings: Settings, me: Profile, profiles: list[Profile], run
     _invalidate()
     st.session_state.pop("adm_quota_editor", None)
     session.refresh_profile()
-    st.toast(f"{len(changes)} profil(s) mis à jour", icon="✅")
+    st.toast(f"{len(changes)} profil(s) mis à jour")
     st.rerun()
 
 

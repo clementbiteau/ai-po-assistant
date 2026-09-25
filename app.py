@@ -37,16 +37,20 @@ from store import Profile, StoreError
 from ui import session
 from ui.admin import render_admin
 from ui.login import render_login
+from ui.onboarding import onboarding_dialog, reopen
 from ui.style import (
+    ACCENT,
     CHART_TEXT,
     CSS,
     MOSCOW_COLORS,
-    MOSCOW_DOTS,
     MOSCOW_ORDER,
-    camel_break,
+    SERIES,
+    STATUS,
     chip,
+    dollars,
     esc,
     euros,
+    intro,
     moscow_chip,
     render_html,
     shorten,
@@ -59,7 +63,7 @@ from ui.theme import theme_toggle
 
 st.set_page_config(
     page_title="AI Product Owner Assistant",
-    page_icon="🧭",
+    page_icon=":material/view_kanban:",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -73,24 +77,24 @@ MOSCOW_HINTS: dict[str, str] = {
     "Won't": "Pas ce cycle — à revisiter",
 }
 SENTIMENT_STYLE: dict[str, tuple[str, str]] = {
-    "critical": ("Critique", "#DC2626"),
-    "negative": ("Négatif", "#EA580C"),
-    "neutral": ("Neutre", "#6B7280"),
-    "positive": ("Positif", "#16A34A"),
+    "critical": ("Critique", STATUS["critical"]),
+    "negative": ("Négatif", STATUS["warning"]),
+    "neutral": ("Neutre", STATUS["neutral"]),
+    "positive": ("Positif", STATUS["good"]),
 }
 SIGNAL_GROUPS: list[tuple[str, str, str]] = [
-    ("bug", "🐞 Bugs", "À router vers la QA / le support"),
-    ("ux_friction", "🧩 Frictions UX", "Quick fixes de design"),
-    ("question", "❓ Questions", "Besoin de doc / d'onboarding"),
-    ("praise", "💚 Points forts", "À préserver et à valoriser"),
+    ("bug", "Bugs", "À router vers la QA et le support"),
+    ("ux_friction", "Frictions UX", "Corrections de design rapides"),
+    ("question", "Questions", "Besoin de documentation ou d'onboarding"),
+    ("praise", "Points forts", "À préserver et à valoriser"),
 ]
 AGENTS_META: list[tuple[str, str, str, str]] = [
-    ("analyst", "FeedbackAnalyst", "🔎", "Extrait patterns, thèmes et feature requests"),
-    ("strategist", "PrioritizationStrategist", "📊", "Score RICE justifié + MoSCoW"),
-    ("writer", "UserStoryWriter", "📝", "User stories + critères Gherkin"),
+    ("analyst", "FeedbackAnalyst", "Analyser", "Thèmes, signaux et demandes isolées, verbatims à l'appui."),
+    ("strategist", "PrioritizationStrategist", "Prioriser", "Score RICE justifié, arbitrage MoSCoW."),
+    ("writer", "UserStoryWriter", "Rédiger", "User stories et critères Gherkin, prêts pour Jira."),
 ]
-TABS = ["📥 Inbox", "🔎 Analyse", "📊 Priorisation", "📝 User Stories", "📦 Export"]
-ADMIN_TAB = "🛡️ Admin"
+TABS = ["Inbox", "Analyse", "Priorisation", "User stories", "Export"]
+ADMIN_TAB = "Admin"
 
 # ══════════════════════════════════════════════════════════════════════════
 # State
@@ -110,6 +114,23 @@ def init_state() -> None:
         st.session_state.setdefault(key, value)
     if pending := st.session_state.pop("pending_nav", None):
         st.session_state.nav = pending
+    # Set by the onboarding dialog; applied before the text area is instantiated.
+    if sample := st.session_state.pop("pending_sample", None):
+        st.session_state.feedback_text = SAMPLES[sample].text
+        st.session_state.nav = TABS[0]
+
+
+def go_to(tab: str) -> None:
+    """Callback: switch tab (runs before widgets are instantiated)."""
+    st.session_state.nav = tab
+
+
+def next_step(tab: str, label: str) -> None:
+    """Footer button that walks the presenter to the next tab of the demo."""
+    st.write("")
+    _, right = st.columns([3, 1.2])
+    right.button(label, type="primary", width="stretch", on_click=go_to, args=(tab,), key=f"next_{tab}",
+                 icon=":material/arrow_forward:", icon_position="right")  # fmt: skip
 
 
 def load_sample(key: str) -> None:
@@ -217,13 +238,13 @@ def effective_scoring(result: PipelineResult) -> tuple[list[ScoredFeature], set[
 
 
 def render_account(settings: Settings, profile: Profile) -> None:
-    """Signed-in user, quota gauges, theme toggle and sign-out."""
+    """Signed-in user, quota gauges, API credit (admins), theme toggle and sign-out."""
     try:
         used = session.consumption(settings)
     except StoreError:
         used = None
-    role = chip("admin", "#7C3AED", solid=True) if profile.is_admin else chip("membre", "#6366F1")
-    gauges = ""
+    role = chip("Admin", ACCENT, solid=True) if profile.is_admin else chip("Membre", STATUS["neutral"])
+    rows = f'<div class="qrow"><span>Max / requête</span><span>{euros(profile.quota.max_eur_per_request)}</span></div>'
     if used is not None:
         for label, spent, limit in (
             ("Aujourd'hui", used.day_eur, profile.quota.daily_eur),
@@ -231,36 +252,38 @@ def render_account(settings: Settings, profile: Profile) -> None:
             ("Mois", used.month_eur, profile.quota.monthly_eur),
         ):
             ratio = min(spent / limit, 1.0) if limit else 0.0
-            color = "#DC2626" if ratio >= 0.9 else "#F59E0B" if ratio >= 0.7 else "#22C55E"
-            gauges += (
+            color = STATUS["critical"] if ratio >= 0.9 else STATUS["warning"] if ratio >= 0.7 else STATUS["good"]
+            rows += (
                 f'<div class="qrow"><span>{label}</span><span>{euros(spent)} / {euros(limit)}</span></div>'
-                f'<div class="bar" style="margin-top:3px"><span style="width:{ratio * 100:.0f}%;background:{color}">'
+                f'<div class="bar" style="margin-top:4px"><span style="width:{ratio * 100:.0f}%;background:{color}">'
                 "</span></div>"
             )
-    per_request = euros(profile.quota.max_eur_per_request)
-    render_html(
-        f'<div class="userbox"><div class="mail">{esc(profile.email)}</div>{role}'
-        f'<div class="qrow"><span>Max / requête</span><span>{per_request}</span></div>{gauges}</div>'
-    )
+    if profile.is_admin and (credit := session.credit_status(settings)) is not None:
+        rows += (
+            f'<div class="qrow"><span>Crédit API restant</span><span>≈ {dollars(credit.remaining_usd)}</span></div>'
+            f'<div class="bar" style="margin-top:4px"><span style="width:{credit.ratio_left * 100:.0f}%;'
+            f'background:{ACCENT}"></span></div>'
+        )
+    render_html(f'<div class="userbox"><div class="mail">{esc(profile.email)}</div>{role}{rows}</div>')
     left, right = st.columns([1.25, 1], vertical_alignment="center", gap="small")
     with left:
         theme_toggle("sidebar")
     with right:
-        if st.button("Sortir", icon=":material/logout:", type="tertiary", key="logout", help="Se déconnecter"):
+        if st.button("Sortir", type="tertiary", key="logout", help="Se déconnecter"):
             session.sign_out()
             st.rerun()
+    st.button("Guide de démarrage", type="tertiary", on_click=reopen, key="reopen_onboarding")
 
 
 def render_sidebar(base_settings: Settings, profile: Profile) -> tuple[Settings, ProductContext, int, bool]:
     """Account, connection, product context and generation options."""
     with st.sidebar:
-        st.markdown("### 🧭 PO Copilot")
-        st.caption("Du feedback brut au backlog Jira priorisé.")
+        render_html('<div class="eyebrow">AI Product Owner</div><p class="brand">Assistant</p>')
         render_account(base_settings, profile)
 
         st.markdown("##### Connexion")
         if base_settings.has_api_key:
-            st.badge("Clé API chargée depuis l'environnement", icon=":material/verified:", color="green")
+            st.badge("Clé API configurée", color="green")
         else:
             st.text_input(
                 "Clé API Anthropic",
@@ -273,7 +296,7 @@ def render_sidebar(base_settings: Settings, profile: Profile) -> tuple[Settings,
         demo_mode = st.toggle(
             "Mode démo hors-ligne",
             value=not settings.has_api_key,
-            help="Rejoue un run pré-calculé sur l'exemple 🔔 — idéal si le réseau lâche en démo live.",
+            help="Rejoue un run pré-calculé sur le cas « Notifications & churn » : utile si le réseau lâche.",
         )
         st.caption(f"Modèle : `{settings.model}` · thinking adaptatif")
 
@@ -304,7 +327,7 @@ def render_sidebar(base_settings: Settings, profile: Profile) -> tuple[Settings,
                 options=["fr", "en"],
                 default="fr",
                 required=True,
-                format_func=lambda code: {"fr": "🇫🇷 Français", "en": "🇬🇧 English"}[code],
+                format_func=lambda code: {"fr": "Français", "en": "English"}[code],
             ),
         )
 
@@ -319,7 +342,7 @@ def render_sidebar(base_settings: Settings, profile: Profile) -> tuple[Settings,
         )
 
         st.divider()
-        with st.expander("⚙️ Sous le capot"):
+        with st.expander("Sous le capot"):
             st.markdown(
                 "- **3 agents spécialisés**, un contrat Pydantic chacun\n"
                 "- **Structured outputs** natifs : JSON validé par schéma\n"
@@ -336,54 +359,35 @@ def render_sidebar(base_settings: Settings, profile: Profile) -> tuple[Settings,
 
 
 def render_hero(result: PipelineResult | None) -> None:
-    """Hero banner with the agent pipeline as a visual flow."""
+    """Editorial header: promise + the three agents as numbered steps."""
     done = " done" if result else ""
-    check = '<span class="ok">✓</span>' if result else ""
-    nodes = []
-    for _key, name, icon, desc in AGENTS_META:
-        nodes.append(
-            f'<div class="node{done}">{check}<div class="t">{icon} {camel_break(name)}</div>'
-            f'<div class="d">{esc(desc)}</div></div>'
-        )
-    flow = (
-        '<div class="io">📨 Feedbacks bruts</div><div class="arrow">→</div>'
-        + '<div class="arrow">→</div>'.join(nodes)
-        + '<div class="arrow">→</div><div class="io">🎫 Backlog Jira</div>'
+    steps = "".join(
+        f'<div class="step{done}"><div class="n">0{i} — {esc(name)}</div><div class="t">{esc(label)}</div>'
+        f'<div class="d">{esc(desc)}</div></div>'
+        for i, (_key, name, label, desc) in enumerate(AGENTS_META, start=1)
     )
     render_html(
-        '<div class="hero"><div class="eyebrow">AI Product Owner Assistant · POC</div>'
-        "<h1>Du feedback client au backlog priorisé.</h1>"
-        '<p class="sub">Emails, tickets Zendesk, NPS, notes d\'appel… trois agents IA les transforment en '
-        "priorités RICE justifiées et en user stories Gherkin prêtes pour le sprint.</p>"
-        f'<div class="flow">{flow}</div></div>'
+        '<div class="hero"><div class="eyebrow">AI Product Owner Assistant</div>'
+        "<h1>Du feedback client au <em>backlog priorisé</em>.</h1>"
+        '<p class="sub">Emails, tickets, verbatims NPS, notes d\'appel : trois agents Claude en tirent des '
+        "priorités argumentées et des user stories prêtes pour le sprint.</p>"
+        f'<div class="steps">{steps}</div></div>'
     )
 
 
 def render_kpis(result: PipelineResult, scored: list[ScoredFeature]) -> None:
     """Top KPI strip, visible once a run exists."""
     musts = sum(1 for s in scored if s.moscow == "Must")
-    cols = st.columns(6)
+    cols = st.columns(5)
     cols[0].metric("Sources", result.analysis.sources_count, border=True)
     cols[1].metric("Thèmes", len(result.analysis.themes), border=True)
     cols[2].metric("Features", len(scored), border=True)
     cols[3].metric("Must have", musts, border=True)
-    cols[4].metric("Stories", len(result.stories), border=True)
+    cols[4].metric("User stories", len(result.stories), border=True)
     cost = result.usage.estimated_cost_usd
-    cols[5].metric(
-        "Run",
-        f"{result.usage.wall_clock_s:.0f} s",
-        delta=f"≈ {cost:.3f} USD" if cost is not None else None,
-        delta_color="off",
-        delta_arrow="off",
-        border=True,
-        help="Durée totale et coût API estimé du run.",
-    )
-    if result.is_demo:
-        st.info(
-            "**Mode démo** : résultats pré-calculés sur l'exemple 🔔 « Notifications & churn ». "
-            "Ajoutez une clé API pour analyser vos propres feedbacks en direct.",
-            icon=":material/play_circle:",
-        )
+    origin = "Résultat pré-calculé (mode démo)" if result.is_demo else "Analyse en direct"
+    cost_txt = f" · coût API ≈ {dollars(cost, digits=3)}" if cost is not None and not result.is_demo else ""
+    st.caption(f"{origin} · `{result.model}` · {result.usage.wall_clock_s:.0f} s{cost_txt}")
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -393,46 +397,37 @@ def render_kpis(result: PipelineResult, scored: list[ScoredFeature]) -> None:
 
 def render_inbox(settings: Settings, profile: Profile, context: ProductContext, top_n: int, demo_mode: bool) -> None:
     """Sample picker, raw input and the run button."""
-    st.markdown("#### Chargez un exemple en 1 clic")
+    intro("Point de départ", "Choisissez un cas client ou collez vos propres retours, puis lancez les agents.")
+    st.markdown("#### Cas clients prêts à l'emploi")
     cols = st.columns(len(SAMPLES))
-    for col, sample in zip(cols, SAMPLES.values(), strict=True):
+    for i, (col, sample) in enumerate(zip(cols, SAMPLES.values(), strict=True), start=1):
         with col, st.container(border=True):
-            st.markdown(f"**{sample.icon} {sample.label}**")
+            render_html(f'<div class="kicker" style="margin-top:0">Cas 0{i}</div>')
+            st.markdown(f"**{sample.label}**")
             st.caption(sample.pitch)
-            st.button(
-                "Charger",
-                key=f"load_{sample.key}",
-                on_click=load_sample,
-                args=(sample.key,),
-                icon=":material/download:",
-                width="stretch",
-            )
+            st.button("Charger ce cas", key=f"load_{sample.key}", on_click=load_sample, args=(sample.key,),
+                      width="stretch")  # fmt: skip
 
-    st.markdown("#### …ou collez vos feedbacks bruts")
+    st.markdown("#### Ou collez vos retours bruts")
     st.text_area(
         "Feedbacks",
         key="feedback_text",
-        height=360,
+        height=340,
         label_visibility="collapsed",
-        placeholder="Collez ici un mélange d'emails, tickets Zendesk, verbatims NPS, notes d'appel…",
+        placeholder="Collez ici un mélange d'emails, tickets, verbatims NPS, notes d'appel…",
     )
     text = st.session_state.feedback_text or ""
     words = len(text.split())
     st.caption(f"{len(text):,} caractères · {words:,} mots".replace(",", " "))
 
     left, mid, _ = st.columns([2.2, 1, 3])
-    run = left.button(
-        "Lancer les 3 agents",
-        type="primary",
-        icon=":material/rocket_launch:",
-        width="stretch",
-        disabled=not text.strip(),
-    )
-    mid.button("Effacer", on_click=clear_input, type="tertiary", icon=":material/delete:")
+    run = left.button("Lancer l'analyse", type="primary", width="stretch", disabled=not text.strip())
+    mid.button("Effacer", on_click=clear_input, type="tertiary")
 
-    if not run:
+    pending = st.session_state.pop("pending_run", None)  # set by the onboarding dialog
+    if not (run or pending):
         return
-    if demo_mode:
+    if (pending or ("demo" if demo_mode else "live")) == "demo":
         run_demo(text)
     else:
         run_live(text, settings, profile, context, top_n)
@@ -442,20 +437,19 @@ def run_demo(text: str) -> None:
     """Replay the pre-computed run with the same progress UX as a live run."""
     if text.strip() != SAMPLES[DEMO_SAMPLE_KEY].text.strip():
         st.warning(
-            "Le mode démo rejoue uniquement l'exemple 🔔 « Notifications & churn ». "
-            "Chargez-le, ou désactivez le mode démo et renseignez une clé API.",
-            icon=":material/info:",
+            "Le mode démo rejoue uniquement le cas « Notifications & churn ». "
+            "Chargez-le, ou désactivez le mode démo pour une analyse en direct."
         )
         return
     result = load_demo_result()
-    with st.status("Les agents travaillent… (démo)", expanded=True) as status:
+    with st.status("Analyse en cours (démo)", expanded=True) as status:
         script = [
-            ("🔎 **FeedbackAnalyst** — segmentation de 10 sources, 6 canaux…", 0.6),
-            ("✅ **FeedbackAnalyst** — 5 thèmes · 5 features candidates · 4 autres signaux", 0.5),
-            ("📊 **PrioritizationStrategist** — estimation Reach · Impact · Confidence · Effort…", 0.8),
-            ("✅ **PrioritizationStrategist** — N°1 : Maîtrise et regroupement des notifications", 0.4),
-            ("📝 **UserStoryWriter** — rédaction de 3 user stories en parallèle…", 0.8),
-            ("✅ **UserStoryWriter** — 3 user stories prêtes pour Jira", 0.2),
+            ("**01 · FeedbackAnalyst** — segmentation de 10 sources sur 6 canaux…", 0.6),
+            ("**01 · FeedbackAnalyst** — terminé : 5 thèmes, 5 features candidates, 4 autres signaux", 0.5),
+            ("**02 · PrioritizationStrategist** — estimation Reach, Impact, Confidence, Effort…", 0.8),
+            ("**02 · PrioritizationStrategist** — terminé : n°1, maîtrise et regroupement des notifications", 0.4),
+            ("**03 · UserStoryWriter** — rédaction de 3 user stories en parallèle…", 0.8),
+            ("**03 · UserStoryWriter** — terminé : 3 user stories prêtes pour Jira", 0.2),
         ]
         for line, pause in script:
             st.write(line)
@@ -478,16 +472,16 @@ def check_quota(settings: Settings, profile: Profile, input_chars: int, stories:
         used = session.consumption(settings, force=True)
         estimate = session.cost_estimator().predict(input_chars, stories)
     except StoreError as exc:
-        st.error(f"Vérification du quota impossible : {exc.user_message}", icon=":material/database:")
+        st.error(f"Vérification du quota impossible : {exc.user_message}")
         raise QuotaBlocked from exc
     decision = evaluate_quota(profile.quota, used, estimate.point_eur)
     if not decision.allowed:
-        st.error(decision.reason, icon=":material/block:")
+        st.error(decision.reason)
         session.record_usage(settings, None, kind="pipeline", status="blocked", input_chars=input_chars,
                              stories_count=stories, error=decision.reason)  # fmt: skip
         raise QuotaBlocked
     st.caption(
-        f"💶 Coût estimé : **{euros(estimate.point_eur, digits=3)}** (P90 {euros(estimate.upper_eur, digits=3)}) · "
+        f"Coût estimé : **{euros(estimate.point_eur, digits=3)}** (P90 {euros(estimate.upper_eur, digits=3)}) · "
         f"plafond de ce run : {euros(decision.budget_eur)}"
     )
     return None if decision.budget_eur is None else decision.budget_eur / settings.usd_to_eur
@@ -503,14 +497,14 @@ def run_live(text: str, settings: Settings, profile: Profile, context: ProductCo
         budget_usd = check_quota(settings, profile, len(text), top_n)
     except QuotaBlocked:
         return
-    labels = {key: f"{icon} **{name}**" for key, name, icon, _ in AGENTS_META}
+    labels = {key: f"**0{i} · {name}**" for i, (key, name, _label, _desc) in enumerate(AGENTS_META, start=1)}
     pipeline: POAssistantPipeline | None = None
     started = time.perf_counter()
-    with st.status("Les agents travaillent…", expanded=True) as status:
+    with st.status("Analyse en cours", expanded=True) as status:
 
         def on_event(event: PipelineEvent) -> None:
-            mark = {"running": "", "done": "✅ ", "error": "❌ "}[event.status]
-            st.write(f"{mark}{labels[event.step]} — {event.message}")
+            mark = {"running": "", "done": "terminé : ", "error": "échec : "}[event.status]
+            st.write(f"{labels[event.step]} — {mark}{event.message}")
             if event.status == "running":
                 status.update(label=f"{labels[event.step].replace('**', '')} en cours…")
 
@@ -534,7 +528,7 @@ def run_live(text: str, settings: Settings, profile: Profile, context: ProductCo
         features_count=len(result.scored_features), stories_count=len(result.stories),
     )  # fmt: skip
     store_result(result)
-    st.toast("Backlog prêt ! Direction l'onglet Analyse.", icon="🎉")
+    st.toast("Analyse terminée. Suivez les onglets dans l'ordre.")
     st.rerun()
 
 
@@ -558,7 +552,7 @@ def show_agent_error(exc: AgentError) -> None:
         details.append(f"Request ID : `{exc.request_id}`")
     if exc.retryable:
         details.append("Erreur temporaire — relancer devrait fonctionner.")
-    st.error(exc.user_message + ("\n\n" + " · ".join(details) if details else ""), icon=":material/error:")
+    st.error(exc.user_message + ("\n\n" + " · ".join(details) if details else ""))
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -569,15 +563,17 @@ def show_agent_error(exc: AgentError) -> None:
 def render_analysis(result: PipelineResult) -> None:
     """Executive summary, themes, feature candidates and other signals."""
     analysis = result.analysis
+    intro("Étape 1 sur 4", "Lisez la synthèse, puis ouvrez les feature requests : chacune est formulée comme un "
+          "problème utilisateur et reste reliée aux verbatims d'origine.")  # fmt: skip
     render_html(f'<div class="summary">{esc(analysis.executive_summary)}</div>')
     st.write("")
-    render_html(" ".join(chip(c, "#4F46E5") for c in analysis.channels))
+    render_html(" ".join(chip(c, STATUS["neutral"]) for c in analysis.channels))
 
     st.markdown("#### Thèmes récurrents")
     max_mentions = max((t.mention_count for t in analysis.themes), default=1) or 1
     cols = st.columns(3)
     for i, theme in enumerate(sorted(analysis.themes, key=lambda t: t.mention_count, reverse=True)):
-        label, color = SENTIMENT_STYLE.get(theme.sentiment, ("—", "#6B7280"))
+        label, color = SENTIMENT_STYLE.get(theme.sentiment, ("—", STATUS["neutral"]))
         width = int(100 * theme.mention_count / max_mentions)
         with cols[i % 3]:
             render_html(
@@ -601,7 +597,7 @@ def render_analysis(result: PipelineResult) -> None:
                 render_html("".join(f'<div class="quote">« {esc(q)} »</div>' for q in feature.evidence_quotes))
             with right:
                 render_html('<div class="kicker">Segments</div>')
-                render_html(" ".join(chip(s, "#7C3AED") for s in feature.user_segments))
+                render_html(" ".join(chip(s, SERIES[1]) for s in feature.user_segments))
                 render_html('<div class="kicker">Sources</div>')
                 for source in feature.sources:
                     st.caption(f"• {source}")
@@ -640,16 +636,18 @@ Une contrainte non négociable (sécurité, légal, contrat) force **Must**.
 
 def render_prioritization(result: PipelineResult, scored: list[ScoredFeature], modified: set[str]) -> None:
     """RICE table, value/effort matrix, MoSCoW board and justifications."""
+    intro("Étape 2 sur 4", "Le modèle estime chaque critère et le justifie ; le score et le classement sont "
+          "calculés par le code. Vous pouvez corriger une estimation, tout se recalcule.")  # fmt: skip
     head_left, head_right = st.columns([3, 1], vertical_alignment="center")
     with head_left:
         render_html(
             '<span class="formula">RICE = <em>Reach</em> × <em>Impact</em> × <em>Confidence</em> ÷ <em>Effort</em></span>'
         )
-    with head_right, st.popover("Grille de scoring", icon=":material/rule:", width="stretch"):
+    with head_right, st.popover("Grille de scoring", width="stretch"):
         st.markdown(RUBRIC_MD)
 
     st.write("")
-    render_html(f'<div class="summary">💡 {esc(result.portfolio_insight)}</div>')
+    render_html(f'<div class="summary">{esc(result.portfolio_insight)}</div>')
     st.write("")
 
     # Ranked table ------------------------------------------------------
@@ -659,8 +657,8 @@ def render_prioritization(result: PipelineResult, scored: list[ScoredFeature], m
             {
                 "#": s.rank,
                 "ID": s.feature.id,
-                "Feature": ("✏️ " if s.feature.id in modified else "") + s.feature.title,
-                "MoSCoW": f"{MOSCOW_DOTS[s.moscow]} {s.moscow}",
+                "Feature": s.feature.title + (" (modifié)" if s.feature.id in modified else ""),
+                "MoSCoW": s.moscow,
                 "RICE": s.rice_score,
                 "Reach": s.reach_users,
                 "Impact": s.assessment.impact,
@@ -690,7 +688,7 @@ def render_prioritization(result: PipelineResult, scored: list[ScoredFeature], m
     )
 
     # Human in the loop -------------------------------------------------
-    with st.expander("✏️ Ajuster les estimations de l'IA (human-in-the-loop)", expanded=bool(modified)):
+    with st.expander("Ajuster les estimations de l'IA", expanded=bool(modified)):
         st.caption(
             "L'IA propose, le PO dispose : modifiez une estimation, le score, le classement, "
             "le MoSCoW et les exports sont recalculés instantanément."
@@ -711,7 +709,7 @@ def render_prioritization(result: PipelineResult, scored: list[ScoredFeature], m
         )
         if modified:
             st.caption(f"{len(modified)} estimation(s) modifiée(s) : {', '.join(sorted(modified))}")
-            if st.button("Revenir aux estimations de l'IA", icon=":material/undo:", type="tertiary"):
+            if st.button("Revenir aux estimations de l'IA", type="tertiary"):
                 st.session_state.pop(editor_key(), None)
                 st.rerun()
 
@@ -763,12 +761,8 @@ def render_prioritization(result: PipelineResult, scored: list[ScoredFeature], m
     with chart_right, st.container(border=True):
         st.markdown("**Matrice valeur / effort**")
         base = alt.Chart(frame)
-        left_quadrants = pd.DataFrame(
-            [{"x": 0.6, "y": 5.6, "t": "⚡ Quick wins"}, {"x": 0.6, "y": 0.4, "t": "🧩 Fill-ins"}]
-        )
-        right_quadrants = pd.DataFrame(
-            [{"x": 5.4, "y": 5.6, "t": "🎯 Big bets"}, {"x": 5.4, "y": 0.4, "t": "🕳️ Money pits"}]
-        )
+        left_quadrants = pd.DataFrame([{"x": 0.6, "y": 5.6, "t": "Quick wins"}, {"x": 0.6, "y": 0.4, "t": "Fill-ins"}])
+        right_quadrants = pd.DataFrame([{"x": 5.4, "y": 5.6, "t": "Big bets"}, {"x": 5.4, "y": 0.4, "t": "Money pits"}])
         points = base.mark_circle(opacity=0.8, stroke="#fff", strokeWidth=2).encode(
             x=alt.X(
                 "effort:Q",
@@ -815,7 +809,7 @@ def render_prioritization(result: PipelineResult, scored: list[ScoredFeature], m
         cards = (
             "".join(
                 f'<div class="mini"><b>{esc(s.feature.id)}</b> · {esc(s.feature.title)}'
-                f'<div class="s">RICE {s.rice_score:,.0f}{" · 🔒 contrainte" if s.assessment.is_mandatory else ""}</div></div>'
+                f'<div class="s">RICE {s.rice_score:,.0f}{" · contrainte" if s.assessment.is_mandatory else ""}</div></div>'
                 for s in items
             )
             or '<div class="s" style="color:#9CA3AF;font-size:.8rem;margin-top:8px">—</div>'
@@ -834,10 +828,10 @@ def render_prioritization(result: PipelineResult, scored: list[ScoredFeature], m
         a = s.assessment
         with st.expander(f"#{s.rank} · {s.feature.id} · {s.feature.title} — RICE {s.rice_score:,.0f} · {s.moscow}"):
             rows = [
-                ("🎯 Reach", f"{a.reach_percent} % → {s.reach_users:,} users".replace(",", " "), a.reach_rationale),
-                ("💥 Impact", f"{a.impact} / 5", a.impact_rationale),
-                ("🔬 Confidence", f"{a.confidence} %", a.confidence_rationale),
-                ("🛠️ Effort", f"{a.effort} / 5", a.effort_rationale),
+                ("Reach", f"{a.reach_percent} % → {s.reach_users:,} users".replace(",", " "), a.reach_rationale),
+                ("Impact", f"{a.impact} / 5", a.impact_rationale),
+                ("Confidence", f"{a.confidence} %", a.confidence_rationale),
+                ("Effort", f"{a.effort} / 5", a.effort_rationale),
             ]
             for label, value, why in rows:
                 c1, c2, c3 = st.columns([1.1, 1, 5])
@@ -845,7 +839,7 @@ def render_prioritization(result: PipelineResult, scored: list[ScoredFeature], m
                 c2.markdown(f"`{value}`")
                 c3.write(why)
             if a.is_mandatory:
-                st.warning(f"**Contrainte non négociable → Must.** {a.mandatory_reason}", icon=":material/lock:")
+                st.warning(f"**Contrainte non négociable, classée Must.** {a.mandatory_reason}")
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -861,13 +855,14 @@ def render_story(story: UserStory, scored: ScoredFeature) -> None:
     with badge_col:
         render_html(
             f'<div style="text-align:right">{moscow_chip(scored.moscow)}'
-            f"{chip(f'{story.story_points} pts', '#4F46E5')}{chip(f'RICE {scored.rice_score:,.0f}', '#0F766E')}</div>"
+            f"{chip(f'{story.story_points} pts', ACCENT)}{chip(f'RICE {scored.rice_score:,.0f}', STATUS['neutral'])}</div>"
         )
-    render_html(" ".join(chip(f"#{label}", "#6B7280") for label in story.labels))
+    render_html(" ".join(chip(label, STATUS["neutral"]) for label in story.labels))
 
     render_html(
-        f'<div class="statement"><b>As a</b> {esc(story.persona)},<br><b>I want to</b> {esc(story.goal)},<br>'
-        f"<b>so that</b> {esc(story.benefit)}.</div>"
+        f'<div class="statement"><span class="k">As a</span>{esc(story.persona)},<br>'
+        f'<span class="k">I want to</span>{esc(story.goal)},<br>'
+        f'<span class="k">So that</span>{esc(story.benefit)}.</div>'
     )
 
     left, right = st.columns([1, 1.35], gap="large")
@@ -875,17 +870,17 @@ def render_story(story: UserStory, scored: ScoredFeature) -> None:
         render_html('<div class="kicker">Contexte</div>')
         st.write(story.context)
         sections = [
-            ("🚫 Hors périmètre", story.out_of_scope),
-            ("🔗 Dépendances", story.dependencies),
-            ("❓ Questions ouvertes pour le PO", story.open_questions),
+            ("Hors périmètre", story.out_of_scope),
+            ("Dépendances", story.dependencies),
+            ("Questions ouvertes pour le PO", story.open_questions),
         ]
         for title, items in sections:
             if items:
                 render_html(f'<div class="kicker">{title}</div>')
                 st.markdown("\n".join(f"- {item}" for item in items))
         if story.split_suggestion:
-            render_html('<div class="kicker">✂️ Découpage suggéré</div>')
-            st.info(story.split_suggestion, icon=":material/call_split:")
+            render_html('<div class="kicker">Découpage suggéré</div>')
+            st.info(story.split_suggestion)
     with right:
         render_html(
             f'<div class="kicker">Critères d\'acceptation · {len(story.acceptance_criteria)} scénarios Gherkin</div>'
@@ -896,7 +891,6 @@ def render_story(story: UserStory, scored: ScoredFeature) -> None:
             data=story.to_gherkin_feature(),
             file_name=f"{story.feature_id.lower()}.feature",
             mime="text/plain",
-            icon=":material/download:",
             key=f"dl_feature_{story.feature_id}",
         )
 
@@ -905,6 +899,8 @@ def render_stories(
     result: PipelineResult, scored: list[ScoredFeature], settings: Settings, profile: Profile, demo_mode: bool
 ) -> None:
     """Story picker, story detail and on-demand generation."""
+    intro("Étape 3 sur 4", "Chaque story suit le format As a / I want to / So that, avec des critères "
+          "d'acceptation Gherkin testables. Choisissez une story dans l'ordre du backlog.")  # fmt: skip
     by_id = {s.feature.id: s for s in scored}
     ordered = [s.feature.id for s in backlog_order(scored) if s.feature.id in result.stories]
     ordered += [fid for fid in result.stories if fid not in ordered]
@@ -934,7 +930,7 @@ def render_stories(
         format_func=lambda fid: f"{fid} · {by_id[fid].moscow} · {by_id[fid].feature.title}",
     )
     disabled = demo_mode or not settings.has_api_key
-    if button_col.button("Rédiger", icon=":material/edit_note:", width="stretch", disabled=disabled):
+    if button_col.button("Rédiger", width="stretch", disabled=disabled):
         try:
             budget_usd = check_quota(settings, profile, 0, 1)
         except QuotaBlocked:
@@ -954,7 +950,7 @@ def render_stories(
         session.record_usage(settings, usage, kind="story", status="success", stories_count=1)
         # `result` is a scored view; persist into the session's source of truth.
         st.session_state.result.stories[target_id] = story
-        st.toast(f"Story {target_id} ajoutée au backlog", icon="📝")
+        st.toast(f"Story {target_id} ajoutée au backlog")
         st.rerun()
     if disabled:
         st.caption("Disponible avec une clé API (hors mode démo).")
@@ -967,31 +963,33 @@ def render_stories(
 
 def render_export(result: PipelineResult) -> None:
     """Download cards and run telemetry."""
+    intro("Étape 4 sur 4", "Exportez le backlog : CSV importable dans Jira, rapport Markdown pour Confluence ou "
+          "Notion, fichiers Gherkin pour les tests.")  # fmt: skip
     slug = result.context.product_name.lower().replace(" ", "-") or "backlog"
     exports = [
         (
-            "🎫 Jira (CSV)",
+            "Jira (CSV)",
             "Import natif Jira : summary, priorité, story points, labels, description + Gherkin.",
             to_jira_csv(result),
             f"{slug}-jira-import.csv",
             "text/csv",
         ),
         (
-            "📄 Rapport Markdown",
+            "Rapport Markdown",
             "Synthèse complète à coller dans Confluence ou Notion.",
             to_markdown(result),
             f"{slug}-backlog-report.md",
             "text/markdown",
         ),
         (
-            "🥒 Gherkin (.feature)",
+            "Gherkin (.feature)",
             "Toutes les stories au format BDD (Cucumber, Behave).",
             to_feature_files(result),
             f"{slug}-stories.feature",
             "text/plain",
         ),
         (
-            "🧾 JSON typé",
+            "JSON typé",
             "Résultat brut validé par schéma, pour toute automatisation.",
             to_json(result),
             f"{slug}-result.json",
@@ -1008,7 +1006,6 @@ def render_export(result: PipelineResult) -> None:
                 data=data,
                 file_name=filename,
                 mime=mime,
-                icon=":material/download:",
                 width="stretch",
                 key=f"dl_{filename}",
             )
@@ -1051,8 +1048,8 @@ def render_export(result: PipelineResult) -> None:
 def empty_state(message: str) -> None:
     """Placeholder shown in result tabs before the first run."""
     with st.container(border=True):
-        st.markdown(f"#### 🌱 {message}")
-        st.caption("Chargez un exemple dans l'onglet **📥 Inbox** puis lancez les agents.")
+        st.markdown(f"#### {message}")
+        st.caption("Choisissez un cas client dans l'onglet **Inbox**, puis lancez l'analyse.")
 
 
 def main() -> None:
@@ -1091,6 +1088,9 @@ def main() -> None:
         with containers[5]:
             render_admin(settings, profile)
 
+    if not st.session_state.get("onboarded"):
+        onboarding_dialog(settings, top_n)
+
     if result is None or view is None:
         for tab, what in zip(
             (analysis_tab, prio_tab, stories_tab, export_tab),
@@ -1102,10 +1102,13 @@ def main() -> None:
         return
     with analysis_tab:
         render_analysis(result)
+        next_step(TABS[2], "Voir la priorisation")
     with prio_tab:
         render_prioritization(result, scored, modified)
+        next_step(TABS[3], "Voir les user stories")
     with stories_tab:
         render_stories(view, scored, settings, profile, demo_mode)
+        next_step(TABS[4], "Exporter le backlog")
     with export_tab:
         render_export(view)
 

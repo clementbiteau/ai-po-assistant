@@ -113,6 +113,8 @@ class Settings:
         local_dev_password: Password of the seeded local users.
         usd_to_eur: Conversion rate used for every euro figure.
         timezone: Timezone defining "today", "this week", "this month".
+        anthropic_credits_usd: Total credits loaded on the Claude Console
+            (USD). Used to display the estimated remaining balance.
     """
 
     anthropic_api_key: str | None
@@ -129,6 +131,7 @@ class Settings:
     local_dev_password: str | None = None
     usd_to_eur: float = DEFAULT_USD_TO_EUR
     timezone: str = "Europe/Paris"
+    anthropic_credits_usd: float | None = None
 
     @property
     def supabase_configured(self) -> bool:
@@ -244,4 +247,5 @@ def get_settings() -> Settings:
         local_dev_password=(os.getenv("LOCAL_DEV_PASSWORD") or "").strip() or None,
         usd_to_eur=_env_float("USD_TO_EUR", DEFAULT_USD_TO_EUR),
         timezone=os.getenv("APP_TIMEZONE", "Europe/Paris"),
+        anthropic_credits_usd=_env_float("ANTHROPIC_CREDITS_USD", 0.0) or None,
     )

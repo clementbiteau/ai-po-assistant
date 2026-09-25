@@ -1095,7 +1095,7 @@ class POAssistantPipeline:
             self._emit("strategist", "error", exc.user_message)
             raise
         top = prioritization.scored_features[0]
-        self._emit("strategist", "done", f"N°1 : {top.feature.title} (RICE {top.rice_score:,.0f})")
+        self._emit("strategist", "done", f"n°1 : {top.feature.title} (RICE {top.rice_score:,.0f})")
 
         stories = self.write_stories(backlog_order(prioritization.scored_features)[:top_n], context)
 
@@ -1131,11 +1131,11 @@ class POAssistantPipeline:
                 scored = futures[future]
                 try:
                     stories[scored.feature.id] = future.result()
-                    self._emit("writer", "running", f"✓ {scored.feature.id} · {scored.feature.title}")
+                    self._emit("writer", "running", f"{scored.feature.id} rédigée · {scored.feature.title}")
                 except AgentError as exc:
                     failures.append(scored.feature.id)
                     logger.error("Story %s failed: %s", scored.feature.id, exc.user_message)
-                    self._emit("writer", "running", f"✗ {scored.feature.id} : {exc.user_message}")
+                    self._emit("writer", "running", f"{scored.feature.id} en échec : {exc.user_message}")
 
         if failures and not stories:
             self._emit("writer", "error", "Aucune user story n'a pu être générée.")

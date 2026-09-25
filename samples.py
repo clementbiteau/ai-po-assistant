@@ -16,7 +16,6 @@ class FeedbackSample:
 
     key: str
     label: str
-    icon: str
     pitch: str
     text: str
 
@@ -83,7 +82,7 @@ Lars Eriksen — IT Manager, Nordvik Energy
 [SLACK #cs-feedback] Julie (Customer Success Manager) — mardi 14:32
 Petit récap de ma semaine : 3 comptes Mid-Market (Logitrans, Kraft & Lemoine, Hexa \
 Conseil) m'ont demandé de recevoir les alertes Orbit directement dans Slack / Teams \
-plutôt que par email. Hexa dit que "l'email c'est là où les notifs vont mourir" 😅. \
+plutôt que par email. Hexa dit que "l'email c'est là où les notifs vont mourir". \
 Ça revient TRÈS souvent dans mes QBR.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -200,21 +199,18 @@ SAMPLES: dict[str, FeedbackSample] = {
         FeedbackSample(
             key="notifications",
             label="Notifications & churn",
-            icon="🔔",
             pitch="Email client mécontent, tickets Zendesk, NPS, Slack CSM, note Sales — 10 sources, FR + EN.",
             text=NOTIFICATIONS_MIX,
         ),
         FeedbackSample(
             key="onboarding",
-            label="Onboarding & migration",
-            icon="🚀",
+            label="Onboarding et migration",
             pitch="Essai gratuit, DSI bloqué par l'import Jira, reviews G2, remontées Sales Engineer.",
             text=ONBOARDING_MIX,
         ),
         FeedbackSample(
             key="mobile",
-            label="Mobile terrain & perf",
-            icon="📱",
+            label="Mobile terrain et performance",
             pitch="Conducteurs de travaux en zone blanche, dashboard lent, compte Enterprise en QBR.",
             text=MOBILE_PERF_MIX,
         ),

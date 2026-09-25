@@ -1,4 +1,4 @@
-# 🧭 AI Product Owner Assistant
+# AI Product Owner Assistant
 
 > **Du feedback client brut au backlog Jira priorisé — en une minute.**
 > Trois agents Claude transforment un mélange d'emails, de tickets Zendesk, de verbatims NPS et de notes d'appel en **priorités RICE justifiées** et en **user stories Gherkin** prêtes pour le sprint.
@@ -7,7 +7,7 @@ POC réalisé pour **Thiga**. Stack : Python · Streamlit · API Anthropic (Clau
 
 ---
 
-## ⚡ Démarrage local en 1 minute
+## Démarrage local en 1 minute
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
@@ -18,28 +18,28 @@ streamlit run app.py
 
 En mode `local`, deux comptes sont créés dans une base SQLite : `admin@local.dev` (admin) et `demo@local.dev` (membre avec quotas). Sans clé Anthropic, le **mode démo hors-ligne** rejoue un run pré-calculé ; c'est un filet de sécurité pour les démos live quand le réseau lâche.
 
-Trois jeux de feedbacks « mot pour mot » sont préchargés : 🔔 *Notifications & churn*, 🚀 *Onboarding & migration*, 📱 *Mobile terrain & perf*.
+Trois jeux de feedbacks « mot pour mot » sont préchargés : *Notifications & churn*, *Onboarding et migration*, *Mobile terrain et performance*. À la première connexion, un **onboarding en 3 étapes** (découvrir, choisir un cas, lancer) démarre la démo. Chaque onglet affiche ensuite l'étape suivante du parcours.
 
 ---
 
-## 🧠 Architecture
+## Architecture
 
 ```mermaid
 flowchart LR
-    IN[/"📨 Feedbacks bruts<br/>emails · Zendesk · NPS · Slack · stores"/] --> A
+    IN[/"Feedbacks bruts<br/>emails · Zendesk · NPS · Slack · stores"/] --> A
     subgraph Pipeline["POAssistantPipeline"]
-        A["🔎 FeedbackAnalyst<br/><i>segmente · classe · dédoublonne</i>"] -->|FeedbackAnalysis| B
-        B["📊 PrioritizationStrategist<br/><i>estime R · I · C · E + justification</i>"] -->|RiceAssessment × n| S
-        S{{"🧮 score_portfolio()<br/>RICE + MoSCoW déterministes"}} -->|backlog_order| C
-        C["📝 UserStoryWriter × N<br/><i>en parallèle</i>"]
+        A["FeedbackAnalyst<br/><i>segmente · classe · dédoublonne</i>"] -->|FeedbackAnalysis| B
+        B["PrioritizationStrategist<br/><i>estime R · I · C · E + justification</i>"] -->|RiceAssessment × n| S
+        S{{"score_portfolio()<br/>RICE + MoSCoW déterministes"}} -->|backlog_order| C
+        C["UserStoryWriter × N<br/><i>en parallèle</i>"]
     end
-    C -->|UserStory| OUT[/"🎫 Jira CSV · Markdown · .feature · JSON"/]
-    PO(("👤 PO")) -. ajuste les estimations .-> S
+    C -->|UserStory| OUT[/"Jira CSV · Markdown · .feature · JSON"/]
+    PO(("PO")) -. ajuste les estimations .-> S
 ```
 
 ```mermaid
 flowchart LR
-    U(("👤 Utilisateur")) -->|email + mot de passe| APP["Streamlit Cloud<br/>app.py"]
+    U(("Utilisateur")) -->|email + mot de passe| APP["Streamlit Cloud<br/>app.py"]
     APP -->|JWT de l'utilisateur| SB[("Supabase<br/>Auth + PostgreSQL · RLS")]
     SB -->|profil, quotas, historique| APP
     APP -->|"quota OK ? → clé serveur"| CL["Claude API<br/>Sonnet 5"]
@@ -58,13 +58,13 @@ flowchart LR
 | [`ui/`](ui/) | Écrans : `login`, `admin`, `theme` (bascule clair/sombre), `session`, `style` |
 | [`supabase/`](supabase/) | Migration SQL (tables, RLS, trigger) + tests des policies |
 | [`config.py`](config.py) · [`exporters.py`](exporters.py) · [`samples.py`](samples.py) | Configuration, exports Jira / Markdown / Gherkin / JSON, feedbacks de démo |
-| [`tests/`](tests/) | 39 tests hors-ligne (LLM simulé, UI via `AppTest`) + tests SQL des policies RLS en CI |
+| [`tests/`](tests/) | 47 tests hors-ligne (LLM simulé, UI via `AppTest`) + tests SQL des policies RLS en CI |
 
 `agents.py` ne dépend pas de Streamlit : le même pipeline peut tourner dans un job batch, une API FastAPI ou un bot Slack.
 
 ---
 
-## 🏗️ Choix techniques
+## Choix techniques
 
 **1. Le LLM estime, le code calcule.**
 Claude produit les *entrées* RICE (Reach %, Impact 1-5, Confidence 50/80/100, Effort 1-5) avec une justification qui cite la grille et la preuve. Le **score**, le **classement** et le **MoSCoW** sont calculés par des fonctions Python pures (`compute_rice`, `moscow_bucket`, `score_portfolio`). Le résultat est reproductible, testable et auditable, et le PO peut **surcharger n'importe quelle estimation** dans l'UI : tout est recalculé instantanément (human-in-the-loop).
@@ -106,18 +106,18 @@ Tokens, latence et coût estimé par agent sont affichés dans l'onglet Export.
 - **Pendant** le run : un plafond dur (le reste le plus faible parmi les quotas) est vérifié avant chaque appel à Claude.
 - La console admin permet de modifier rôles et quotas par utilisateur, directement dans un tableau.
 
-**11. Console admin (onglet 🛡️, admins uniquement).**
+**11. Console admin (onglet Admin, réservé aux admins).**
 - **Usage & coûts** : dépense en €, tokens, runs bloqués, répartition par agent et par utilisateur. Chaque graphique affiche **sa requête SQL** (DuckDB, dialecte PostgreSQL).
 - **Prévisions ML** : une régression OLS `coût ≈ β0 + β1·kcar + β2·stories` (R², MAE, prédit vs réel, simulateur) et une projection de la facture de fin de mois (tendance linéaire, bande de prédiction à 80 %).
 - **Quotas** : un tableau éditable par utilisateur (€/requête, €/jour, €/semaine, €/mois, vide = illimité).
 - **Données de démo** : 60 jours d'usage synthétique (flag `is_synthetic`, exclu des quotas, purgeable en un clic).
 
-**12. Thème clair / sombre.**
-Une bascule ☀️ / 🌙 dans la barre latérale et sur l'écran de connexion. Elle pilote le sélecteur de thème natif de Streamlit : pas de rechargement, la session est conservée, le choix est mémorisé. Les deux palettes sont définies dans `.streamlit/config.toml` et le CSS custom s'adapte aux deux thèmes.
+**12. Design et thème clair / sombre.**
+Direction éditoriale et sobre : fond papier, un seul accent vert profond, titres en serif (Newsreader), interface en Geist, chiffres en Geist Mono, aucun emoji. Les couleurs des graphiques ont été validées pour les daltonismes et le contraste, dans les deux thèmes. Une bascule Clair / Sombre se trouve dans la barre latérale et sur l'écran de connexion. Elle pilote le sélecteur de thème natif de Streamlit : pas de rechargement, la session est conservée, le choix est mémorisé. Les deux palettes sont définies dans `.streamlit/config.toml` et le CSS custom s'adapte aux deux thèmes.
 
 ---
 
-## 🚀 Mise en ligne (Supabase + Streamlit Community Cloud)
+## Mise en ligne (Supabase + Streamlit Community Cloud)
 
 **1. Supabase (≈ 5 min)**
 1. Créez un projet sur [supabase.com](https://supabase.com).
@@ -140,7 +140,7 @@ Une bascule ☀️ / 🌙 dans la barre latérale et sur l'écran de connexion. 
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 | Variable | Défaut | Rôle |
 |---|---|---|
@@ -156,16 +156,17 @@ Une bascule ☀️ / 🌙 dans la barre latérale et sur l'écran de connexion. 
 | `LOCAL_DEV_PASSWORD` | — | Mot de passe des comptes locaux |
 | `USD_TO_EUR` | `0.86` | Taux utilisé pour tous les montants en € |
 | `APP_TIMEZONE` | `Europe/Paris` | Calendrier des quotas jour / semaine / mois |
+| `ANTHROPIC_CREDITS_USD` | — | Crédit chargé sur la Console Claude : affiche le **crédit restant estimé** (barre latérale admin et onglet Admin) |
 
 Sur Streamlit Community Cloud, déclarez ces variables dans *Secrets* : elles sont exposées comme variables d'environnement.
 
 ---
 
-## ✅ Qualité
+## Qualité
 
 ```bash
 pip install -r requirements-dev.txt
-pytest -q                          # 39 tests : LLM simulé, UI via AppTest, aucune clé ni aucun coût
+pytest -q                          # 47 tests : LLM simulé, UI via AppTest, aucune clé ni aucun coût
 ruff check . && ruff format --check .
 DATABASE_URL=postgresql://postgres@localhost:5432/scratch scripts/test_schema.sh   # migration + RLS
 ```
@@ -176,7 +177,7 @@ Couverture : formule RICE, seuils MoSCoW, ordre du backlog, rendu Gherkin, auto-
 
 ---
 
-## 🗺️ Pistes pour aller plus loin
+## Pistes pour aller plus loin
 
 - **Connecteurs d'entrée** : Zendesk, Intercom, Gmail, export NPS (webhooks ou batch nocturne via l'API Batches, -50 % de coût).
 - **Création Jira directe** par l'API REST au lieu du CSV, avec détection des doublons dans le backlog existant.
