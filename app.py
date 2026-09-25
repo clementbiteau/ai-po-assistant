@@ -250,7 +250,9 @@ def render_account(settings: Settings, profile: Profile) -> None:
         used = session.consumption(settings)
     except StoreError:
         used = None
-    role = chip("Admin", ACCENT, solid=True) if profile.is_admin else chip("Membre", STATUS["neutral"])
+    role = (
+        chip("Admin", ACCENT, solid=True) if profile.is_admin else chip("Membre", "#E6DEFA", solid=True, text="#1B0442")
+    )
     rows = f'<div class="qrow"><span>Max / requête</span><span>{euros(profile.quota.max_eur_per_request)}</span></div>'
     if used is not None:
         for label, spent, limit in (
@@ -425,17 +427,17 @@ def render_inbox(settings: Settings, profile: Profile, context: ProductContext, 
 
 _INBOX_CSS = """
 <style>
-.inbox {border: 1px solid rgba(127,127,127,.2); border-radius: 12px; overflow: hidden; margin-bottom: 14px;}
+.inbox {border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 14px; background: var(--surface);}
 .inbox .row {display: grid; grid-template-columns: 132px 1fr auto; gap: 14px; align-items: baseline;
-  padding: 11px 16px; border-top: 1px solid rgba(127,127,127,.14);}
+  padding: 11px 16px; border-top: 1px solid var(--line);}
 .inbox .row:first-child {border-top: 0;}
-.inbox .ch {font-family: 'Geist Mono', ui-monospace, monospace; font-size: .68rem; letter-spacing: .08em;
-  text-transform: uppercase; opacity: .6;}
+.inbox .ch {font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: .68rem; letter-spacing: .08em;
+  text-transform: uppercase; opacity: .75;}
 .inbox .ti {font-weight: 600; font-size: .92rem;}
-.inbox .sn {font-size: .84rem; opacity: .66; margin-top: 2px; line-height: 1.45;}
-.inbox .why {font-size: .74rem; opacity: .7; margin-top: 3px;}
-.inbox .urg {font-family: 'Geist Mono', ui-monospace, monospace; font-size: .66rem; letter-spacing: .1em;
-  text-transform: uppercase; color: #B3452C; border: 1px solid rgba(179,69,44,.45); border-radius: 5px;
+.inbox .sn {font-size: .84rem; opacity: .8; margin-top: 2px; line-height: 1.45;}
+.inbox .why {font-size: .74rem; opacity: .8; margin-top: 3px;}
+.inbox .urg {font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: .66rem; letter-spacing: .1em;
+  text-transform: uppercase; color: #B3261E; border: 1px solid rgba(179,38,30,.5); border-radius: 5px;
   padding: 1px 6px; white-space: nowrap;}
 @media (max-width: 760px) {.inbox .row {grid-template-columns: 1fr;}}
 </style>

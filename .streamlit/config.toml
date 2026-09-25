@@ -1,50 +1,63 @@
-# Editorial, restrained palette: warm paper, ink, one deep-green accent.
-# Chart colours are defined in ui/style.py (validated for both themes).
+# Thiga palette (relevée sur thiga.co) : indigo #1B0442, framboise #C50041,
+# bordeaux #5E0028, violet #5818FF, crème #FFFCF9 / #F7F3EF. Titres en Kanit,
+# texte en Inter. Les couleurs des graphiques sont dans ui/style.py (validées
+# daltonisme + contraste sur les deux thèmes).
 
 [theme]
-font = "Geist:https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap"
-headingFont = "Newsreader:https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..600&display=swap"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+headingFont = "Kanit:https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap"
 headingFontWeights = 500
-codeFont = "Geist Mono:https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap"
-baseRadius = "0.5rem"
+codeFont = "JetBrains Mono:https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+baseRadius = "0.6rem"
 
 [theme.light]
-primaryColor = "#1F6E57"
-backgroundColor = "#FBFAF7"
-secondaryBackgroundColor = "#F2F0EA"
-textColor = "#1C1B19"
-borderColor = "#E4E0D7"
-linkColor = "#1F6E57"
-redColor = "#B3452C"
-orangeColor = "#B87612"
-yellowColor = "#A8841C"
-greenColor = "#2F9477"
-blueColor = "#4271C8"
-violetColor = "#6B5CA8"
-grayColor = "#8A867D"
-chartCategoricalColors = ["#228E6F", "#4271C8", "#B87612"]
+# Fond crème moins éblouissant que le blanc, texte quasi noir, bordures visibles.
+primaryColor = "#C50041"
+backgroundColor = "#F2ECE5"
+secondaryBackgroundColor = "#FFFCF9"
+textColor = "#141019"
+borderColor = "#D5CAC0"
+linkColor = "#5E0028"
+redColor = "#B3261E"
+orangeColor = "#B7791F"
+yellowColor = "#9C7A12"
+greenColor = "#2E7D5B"
+blueColor = "#3F4FB8"
+violetColor = "#5818FF"
+grayColor = "#6E6878"
+chartCategoricalColors = ["#6236F0", "#D01452", "#B7790E"]
 
 [theme.light.sidebar]
-backgroundColor = "#F4F2EC"
+backgroundColor = "#1B0442"
+secondaryBackgroundColor = "#2A1561"
+textColor = "#FFFCF9"
+borderColor = "#3E2A7A"
+primaryColor = "#FF4F87"
+linkColor = "#E6DEFA"
 
 [theme.dark]
-primaryColor = "#4FA98B"
-backgroundColor = "#151513"
-secondaryBackgroundColor = "#1F1E1B"
-textColor = "#ECE8DF"
-borderColor = "#2F2D29"
-linkColor = "#6FBFA3"
-redColor = "#D06A52"
-orangeColor = "#CF8F2E"
-yellowColor = "#C9A43F"
-greenColor = "#4FA98B"
-blueColor = "#6A8FD8"
-violetColor = "#9A8CD6"
-grayColor = "#8A867D"
-chartCategoricalColors = ["#228E6F", "#4271C8", "#B87612"]
+primaryColor = "#E23A74"
+backgroundColor = "#120B22"
+secondaryBackgroundColor = "#1E1535"
+textColor = "#F4EFF8"
+borderColor = "#362B55"
+linkColor = "#B6A6FF"
+redColor = "#E5534B"
+orangeColor = "#D99A3A"
+yellowColor = "#D6B24A"
+greenColor = "#4CAF84"
+blueColor = "#8C9CFF"
+violetColor = "#B6A6FF"
+grayColor = "#9A93A8"
+chartCategoricalColors = ["#6236F0", "#D01452", "#B7790E"]
 
 [theme.dark.sidebar]
-backgroundColor = "#1A1A17"
+backgroundColor = "#1B0442"
+secondaryBackgroundColor = "#2A1561"
+textColor = "#FFFCF9"
+borderColor = "#3E2A7A"
+primaryColor = "#FF4F87"
+linkColor = "#E6DEFA"
 
 [client]
 # "viewer" keeps the main menu (with the native Light/Dark switcher driven by

@@ -18,23 +18,23 @@ _STEPS = ("Le cas d'usage", "Les agents", "Choisir un cas", "Lancer")
 
 _CSS = """
 <style>
-.ob-steps {display: flex; gap: 22px; margin: 0 0 18px; font-family: 'Geist Mono', ui-monospace, monospace;
+.ob-steps {display: flex; gap: 22px; margin: 0 0 18px; font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: .7rem; letter-spacing: .12em; text-transform: uppercase;}
-.ob-steps span {opacity: .4; padding-bottom: 6px; border-bottom: 1px solid transparent;}
-.ob-steps span.on {opacity: 1; color: #2F9477; border-bottom-color: #2F9477;}
-.ob-title {font-family: 'Newsreader', Georgia, serif; font-size: 1.9rem; font-weight: 500; line-height: 1.15;
+.ob-steps span {opacity: .55; padding-bottom: 6px; border-bottom: 1px solid transparent;}
+.ob-steps span.on {opacity: 1; color: var(--accent-text); border-bottom: 2px solid var(--accent);}
+.ob-title {font-family: 'Kanit', sans-serif; font-size: 1.9rem; font-weight: 500; line-height: 1.15;
   margin: 0 0 8px;}
-.ob-lead {opacity: .72; font-size: .98rem; line-height: 1.55; margin-bottom: 18px;}
-.ob-card {border: 1px solid rgba(127,127,127,.2); border-radius: 10px; padding: 16px; height: 100%;}
-.ob-card .n {font-family: 'Geist Mono', ui-monospace, monospace; font-size: .7rem; color: #2F9477;}
-.ob-card .t {font-family: 'Newsreader', Georgia, serif; font-size: 1.2rem; margin: 6px 0 4px;}
-.ob-card .d {font-size: .86rem; opacity: .7; line-height: 1.5;}
+.ob-lead {opacity: .85; font-size: .98rem; line-height: 1.55; margin-bottom: 18px;}
+.ob-card {border: 1px solid var(--line); border-radius: 10px; padding: 16px; height: 100%; background: var(--surface);}
+.ob-card .n {font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: .7rem; color: var(--accent-text);}
+.ob-card .t {font-family: 'Kanit', sans-serif; font-size: 1.2rem; margin: 6px 0 4px;}
+.ob-card .d {font-size: .86rem; opacity: .8; line-height: 1.5;}
 .ob-facts {display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 4px 0 6px;}
-.ob-fact {border-top: 1px solid rgba(127,127,127,.25); padding-top: 8px;}
-.ob-fact .v {font-family: 'Geist Mono', ui-monospace, monospace; font-size: 1.2rem;}
-.ob-fact .l {font-size: .8rem; opacity: .65;}
-.ob-quote {font-family: 'Newsreader', Georgia, serif; font-style: italic; font-size: 1.05rem; opacity: .85;
-  border-left: 2px solid #2F9477; padding-left: 14px; margin: 14px 0 6px;}
+.ob-fact {border-top: 1px solid var(--line); padding-top: 8px;}
+.ob-fact .v {font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 1.2rem;}
+.ob-fact .l {font-size: .8rem; opacity: .78;}
+.ob-quote {font-family: 'Kanit', sans-serif; font-size: 1.08rem; opacity: .95;
+  border-left: 3px solid var(--accent); padding-left: 14px; margin: 14px 0 6px;}
 </style>
 """
 

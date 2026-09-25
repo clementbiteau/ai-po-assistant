@@ -145,7 +145,14 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 - **Compromis** : plus de tokens par minute consommés d'un coup. Sur un compte neuf aux limites basses, on peut passer à 1 (`STORY_WORKERS=1`).
 
 ### D10. Streamlit pour l'interface
-- **Décision** : Streamlit, imposé par la stack, avec un design sobre fait maison : CSS adapté aux deux thèmes, palette de graphiques validée, aucun emoji.
+- **Décision** : Streamlit, imposé par la stack, avec un design aux couleurs de Thiga :
+  - indigo `#1B0442`, framboise `#C50041`, bordeaux `#5E0028`, violet `#5818FF`, crème `#FFFCF9` ;
+  - titres en Kanit, texte en Inter ;
+  - barre latérale indigo dans les deux thèmes ;
+  - mode clair sur fond crème avec cartes blanches, pour éviter l'éblouissement ;
+  - aucun emoji.
+
+  Les couleurs des graphiques ont été choisies pour rester distinctes pour les daltoniens et contrastées sur les deux fonds. Les accents qui dépendent du thème sont des variables CSS basculées par l'interrupteur Clair / Sombre.
 - **Pourquoi** : c'est le moyen le plus rapide de livrer une application de données interactive en Python.
 - **Compromis** : Streamlit réexécute le script à chaque interaction. D'où les caches par session (quotas, données admin) et l'état stocké dans `st.session_state`.
 

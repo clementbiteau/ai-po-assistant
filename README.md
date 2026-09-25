@@ -123,7 +123,7 @@ Tokens, latence et coût estimé par agent sont affichés dans l'onglet Export.
 - **Inbox** : les messages sont listés avec leur canal et un indicateur d'urgence, calculés par des règles avant tout appel à l'IA. Le message d'accueil (« Bonjour … tu as 10 notifications, dont 5 en urgence ») s'appuie sur ce tri.
 
 **13. Design et thème clair / sombre.**
-Direction éditoriale et sobre : fond papier, un seul accent vert profond, titres en serif (Newsreader), interface en Geist, chiffres en Geist Mono, aucun emoji. Les couleurs des graphiques ont été validées pour les daltonismes et le contraste, dans les deux thèmes. Une bascule Clair / Sombre se trouve dans la barre latérale et sur l'écran de connexion. Elle pilote le sélecteur de thème natif de Streamlit : pas de rechargement, la session est conservée, le choix est mémorisé. Les deux palettes sont définies dans `.streamlit/config.toml` et le CSS custom s'adapte aux deux thèmes.
+Charte inspirée de Thiga (relevée sur thiga.co) : indigo `#1B0442`, framboise `#C50041`, bordeaux, violet ; titres en Kanit, texte en Inter, chiffres en JetBrains Mono ; aucun emoji. Le mode clair utilise un fond crème (pas de blanc pur) et des cartes blanches pour un contraste confortable. Les couleurs des graphiques ont été validées pour les daltonismes et le contraste, dans les deux thèmes. Une bascule Clair / Sombre se trouve dans la barre latérale et sur l'écran de connexion. Elle pilote le sélecteur de thème natif de Streamlit : pas de rechargement, la session est conservée, le choix est mémorisé. Les deux palettes sont définies dans `.streamlit/config.toml` et le CSS custom s'adapte aux deux thèmes.
 
 ---
 

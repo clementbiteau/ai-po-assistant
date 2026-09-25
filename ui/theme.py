@@ -19,12 +19,13 @@ import streamlit as st
 _TEMPLATE = """
 <style>
 #{id} {{display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px;
-  border: 1px solid rgba(127,127,127,.3); background: rgba(127,127,127,.08);}}
+  border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
+  background: color-mix(in srgb, currentColor 6%, transparent);}}
 #{id} button {{all: unset; cursor: pointer; font-family: inherit; font-size: .76rem; font-weight: 500;
   line-height: 1; white-space: nowrap; padding: 6px 11px; border-radius: 999px; color: inherit; opacity: .7;
   transition: all .15s ease;}}
 #{id} button:hover {{opacity: 1;}}
-#{id} button.on {{background: #1F6E57; color: #F2EEE4; opacity: 1;}}
+#{id} button.on {{background: #C50041; color: #FFFCF9; opacity: 1;}}
 </style>
 <div id="{id}" role="group" aria-label="Thème">
   <button type="button" data-mode="Light" aria-label="Thème clair">Clair</button>
@@ -40,8 +41,13 @@ _TEMPLATE = """
     const rgb = (getComputedStyle(el).backgroundColor.match(/\\d+/g) || [255, 255, 255]).map(Number);
     return 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2] < 128;
   }};
-  const paint = () => box.querySelectorAll("button").forEach((b) =>
-    b.classList.toggle("on", (b.dataset.mode === "Dark") === isDark()));
+  const paint = () => {{
+    const dark = isDark();
+    // Theme-dependent CSS variables (ui/style.py) key off this attribute.
+    document.documentElement.dataset.poTheme = dark ? "dark" : "light";
+    document.querySelectorAll('[id^="po-theme-"] button').forEach((b) =>
+      b.classList.toggle("on", (b.dataset.mode === "Dark") === dark));
+  }};
   const pick = async (mode) => {{
     const menu = document.querySelector('[data-testid="stMainMenuButton"]');
     if (!menu) return;
@@ -57,6 +63,8 @@ _TEMPLATE = """
   }};
   box.querySelectorAll("button").forEach((b) => (b.onclick = () => pick(b.dataset.mode)));
   paint();
+  // Stay in sync if the theme is changed from Streamlit's own menu.
+  if (!window.__poThemeSync) {{ window.__poThemeSync = setInterval(paint, 1200); }}
 }})();
 </script>
 """
