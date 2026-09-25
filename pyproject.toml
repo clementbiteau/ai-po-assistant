@@ -1,0 +1,21 @@
+[project]
+name = "ai-po-assistant"
+version = "0.1.0"
+description = "Multi-agent AI assistant turning raw customer feedback into a RICE-prioritised, Jira-ready backlog."
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "UP", "SIM", "I"]
+ignore = ["E501"]  # line length is handled by `ruff format`
+
+[tool.ruff.lint.isort]
+# `supabase/` holds SQL migrations; the Python package of the same name is third-party.
+known-third-party = ["supabase", "supabase_auth", "postgrest"]

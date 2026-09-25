@@ -1,0 +1,469 @@
+"""Builds data/demo_result.json from typed models (schema-valid by construction)."""
+
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from agents import (  # noqa: E402
+    AgentUsage,
+    FeatureRequest,
+    FeedbackAnalysis,
+    GherkinScenario,
+    OtherSignal,
+    PipelineResult,
+    ProductContext,
+    RiceAssessment,
+    Theme,
+    UsageReport,
+    UserStory,
+    score_portfolio,
+)
+
+ctx = ProductContext()
+
+features = [
+    FeatureRequest(
+        id="F1",
+        title="Maîtrise et regroupement des notifications",
+        problem_statement="Les équipes reçoivent 60 à 80 notifications par jour, toutes au même niveau : les alertes critiques (retards, échéances) sont noyées et plus personne ne lit les notifications.",
+        desired_outcome="Chaque utilisateur reçoit un récapitulatif quotidien et choisit par projet et par type d'évènement ce qui mérite une alerte immédiate.",
+        user_segments=["Head of Operations", "Chefs de projet Mid-Market", "Utilisateurs mobiles"],
+        theme="Surcharge de notifications",
+        mention_count=4,
+        evidence_quotes=[
+            "la semaine dernière nous avons raté une échéance client parce que l'alerte de retard était noyée au milieu de 40 mails",
+            "Mettez un résumé quotidien svp, et laissez-nous couper les notifs d'un projet quand on n'est plus dessus.",
+            "impossible de mettre les notifications en sourdine le week-end",
+        ],
+        sources=[
+            "Email · Head of Ops, Logitrans (180 utilisateurs)",
+            "NPS 4/10 · Kraft & Lemoine",
+            "App Store ★★",
+            "Slack CSM (3 comptes Mid-Market)",
+        ],
+    ),
+    FeatureRequest(
+        id="F3",
+        title="Vue de charge de travail par personne",
+        problem_statement="Les managers et PMO ne voient pas qui est surchargé : ils reconstruisent la capacité de l'équipe dans un Excel parallèle, et l'absence de cette vue fait perdre des deals.",
+        desired_outcome="Visualiser la charge de chaque personne semaine par semaine pour arbitrer affectations et recrutements.",
+        user_segments=["Directrice PMO", "DAF / Direction", "Managers d'équipe"],
+        theme="Pilotage de la capacité",
+        mention_count=2,
+        evidence_quotes=[
+            "Il manque juste une vue de la charge de travail par personne : aujourd'hui je fais ça dans un Excel à côté",
+            'le concurrent propose une vue "capacité équipe" qui montre la charge de chaque personne semaine par semaine',
+        ],
+        sources=["NPS 9/10 · Groupe Aldane", "Note d'appel Sales · deal perdu Ventura Group (300 sièges)"],
+    ),
+    FeatureRequest(
+        id="F2",
+        title="Alertes dans Slack et Microsoft Teams",
+        problem_statement="L'email n'est plus le canal où les équipes travaillent : les alertes Orbit y sont ignorées alors que les échanges quotidiens se font dans Slack ou Teams.",
+        desired_outcome="Recevoir les alertes importantes dans l'outil de messagerie de l'équipe, là où elles sont lues.",
+        user_segments=["Comptes Mid-Market", "Chefs de projet"],
+        theme="Surcharge de notifications",
+        mention_count=3,
+        evidence_quotes=[
+            "m'ont demandé de recevoir les alertes Orbit directement dans Slack / Teams plutôt que par email",
+            "l'email c'est là où les notifs vont mourir",
+        ],
+        sources=["Slack CSM · Logitrans, Kraft & Lemoine, Hexa Conseil"],
+    ),
+    FeatureRequest(
+        id="F4",
+        title="SSO Azure AD et déprovisionnement automatique",
+        problem_statement="Les comptes sont gérés manuellement : un ancien prestataire a gardé l'accès trois semaines, ce qui constitue un écart d'audit et bloque le renouvellement.",
+        desired_outcome="Authentification SAML via Azure AD et suppression automatique des accès des personnes qui quittent l'entreprise.",
+        user_segments=["DSI / IT Managers", "Comptes Enterprise"],
+        theme="Sécurité et conformité",
+        mention_count=1,
+        evidence_quotes=[
+            "without SSO through Azure AD (SAML) and automatic deprovisioning of leavers, they will not sign the renewal for our 450 seats",
+            "a former contractor still had access for three weeks — that is a finding for our auditors",
+        ],
+        sources=["Email · IT Manager, Nordvik Energy (450 sièges)"],
+    ),
+    FeatureRequest(
+        id="F5",
+        title="Rapport d'avancement PDF programmé",
+        problem_statement="Pour informer leur direction, les responsables font des captures d'écran du tableau de bord chaque semaine.",
+        desired_outcome="Programmer l'envoi automatique d'un rapport PDF à une liste de destinataires.",
+        user_segments=["Responsables de cabinet / PME"],
+        theme="Reporting",
+        mention_count=1,
+        evidence_quotes=[
+            "est-il possible de programmer l'envoi automatique d'un rapport d'avancement en PDF à notre direction chaque lundi ?"
+        ],
+        sources=["Zendesk #48240 · Cabinet Rousseau & Associés (18 utilisateurs)"],
+    ),
+]
+
+assessments = {
+    "F1": RiceAssessment(
+        feature_id="F1",
+        reach_percent=45,
+        reach_rationale="Tous les utilisateurs actifs reçoivent des notifications ; la douleur est concentrée sur les comptes Mid-Market multi-projets, soit environ 45 % de la base. 4 sources sur 10 convergent.",
+        impact=5,
+        impact_rationale="Niveau 5 (Massive) : le renouvellement de Logitrans (180 utilisateurs) est explicitement menacé et une échéance client a été manquée — directement lié à l'objectif de réduction du churn Mid-Market.",
+        confidence=100,
+        confidence_rationale="100 % : quatre sources indépendantes (email, NPS, App Store, CSM) décrivent le même problème, avec un impact business chiffré (180 licences, échéance manquée).",
+        effort=3,
+        effort_rationale="Niveau 3 (M) : préférences par projet et par type d'évènement + job de digest quotidien sur le service de notifications existant ; une équipe, environ un sprint.",
+        is_mandatory=False,
+        mandatory_reason="",
+    ),
+    "F3": RiceAssessment(
+        feature_id="F3",
+        reach_percent=20,
+        reach_rationale="Concerne les managers, PMO et directions qui pilotent des équipes : environ 20 % des utilisateurs actifs.",
+        impact=4,
+        impact_rationale="Niveau 4 (High) : supprime un Excel parallèle et débloque l'arbitrage des recrutements ; un deal de 300 sièges a été perdu sur ce point.",
+        confidence=80,
+        confidence_rationale="80 % : deux sources convergentes dont une perte de deal chiffrée, mais le besoin précis (granularité, capacité vs. charge) reste à valider.",
+        effort=4,
+        effort_rationale="Niveau 4 (L) : nouvelle agrégation de données (capacité, absences, charge planifiée) et nouvelle vue transverse ; 1 à 2 mois.",
+        is_mandatory=False,
+        mandatory_reason="",
+    ),
+    "F2": RiceAssessment(
+        feature_id="F2",
+        reach_percent=25,
+        reach_rationale="Les équipes équipées de Slack ou Teams, majoritaires en Mid-Market : environ 25 % des utilisateurs actifs.",
+        impact=3,
+        impact_rationale="Niveau 3 (Medium) : les alertes deviennent visibles là où les équipes travaillent, mais le digest (F1) traite déjà l'essentiel de la surcharge.",
+        confidence=80,
+        confidence_rationale="80 % : demande récurrente en QBR sur 3 comptes, relayée par un seul canal (CSM), sans impact chiffré.",
+        effort=4,
+        effort_rationale="Niveau 4 (L) : deux intégrations tierces (Slack, Teams) avec OAuth, gestion des canaux et maintenance des API.",
+        is_mandatory=False,
+        mandatory_reason="",
+    ),
+    "F4": RiceAssessment(
+        feature_id="F4",
+        reach_percent=10,
+        reach_rationale="Les comptes Enterprise avec une DSI exigeante représentent environ 10 % des utilisateurs actifs.",
+        impact=5,
+        impact_rationale="Niveau 5 (Massive) : condition explicite de renouvellement de 450 sièges ; sans SSO, le compte est perdu.",
+        confidence=80,
+        confidence_rationale="80 % : une source unique mais très précise et chiffrée ; standard du marché Enterprise.",
+        effort=4,
+        effort_rationale="Niveau 4 (L) : intégration SAML, provisionnement SCIM et tests de sécurité ; 1 à 2 mois.",
+        is_mandatory=True,
+        mandatory_reason="Exigence de sécurité contractuelle : la revue IT de Q3 conditionne le renouvellement de 450 sièges, et l'accès résiduel d'un ex-prestataire est un écart d'audit.",
+    ),
+    "F5": RiceAssessment(
+        feature_id="F5",
+        reach_percent=12,
+        reach_rationale="Responsables qui rendent compte à une direction : environ 12 % des utilisateurs.",
+        impact=2,
+        impact_rationale="Niveau 2 (Low) : gain de temps hebdomadaire réel, mais la capture d'écran reste un contournement acceptable.",
+        confidence=50,
+        confidence_rationale="50 % : une seule demande, ticket de priorité basse.",
+        effort=2,
+        effort_rationale="Niveau 2 (S) : génération PDF et planification sur un tableau de bord existant.",
+        is_mandatory=False,
+        mandatory_reason="",
+    ),
+}
+
+scored = score_portfolio([(f, assessments[f.id]) for f in features], ctx.active_users)
+
+analysis = FeedbackAnalysis(
+    executive_summary=(
+        "La surcharge de notifications est le premier irritant : elle fait manquer des échéances et menace "
+        "explicitement le renouvellement d'un compte Mid-Market de 180 utilisateurs. Deux comptes à fort "
+        "enjeu posent des conditions fermes (SSO Azure AD pour 450 sièges, vue de charge ayant fait perdre "
+        "un deal de 300 sièges). Deux bugs récents (notifications en double, crash mobile sur PDF) aggravent la perception."
+    ),
+    sources_count=10,
+    channels=["Email", "Zendesk", "NPS", "Slack interne", "App Store", "Note d'appel Sales"],
+    themes=[
+        Theme(
+            name="Surcharge de notifications",
+            description="Trop d'alertes, sans hiérarchie ni contrôle, dans un canal (l'email) que les équipes ne lisent plus.",
+            sentiment="critical",
+            mention_count=5,
+        ),
+        Theme(
+            name="Pilotage de la capacité",
+            description="Les managers veulent voir la charge de chaque personne pour arbitrer.",
+            sentiment="negative",
+            mention_count=2,
+        ),
+        Theme(
+            name="Sécurité et conformité",
+            description="Gestion manuelle des accès incompatible avec les exigences des DSI Enterprise.",
+            sentiment="critical",
+            mention_count=1,
+        ),
+        Theme(
+            name="Reporting",
+            description="Le partage de l'avancement avec la direction est manuel et l'export est introuvable.",
+            sentiment="neutral",
+            mention_count=2,
+        ),
+        Theme(
+            name="Qualité mobile",
+            description="Crash à l'ouverture des pièces jointes PDF sur mobile.",
+            sentiment="negative",
+            mention_count=1,
+        ),
+    ],
+    feature_requests=sorted(features, key=lambda f: f.id),
+    other_signals=[
+        OtherSignal(
+            type="bug",
+            summary="Chaque notification email est envoyée en double depuis la mise à jour 4.2.",
+            quote="Depuis la mise à jour 4.2 de jeudi, chaque notification arrive deux fois dans ma boîte.",
+        ),
+        OtherSignal(
+            type="bug",
+            summary="L'application mobile plante à l'ouverture d'une pièce jointe PDF.",
+            quote="L'appli mobile plante systématiquement quand j'ouvre une pièce jointe PDF dans une tâche.",
+        ),
+        OtherSignal(
+            type="ux_friction",
+            summary="L'export Excel du reporting est caché dans un sous-menu.",
+            quote="J'ai cherché 20 minutes l'export Excel du reporting.",
+        ),
+        OtherSignal(
+            type="praise",
+            summary="Le Gantt est apprécié et adopté rapidement.",
+            quote="Super outil, le Gantt est top et l'équipe l'a adopté en 2 semaines.",
+        ),
+    ],
+)
+
+stories = {
+    "F1": UserStory(
+        feature_id="F1",
+        jira_summary="Recevoir un digest quotidien et filtrer ses notifications par projet",
+        persona="chef de projet d'un compte Mid-Market",
+        goal="recevoir un récapitulatif quotidien de mes notifications et choisir, par projet, les évènements qui déclenchent une alerte immédiate",
+        benefit="je ne rate plus aucune alerte critique sans passer une heure par jour à trier mes notifications",
+        context=(
+            "Quatre sources sur dix décrivent la même surcharge (60 à 80 notifications par jour). Logitrans a manqué une échéance client et conditionne son renouvellement de mars (180 utilisateurs) à ce sujet. "
+            "Cette story livre la première tranche : préférences par projet + digest quotidien. Les alertes « retard » et « échéance » restent immédiates par défaut."
+        ),
+        acceptance_criteria=[
+            GherkinScenario(
+                title="Recevoir le digest quotidien à l'heure choisie",
+                given=[
+                    "Camille a activé le digest quotidien à 08:00 dans ses préférences",
+                    "12 commentaires et 3 changements de statut ont eu lieu sur ses projets depuis la veille 08:00",
+                ],
+                when=["il est 08:00 dans le fuseau horaire de Camille"],
+                then=[
+                    "Camille reçoit un seul email intitulé « Votre récap Orbit du jour »",
+                    "l'email regroupe les 15 évènements par projet",
+                    "aucun email individuel n'a été envoyé pour ces 15 évènements",
+                ],
+            ),
+            GherkinScenario(
+                title="Les alertes critiques restent immédiates",
+                given=[
+                    "Camille a activé le digest quotidien",
+                    "la tâche « Livraison lot 3 » du projet Logitrans a une échéance aujourd'hui à 17:00",
+                ],
+                when=["la tâche passe en retard à 17:01"],
+                then=[
+                    "Camille reçoit une notification immédiate « Tâche en retard » en moins de 2 minutes",
+                    "l'évènement apparaît aussi dans le digest du lendemain",
+                ],
+            ),
+            GherkinScenario(
+                title="Couper les notifications d'un projet",
+                given=["Camille suit les projets « Refonte site » et « Migration ERP »"],
+                when=["Camille choisit « Aucune notification » pour le projet « Refonte site »"],
+                then=[
+                    "Camille ne reçoit plus aucune notification ni ligne de digest pour « Refonte site »",
+                    "les notifications de « Migration ERP » sont inchangées",
+                    "un bandeau confirme « Notifications coupées pour Refonte site »",
+                ],
+            ),
+            GherkinScenario(
+                title="Digest vide",
+                given=[
+                    "Camille a activé le digest quotidien",
+                    "aucun évènement n'a eu lieu sur ses projets depuis la veille 08:00",
+                ],
+                when=["il est 08:00 dans le fuseau horaire de Camille"],
+                then=["aucun email de digest n'est envoyé"],
+            ),
+        ],
+        story_points=8,
+        labels=["notifications", "churn-risk", "mid-market"],
+        out_of_scope=[
+            "Canaux Slack / Teams (voir F2)",
+            "Mode « ne pas déranger » le week-end sur mobile",
+            "Correction du bug des notifications en double (ticket #48213, à traiter séparément)",
+        ],
+        dependencies=[
+            "Service de notifications : ajout d'une file d'attente pour le regroupement",
+            "Correction préalable du bug d'envoi en double (#48213)",
+        ],
+        open_questions=[
+            "L'heure du digest est-elle choisie par l'utilisateur ou fixée par l'administrateur du compte ?",
+            "Quels types d'évènements sont « critiques » par défaut (retard, échéance, mention) ?",
+        ],
+        split_suggestion="Tranche 2 : plages de silence (soirs et week-ends) sur mobile. Tranche 3 : préférences par type d'évènement définies par l'administrateur pour tout le compte.",
+    ),
+    "F4": UserStory(
+        feature_id="F4",
+        jira_summary="Se connecter via SSO Azure AD (SAML) avec déprovisionnement automatique",
+        persona="IT Manager d'un compte Enterprise",
+        goal="connecter Orbit à notre Azure AD pour que l'authentification et la suppression des accès soient gérées par notre annuaire",
+        benefit="aucun ancien collaborateur ne garde accès à nos projets et nous passons notre revue de sécurité de Q3",
+        context=(
+            "Nordvik Energy (450 sièges) conditionne son renouvellement à la revue de sécurité de Q3 : SSO Azure AD et déprovisionnement automatique sont exigés. "
+            "Un ex-prestataire a conservé un accès trois semaines, ce qui constitue un écart d'audit. Classée Must car exigence contractuelle de sécurité."
+        ),
+        acceptance_criteria=[
+            GherkinScenario(
+                title="Connexion par SSO",
+                given=[
+                    "l'administrateur de Nordvik Energy a configuré le SSO SAML avec les métadonnées Azure AD",
+                    "Ingrid a un compte Azure AD actif rattaché au domaine nordvik-energy.no",
+                ],
+                when=["Ingrid saisit ingrid@nordvik-energy.no sur la page de connexion Orbit"],
+                then=[
+                    "Ingrid est redirigée vers la page de connexion Microsoft",
+                    "après authentification, Ingrid arrive sur son tableau de bord Orbit sans saisir de mot de passe Orbit",
+                ],
+            ),
+            GherkinScenario(
+                title="Déprovisionnement automatique d'un départ",
+                given=["le provisionnement SCIM est activé pour Nordvik Energy", "Erik est un utilisateur Orbit actif"],
+                when=["l'administrateur désactive le compte d'Erik dans Azure AD"],
+                then=[
+                    "le compte Orbit d'Erik est désactivé en moins de 40 minutes",
+                    "les sessions ouvertes d'Erik sont révoquées",
+                    "l'évènement apparaît dans le journal d'audit avec la date, l'heure et la source « SCIM »",
+                ],
+            ),
+            GherkinScenario(
+                title="SSO obligatoire pour le domaine",
+                given=["l'option « SSO obligatoire » est activée pour le domaine nordvik-energy.no"],
+                when=["un utilisateur de ce domaine tente de se connecter avec un mot de passe Orbit"],
+                then=[
+                    "la connexion par mot de passe est refusée",
+                    "le message « Votre organisation exige une connexion via Microsoft » s'affiche avec un bouton de connexion SSO",
+                ],
+            ),
+            GherkinScenario(
+                title="Métadonnées SAML invalides",
+                given=["l'administrateur est sur l'écran de configuration SSO"],
+                when=["il importe un fichier de métadonnées dont le certificat a expiré"],
+                then=[
+                    "la configuration n'est pas enregistrée",
+                    "le message « Certificat expiré le 12/05/2025 » s'affiche",
+                    "le SSO existant, s'il y en a un, reste actif",
+                ],
+            ),
+        ],
+        story_points=13,
+        labels=["security", "enterprise", "sso"],
+        out_of_scope=[
+            "Fournisseurs d'identité autres qu'Azure AD (Okta, Google Workspace)",
+            "Gestion fine des groupes et rôles via SCIM",
+        ],
+        dependencies=[
+            "Revue de sécurité interne (pentest) avant mise en production",
+            "Documentation d'administration pour les DSI clientes",
+        ],
+        open_questions=[
+            "Le SSO est-il réservé à l'offre Enterprise ou disponible en option payante ?",
+            "Quel délai de déprovisionnement la DSI de Nordvik accepte-t-elle ?",
+        ],
+        split_suggestion="La story dépasse 8 points : livrer d'abord la connexion SAML (5 pts), puis le déprovisionnement SCIM (8 pts), avant l'échéance de la revue de Q3.",
+    ),
+    "F3": UserStory(
+        feature_id="F3",
+        jira_summary="Visualiser la charge de travail hebdomadaire de chaque membre",
+        persona="directrice PMO",
+        goal="voir la charge planifiée de chaque membre de mon équipe semaine par semaine, comparée à sa capacité",
+        benefit="j'identifie les surcharges et j'arbitre les affectations sans maintenir un Excel parallèle",
+        context=(
+            "Besoin exprimé par une directrice PMO (NPS 9) et raison principale de la perte du deal Ventura Group (300 sièges). "
+            "Première tranche en lecture seule, basée sur les estimations en heures déjà saisies sur les tâches."
+        ),
+        acceptance_criteria=[
+            GherkinScenario(
+                title="Afficher la charge par personne",
+                given=[
+                    "Hélène est administratrice PMO de l'espace Groupe Aldane",
+                    "Marc a 3 tâches estimées à 12 h, 16 h et 10 h sur la semaine 42",
+                    "la capacité de Marc est de 35 h par semaine",
+                ],
+                when=["Hélène ouvre la vue « Charge équipe » sur la semaine 42"],
+                then=["la ligne de Marc affiche 38 h / 35 h", "la cellule de Marc est signalée en surcharge (109 %)"],
+            ),
+            GherkinScenario(
+                title="Détail d'une surcharge",
+                given=["Hélène consulte la vue « Charge équipe »", "Marc est en surcharge sur la semaine 42"],
+                when=["Hélène clique sur la cellule de Marc en semaine 42"],
+                then=["la liste des 3 tâches de Marc s'affiche avec projet, estimation et échéance"],
+            ),
+            GherkinScenario(
+                title="Tâches non estimées",
+                given=["Julie a 2 tâches sans estimation sur la semaine 42"],
+                when=["Hélène ouvre la vue « Charge équipe »"],
+                then=[
+                    "la ligne de Julie affiche « 2 tâches non estimées »",
+                    "ces tâches ne sont pas comptées dans son pourcentage de charge",
+                ],
+            ),
+            GherkinScenario(
+                title="Accès réservé aux rôles de pilotage",
+                given=["Paul a le rôle « Membre »"],
+                when=["Paul tente d'ouvrir la vue « Charge équipe »"],
+                then=["l'accès est refusé avec le message « Vue réservée aux managers et administrateurs »"],
+            ),
+        ],
+        story_points=8,
+        labels=["capacity-planning", "reporting", "sales-blocker"],
+        out_of_scope=["Réaffectation de tâches par glisser-déposer", "Prise en compte automatique des congés"],
+        dependencies=["Champ « capacité hebdomadaire » sur le profil utilisateur"],
+        open_questions=[
+            "La capacité par défaut est-elle de 35 h ou définie par l'administrateur ?",
+            "Faut-il agréger par équipe en plus de la vue par personne ?",
+        ],
+        split_suggestion="Tranche 2 : intégration des absences et congés. Tranche 3 : réaffectation par glisser-déposer depuis la vue.",
+    ),
+}
+
+usage = UsageReport(
+    per_agent={
+        "FeedbackAnalyst": AgentUsage(calls=1, input_tokens=4120, output_tokens=5310, seconds=21.4),
+        "PrioritizationStrategist": AgentUsage(calls=1, input_tokens=4480, output_tokens=6120, seconds=26.8),
+        "UserStoryWriter": AgentUsage(calls=3, input_tokens=6630, output_tokens=12450, seconds=58.2),
+    },
+    wall_clock_s=71.9,
+)
+usage.estimated_cost_usd = sum(u.input_tokens * 2 + u.output_tokens * 10 for u in usage.per_agent.values()) / 1e6
+
+result = PipelineResult(
+    context=ctx,
+    analysis=analysis,
+    portfolio_insight=(
+        "Quick win à fort levier : F1 (digest et filtres de notifications) traite la cause n°1 de churn Mid-Market pour un effort moyen — à lancer immédiatement, "
+        "après la correction du bug d'envoi en double. F4 (SSO) est un Must contractuel malgré un score RICE plus modeste : à planifier avant la revue de Q3. "
+        "F3 et F2 sont des paris de croissance à cadrer en discovery ; F5 peut attendre."
+    ),
+    scored_features=scored,
+    stories=stories,
+    usage=usage,
+    model="claude-sonnet-5",
+    generated_at="2026-09-25T09:00:00+00:00",
+    is_demo=True,
+)
+
+out = ROOT / "data" / "demo_result.json"
+out.parent.mkdir(exist_ok=True)
+out.write_text(result.model_dump_json(indent=2), encoding="utf-8")
+for s in scored:
+    print(s.rank, s.feature.id, s.rice_score, s.moscow)
+print("written", out)

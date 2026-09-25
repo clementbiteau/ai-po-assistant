@@ -1,0 +1,11 @@
+# Runtime
+anthropic>=1.8,<2          # Claude API — structured outputs, adaptive thinking
+streamlit>=1.64,<2         # UI (stateful st.tabs, native theme switcher)
+pydantic>=2.9,<3           # typed contracts between agents
+supabase>=2.20,<3          # auth (email + password) and Postgres via PostgREST + RLS
+duckdb>=1.1,<2             # in-process SQL analytics for the admin console
+numpy>=1.26
+pandas>=2.2
+altair>=5.0
+python-dotenv>=1.0         # .env loading
+tzdata>=2024.1             # IANA timezones on slim Linux images
