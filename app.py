@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import altair as alt
 import pandas as pd
@@ -20,6 +20,7 @@ import streamlit as st
 from agents import (
     AgentBudgetError,
     AgentError,
+    LiveUpdate,
     PipelineEvent,
     PipelineResult,
     POAssistantPipeline,
@@ -39,6 +40,7 @@ from triage import InboxItem, triage
 from ui import session
 from ui.admin import render_admin
 from ui.greeting import render_greeting
+from ui.live import demo_updates, live_html
 from ui.login import render_login
 from ui.onboarding import onboarding_dialog, reopen
 from ui.style import (
@@ -504,15 +506,30 @@ def run_demo(text: str) -> None:
         return
     result = load_demo_result()
     with st.status("Analyse en cours (démo)", expanded=True) as status:
-        script = [
-            ("**01 · FeedbackAnalyst** — segmentation de 10 sources sur 6 canaux…", 0.6),
-            ("**01 · FeedbackAnalyst** — terminé : 5 thèmes, 5 features candidates, 4 autres signaux", 0.5),
-            ("**02 · PrioritizationStrategist** — estimation Reach, Impact, Confidence, Effort…", 0.8),
-            ("**02 · PrioritizationStrategist** — terminé : n°1, maîtrise et regroupement des notifications", 0.4),
+
+        def replay(step: Literal["analyst", "strategist"], running: str, done: str) -> None:
+            st.write(running)
+            slot = st.empty()
+            for update in demo_updates(result, step):
+                slot.markdown(live_html(update), unsafe_allow_html=True)
+                time.sleep(0.3)
+            slot.empty()
+            st.write(done)
+
+        replay(
+            "analyst",
+            "**01 · FeedbackAnalyst** — segmentation de 10 sources sur 6 canaux…",
+            "**01 · FeedbackAnalyst** — terminé : 5 thèmes, 5 features candidates, 4 autres signaux",
+        )
+        replay(
+            "strategist",
+            "**02 · PrioritizationStrategist** — estimation Reach, Impact, Confidence, Effort…",
+            "**02 · PrioritizationStrategist** — terminé : n°1, maîtrise et regroupement des notifications",
+        )
+        for line, pause in [
             ("**03 · UserStoryWriter** — rédaction de 3 user stories en parallèle…", 0.8),
             ("**03 · UserStoryWriter** — terminé : 3 user stories prêtes pour Jira", 0.2),
-        ]
-        for line, pause in script:
+        ]:
             st.write(line)
             time.sleep(pause)
         status.update(label="Analyse terminée (démo)", state="complete", expanded=False)
@@ -562,15 +579,26 @@ def run_live(text: str, settings: Settings, profile: Profile, context: ProductCo
     pipeline: POAssistantPipeline | None = None
     started = time.perf_counter()
     with st.status("Analyse en cours", expanded=True) as status:
+        live_slot: Any = None  # live panel of the streamed step in progress
 
         def on_event(event: PipelineEvent) -> None:
+            nonlocal live_slot
+            if live_slot is not None:
+                live_slot.empty()
+                live_slot = None
             mark = {"running": "", "done": "terminé : ", "error": "échec : "}[event.status]
             st.write(f"{labels[event.step]} — {mark}{event.message}")
             if event.status == "running":
                 status.update(label=f"{labels[event.step].replace('**', '')} en cours…")
+                if event.step != "writer":  # the story writers run in threads and are not streamed
+                    live_slot = st.empty()
+
+        def on_live(update: LiveUpdate) -> None:
+            if live_slot is not None:
+                live_slot.markdown(live_html(update), unsafe_allow_html=True)
 
         try:
-            pipeline = POAssistantPipeline(settings, on_event=on_event, budget_usd=budget_usd)
+            pipeline = POAssistantPipeline(settings, on_event=on_event, budget_usd=budget_usd, on_live=on_live)
             result = pipeline.run(text, context, top_n=top_n)
         except AgentError as exc:
             status.update(label="Le pipeline s'est arrêté", state="error", expanded=True)

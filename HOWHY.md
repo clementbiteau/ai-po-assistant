@@ -6,7 +6,8 @@ le projet ou répondre à une revue technique.
 
 Sommaire : [1. Le cas d'usage](#1-le-cas-dusage) · [2. Vue d'ensemble](#2-vue-densemble) ·
 [3. Le parcours d'une analyse](#3-le-parcours-dune-analyse) · [4. Les décisions](#4-les-décisions) ·
-[5. Sécurité](#5-sécurité) · [6. Limites connues](#6-limites-connues) · [7. Glossaire](#7-glossaire)
+[5. Sécurité](#5-sécurité) · [6. Limites connues](#6-limites-connues) ·
+[7. Adéquation à la consigne](#7-adéquation-à-la-consigne) · [8. Glossaire](#8-glossaire)
 
 ---
 
@@ -193,12 +194,25 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 
 ### D16. Les tests
 - **Décision** :
-  - 56 tests hors ligne, sur un faux client Claude : aucune clé, aucun coût, moins de 15 secondes.
+  - 62 tests hors ligne, sur un faux client Claude : aucune clé, aucun coût, moins de 15 secondes.
   - Tests d'interface avec `AppTest` : connexion, droits, lancement.
   - Tests SQL des règles de sécurité sur PostgreSQL.
   - Lint avec `ruff`.
   - Le tout en CI GitHub Actions.
 - **Pourquoi** : pouvoir modifier un prompt, une règle ou l'interface en sachant tout de suite ce qui casse.
+
+### D17. La progression en direct (streaming)
+- **Décision** : l'analyste et le stratège reçoivent leur réponse en *streaming*. Pendant qu'ils travaillent, l'écran affiche :
+  - le résumé de leur réflexion, qui s'écrit au fil de l'eau ;
+  - les éléments déjà trouvés : les thèmes et les features pour l'analyste, les features notées (impact, effort) pour le stratège.
+
+  Le JSON encore incomplet est lu en mode partiel, et un élément n'apparaît qu'une fois ses champs terminés. Le mode démo rejoue le même affichage à partir du résultat enregistré.
+- **Pourquoi** : un run dure plusieurs dizaines de secondes. Voir l'IA avancer rend l'attente lisible et montre que le résultat se construit à partir des retours collés.
+- **Compromis** :
+  - Le streaming ne rend pas le run plus rapide, il rend seulement l'attente visible.
+  - Les rédacteurs de user stories ne sont pas streamés : ils tournent en parallèle dans d'autres threads, et Streamlit ne peut mettre à jour l'écran que depuis le thread principal. Chaque story terminée est signalée.
+  - L'affichage est best effort : s'il échoue, il se coupe sans interrompre l'agent.
+  - Chaque utilisateur ne voit que la réflexion portant sur les retours qu'il a lui-même collés. Le journal complet reste réservé aux admins.
 
 ---
 
@@ -230,7 +244,51 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 
 ---
 
-## 7. Glossaire
+## 7. Adéquation à la consigne
+
+Une relecture critique : est-ce que le POC répond à ce qui est demandé, où s'en écarte-t-il, et qu'a-t-il en plus ?
+
+### 7.1 Ce qui est demandé, et ce que fait le POC
+
+| Demande de la consigne | Réponse du POC | Statut |
+|---|---|---|
+| Une startup SaaS qui édite une plateforme de gestion de projets | Orbit (fictive) : planification, Gantt, charge des équipes, clients PME et ETI. 3 cas prêts à l'emploi | Couvert |
+| Un PO submergé par les retours clients et les demandes | Inbox multicanale (emails, tickets, NPS, Slack, stores, notes d'appel), triée instantanément par règles | Couvert |
+| Module 1 : analyser les retours | `FeedbackAnalyst` : thèmes, demandes formulées comme des problèmes, autres signaux, verbatims vérifiés mot pour mot | Couvert |
+| Module 2 : prioriser avec un RICE justifié | `PrioritizationStrategist` estime R, I, C et E avec une justification par critère ; le code calcule le score. Le PO peut corriger chaque estimation | Couvert |
+| Module 3 : rédiger des user stories avec critères Gherkin | `UserStoryWriter` : persona, besoin, bénéfice, points, 3 à 6 scénarios Gherkin ; export Jira et `.feature` | Couvert |
+| Aider le PO à décider | L'IA prépare, le PO tranche : estimations modifiables, recalcul instantané, preuves visibles | Couvert |
+| Interface Streamlit | Oui | Couvert |
+| Claude 3.5 Sonnet | Claude Sonnet 5 | Écart assumé (7.2) |
+
+### 7.2 Les écarts assumés
+
+- **Le modèle.** Claude 3.5 Sonnet a été retiré de l'API en octobre 2025 : il ne peut plus être appelé. Sonnet 5 est son successeur dans la même gamme (voir D8).
+- **MoSCoW en plus de RICE.** La consigne demande RICE. MoSCoW est ajouté parce que RICE seul classe mal les obligations (le SSO du cas de démo). Ses seuils, relatifs au meilleur score, sont un choix de conception (voir D4).
+- **Le résultat de démo.** Il est rédigé à la main pour l'instant. Il sera remplacé par un vrai run avant la présentation (voir D15).
+
+### 7.3 Ce qui dépasse la consigne, et pourquoi
+
+| Ajout | Pourquoi il est là | Place dans la présentation |
+|---|---|---|
+| Tri de l'Inbox par règles | Répond directement au « PO submergé » : il voit tout de suite ce qui est urgent | Au cœur |
+| Vérification des verbatims | Rend l'analyse digne de confiance : chaque preuve est vérifiable | Au cœur |
+| Exports Jira, Markdown, `.feature` | Les stories quittent l'outil et entrent dans le flux de l'équipe | Au cœur |
+| Progression en direct | Rend l'attente lisible pendant un run | En passant |
+| Authentification et RLS | L'app est en ligne, le dépôt est public, la clé API est payante : sans cela, impossible d'ouvrir l'app aux relecteurs | Une phrase |
+| Quotas et estimation du coût | Même raison : maîtriser la dépense réelle | Une phrase |
+| Console admin (SQL, prévision) et journal des agents | Piloter les coûts et comprendre ce que fait chaque agent | Seulement si le jury pose la question |
+
+### 7.4 Verdict
+
+- **Le cœur de la consigne est entièrement couvert** : les trois modules fonctionnent de bout en bout, sur Claude et Streamlit.
+- **Les ajouts ne concurrencent pas le sujet.** Soit ils servent directement le PO (tri, preuves, exports), soit ils rendent possible une démo ouverte et sûre (connexion, quotas, admin).
+- **Le risque est de paraître sur-dimensionné.** La parade : présenter d'abord les trois modules, puis l'infrastructure en une minute. La logique métier tient dans un seul fichier (`agents.py`), sans dépendance à l'interface.
+- **Ce qui manquerait pour un vrai usage** (connecteurs, mémoire du backlog existant, évaluation continue) est listé dans les limites connues (section 6) et relève de la feuille de route, pas du POC.
+
+---
+
+## 8. Glossaire
 
 | Terme | Définition |
 |---|---|

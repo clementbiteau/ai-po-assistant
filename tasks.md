@@ -15,20 +15,12 @@ _Aucune tâche en cours._
 
 ## À faire — prochaine session
 
-### Priorité 1 · Latence, optimisation, adéquation au use case (le « point 3 »)
-- [ ] **Mesurer la latence réelle** d'un run en direct via *Admin › Agents* : durée par agent (médiane, 95e centile), part des corrections (tentative 2), tokens par agent. Identifier le goulot.
-- [ ] **Évaluer les leviers d'optimisation**, en mesurant avant et après :
-  - effort par agent (`EFFORT_*`) ;
-  - `max_tokens` ;
-  - progression en streaming dans l'interface ;
-  - parallélisme des stories (`STORY_WORKERS`) ;
-  - réduction de l'entrée du stratège ;
-  - prompt caching (gain probablement faible : les prompts système sont courts) ;
-  - modèle plus léger pour les tâches simples.
-- [ ] **Revue critique « est-ce que ça correspond au use case ? »**
-  - Rappel de la consigne : startup SaaS de gestion de projets, PO submergé, 3 modules (analyse, RICE justifié, user stories Gherkin), Streamlit, Claude.
-  - Lister les écarts assumés : Sonnet 5 au lieu de 3.5 Sonnet (retiré), seuils MoSCoW relatifs, résultat de démo rédigé à la main.
-  - Lister les extensions hors consigne et leur justification : authentification, quotas, admin, journal des agents.
+### Priorité 1 · Latence et adéquation au use case (le « point 3 »)
+- [ ] **Mesurer un run de référence** : 3 runs en direct sur « Notifications & churn », puis une requête SQL sur `agent_calls` pour obtenir la durée par agent, la part des corrections (tentative 2), les tokens et le coût par run. Vérifier au passage qu'un run reste sous le plafond de 0,50 € par requête du compte relecteur.
+- [ ] **Effort du stratège** : si c'est l'étape la plus lente, comparer `EFFORT_STRATEGIST` en `high` et en `medium` sur la durée et la stabilité du classement RICE.
+- [ ] **Vérifier le streaming en direct** lors du premier run réel : fluidité de l'affichage, et langue de la réflexion résumée (elle peut arriver en anglais, car les prompts système sont en anglais).
+
+Écartés : `max_tokens` (plafond de sécurité, sans effet sur la vitesse) et `STORY_WORKERS` (les 3 stories tournent déjà en parallèle).
 
 ### Priorité 2 · Démo
 - [ ] **Remplacer le résultat de démo rédigé à la main par un vrai run** : lancer en direct le cas « Notifications & churn », télécharger *Export › JSON typé*, l'enregistrer sous `data/demo_result.json`, puis commit.
@@ -37,19 +29,25 @@ _Aucune tâche en cours._
 ### Priorité 3 · Améliorations proposées
 - [ ] **Prénom affiché** : ajouter un champ « nom affiché » au profil (Supabase `profiles.display_name`, éditable dans *Admin › Quotas*), pour afficher « Clément » avec l'accent au lieu du prénom déduit de l'email.
 - [ ] **Jeu d'évaluation** : une dizaine de dumps annotés (demandes attendues, bugs, verbatims) pour mesurer la qualité à chaque changement de prompt.
+- [ ] **Résister à un rafraîchissement de page** : aujourd'hui, F5 déconnecte l'utilisateur et fait disparaître l'analyse affichée. Les dépenses, elles, restent en base. Piste : garder la session et recharger le dernier résultat.
+- [ ] **Bouton « Actualiser » dans Admin** : les chiffres de la console sont mis en cache 2 minutes par session.
+- [ ] Optimisations secondaires, à ne faire que si la mesure le justifie : modèle plus léger (Haiku 4.5) pour le rédacteur, entrée allégée pour le stratège, prompt caching (gain probablement faible).
 - [ ] Connecteurs d'entrée (Zendesk, messagerie, outil NPS, Slack). Hors POC, à présenter comme roadmap.
 
-### Actions côté Clément (configuration, à confirmer)
-- [ ] Supabase › SQL Editor : exécuter `supabase/migrations/20260926000000_agent_calls.sql` (journal des agents).
-- [ ] Supabase › Authentication › General configuration : désactiver « Allow new users to sign up ».
-- [ ] Streamlit › Secrets : ajouter `ANTHROPIC_CREDITS_USD = "10"` (crédit restant estimé).
-- [ ] Supabase › Authentication › Users : créer les comptes relecteurs (cocher *Auto Confirm User*).
+### Actions côté Clément (configuration)
+- [ ] *Admin › Quotas* : relever les limites du compte relecteur `test@thiga.com` pour le jour de l'entretien, une fois le coût d'un run connu.
 
 ---
 
 ## Terminé
 
 ### 2026-09-25
+- [x] Revue d'adéquation à la consigne : section 7 de `HOWHY.md` (demandes couvertes, écarts assumés, ajouts et leur place dans la présentation, verdict).
+- [x] Streaming de la progression : pendant l'analyste et le stratège, la réflexion résumée et les éléments trouvés (thèmes, features, features notées) s'affichent en direct. Rejoué aussi en mode démo. Tests ajoutés, décision D17 dans `HOWHY.md`.
+- [x] Supabase : inscriptions publiques désactivées.
+- [x] Streamlit › Secrets : `ANTHROPIC_CREDITS_USD = "10"` ajouté.
+- [x] Supabase : compte relecteur `test@thiga.com` créé (rôle membre).
+- [x] Supabase : migration `agent_calls` exécutée (journal des agents actif en production).
 - [x] Accueil épuré : inbox **vide par défaut**, avec une invite à choisir un cas prêt à l'emploi ou à coller ses propres retours.
 - [x] Onboarding : **démo rapide présélectionnée** à l'étape « Lancer ».
 - [x] Inbox chargée en vue compacte : cas en cours, bouton « Changer de cas », **tri instantané et texte brut dans des sections repliables, fermées par défaut**.

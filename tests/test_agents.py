@@ -24,13 +24,16 @@ from agents import (
     AgentTimeoutError,
     ClaudeGateway,
     GherkinScenario,
+    LiveUpdate,
     PipelineResult,
     POAssistantPipeline,
     PrioritizationOutput,
+    analyst_findings,
     backlog_order,
     compute_rice,
     moscow_bucket,
     score_portfolio,
+    strategist_findings,
 )
 from config import Settings
 from exporters import to_feature_files, to_jira_csv, to_markdown
@@ -72,6 +75,36 @@ class FakeMessages:
         if isinstance(item, Exception):
             raise item
         return item
+
+    def stream(self, **kwargs: Any) -> FakeStream:
+        """Same answer as :meth:`create`, delivered as thinking then text snapshots."""
+        message = self.create(**kwargs)
+        self.calls[-1]["streamed"] = True
+        return FakeStream(message)
+
+
+class FakeStream:
+    """Mimics ``MessageStream``: iterable events with snapshots, then the final message."""
+
+    def __init__(self, message: Any, chunks: int = 4) -> None:
+        self.message = message
+        thinking = next((b.thinking for b in message.content if b.type == "thinking"), "")
+        text = next(b.text for b in message.content if b.type == "text")
+        cut = [len(text) * (i + 1) // chunks for i in range(chunks)]
+        self.events = [SimpleNamespace(type="thinking", snapshot=thinking)] if thinking else []
+        self.events += [SimpleNamespace(type="text", snapshot=text[:c]) for c in cut]
+
+    def __enter__(self) -> FakeStream:
+        return self
+
+    def __exit__(self, *_: Any) -> None:
+        return None
+
+    def __iter__(self) -> Any:
+        return iter(self.events)
+
+    def get_final_message(self) -> Any:
+        return self.message
 
 
 def gateway_with(messages: FakeMessages) -> ClaudeGateway:
@@ -278,3 +311,77 @@ def test_quote_grounding() -> None:
     assert not quote_in_source("je perds une heure par jour à trier mes notifications", source)  # paraphrase
     assert not quote_in_source("…", source)
     assert all(quote_in_source(q, DEMO.source_text) for f in DEMO.analysis.feature_requests for q in f.evidence_quotes)
+
+
+# ── Live progress (streaming) ────────────────────────────────────────────
+
+
+def test_findings_only_report_items_whose_fields_are_final() -> None:
+    text = DEMO.analysis.model_dump_json()
+    second_title = DEMO.analysis.feature_requests[1].title
+    cut = text.index(second_title) + 3  # stream stopped inside the 2nd feature title
+    found = analyst_findings(text[:cut])
+    assert [label for kind, label in found if kind == "theme"] == [t.name for t in DEMO.analysis.themes]
+    assert [label for kind, label in found if kind == "feature"] == [DEMO.analysis.feature_requests[0].title]
+    assert analyst_findings("") == analyst_findings("not json") == ()
+
+    output = PrioritizationOutput(assessments=[s.assessment for s in DEMO.scored_features], portfolio_insight="")
+    scored = strategist_findings(output.model_dump_json(), {"F1": "Notifications"})
+    assert len(scored) == len(DEMO.scored_features)
+    assert any(label.startswith("Notifications · impact ") for _kind, label in scored)
+
+
+def test_pipeline_streams_analyst_and_strategist_only(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(ClaudeGateway, "STREAM_INTERVAL_S", 0.0)
+    updates: list[LiveUpdate] = []
+    messages = FakeMessages(router=demo_router)
+    pipeline = POAssistantPipeline(SETTINGS, on_live=updates.append)
+    pipeline.gateway._client = SimpleNamespace(messages=messages)  # type: ignore[assignment]
+
+    result = pipeline.run("x" * 200, DEMO.context, top_n=3)
+
+    assert [c.get("streamed", False) for c in messages.calls] == [True, True, False, False, False]
+    assert {u.step for u in updates} == {"analyst", "strategist"}
+    last_analyst = [u for u in updates if u.step == "analyst"][-1]
+    assert [label for kind, label in last_analyst.found if kind == "feature"] == [
+        f.title for f in DEMO.analysis.feature_requests
+    ]
+    assert len([u for u in updates if u.step == "strategist"][-1].found) == len(DEMO.scored_features)
+    assert len(result.stories) == 3
+
+
+def test_a_failing_live_display_never_breaks_the_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(ClaudeGateway, "STREAM_INTERVAL_S", 0.0)
+
+    def broken(_update: LiveUpdate) -> None:
+        raise RuntimeError("widget gone")
+
+    pipeline = POAssistantPipeline(SETTINGS, on_live=broken)
+    pipeline.gateway._client = SimpleNamespace(messages=FakeMessages(router=demo_router))  # type: ignore[assignment]
+    assert len(pipeline.run("x" * 200, DEMO.context, top_n=1).stories) == 1
+
+
+def test_streamed_retry_reports_the_attempt(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(ClaudeGateway, "STREAM_INTERVAL_S", 0.0)
+    valid = PrioritizationOutput(assessments=[DEMO.scored_features[0].assessment], portfolio_insight="ok")
+    messages = FakeMessages([fake_message("{}", thinking="first"), fake_message(valid.model_dump_json())])
+    seen: list[int] = []
+    gateway_with(messages).structured(
+        agent="t", system="s", prompt="p", schema=PrioritizationOutput, effort="low",
+        on_stream=lambda attempt, _thinking, _text: seen.append(attempt),
+    )  # fmt: skip
+    assert seen[0] == 1 and seen[-1] == 2
+
+
+def test_live_panel_escapes_model_output_and_replays_the_demo() -> None:
+    from ui.live import demo_updates, live_html, thinking_tail
+
+    html = live_html(LiveUpdate("analyst", 2, "**Plan** <b>x</b>", (("feature", "<script>"),)))
+    assert "<script>" not in html and "&lt;script&gt;" in html
+    assert "correction" in html and "Plan" in html and "**" not in html
+    assert thinking_tail("mot " * 200, limit=40).startswith("…mot")
+
+    frames = demo_updates(DEMO, "analyst")
+    assert len(frames[-1].found) == len(DEMO.analysis.themes) + len(DEMO.analysis.feature_requests)
+    assert len(frames[0].found) < len(frames[-1].found)
+    assert len(demo_updates(DEMO, "strategist")[-1].found) == len(DEMO.scored_features)

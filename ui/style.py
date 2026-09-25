@@ -110,6 +110,21 @@ h1, h2, h3, h4 {letter-spacing: -0.005em;}
 .step .t {font-weight: 600; margin-top: 4px;}
 .step .d {font-size: .84rem; opacity: var(--muted); margin-top: 2px;}
 
+/* Live progress panel (agent reasoning and findings while it runs) */
+.live {border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 2px 0 12px;
+  background: var(--surface-2);}
+.live .lh {display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--accent-text); font-weight: 500;}
+.live .dot {width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+  animation: live-pulse 1.4s ease-in-out infinite;}
+@keyframes live-pulse {0%, 100% {opacity: .25;} 50% {opacity: 1;}}
+@media (prefers-reduced-motion: reduce) {.live .dot {animation: none;}}
+.live .lt {font-size: .86rem; line-height: 1.55; font-style: italic; opacity: var(--muted); margin-top: 6px;}
+.live .lg {font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; opacity: .78; margin: 10px 0 4px;}
+.live .chip.theme {background: var(--surface); border-color: var(--line); opacity: .88;}
+.live .chip.feature {color: var(--accent-text); background: var(--accent-soft); border-color: var(--accent-line);}
+.live .li {font-size: .84rem; padding: 3px 0 3px 10px; border-left: 2px solid var(--accent-line); margin-top: 3px;}
+
 /* ── Sidebar (Thiga indigo in both themes) ────────────────────────────── */
 .brand {font-family: 'Kanit', sans-serif; font-size: 1.5rem; font-weight: 500; margin: 0; line-height: 1.1;}
 .userbox {border: 1px solid rgba(255,252,249,.18); border-radius: 10px; padding: 12px 14px;

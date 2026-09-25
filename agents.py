@@ -36,9 +36,11 @@ from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from functools import partial
 from typing import Any, Literal, TypeVar
 
 import anthropic
+import jiter
 from pydantic import BaseModel, Field, ValidationError
 
 from config import ConfigurationError, Effort, Settings
@@ -545,6 +547,10 @@ def _thinking_summary(response: Any) -> str:
     return "\n\n".join(p for p in parts if p)[:_THINKING_CHARS]
 
 
+#: Receives ``(attempt, thinking_so_far, answer_so_far)`` while a response streams in.
+StreamCallback = Callable[[int, str, str], None]
+
+
 class ClaudeGateway:
     """Thin, typed wrapper around the Anthropic Messages API.
 
@@ -555,6 +561,8 @@ class ClaudeGateway:
 
     #: Extra attempts when the JSON answer fails Pydantic/business validation.
     VALIDATION_RETRIES = 1
+    #: Minimum delay between two live updates of a streamed response (seconds).
+    STREAM_INTERVAL_S = 0.25
 
     def __init__(
         self, settings: Settings, tracker: UsageTracker | None = None, budget_usd: float | None = None
@@ -593,6 +601,7 @@ class ClaudeGateway:
         schema: type[ModelT],
         effort: Effort,
         validator: Callable[[ModelT], None] | None = None,
+        on_stream: StreamCallback | None = None,
     ) -> ModelT:
         """Ask Claude for a JSON answer that conforms to ``schema``.
 
@@ -609,6 +618,9 @@ class ClaudeGateway:
             effort: Reasoning effort for this call.
             validator: Optional callable raising ``ValueError`` when the
                 parsed answer breaks a business rule.
+            on_stream: When given, the response is streamed and this callback
+                receives the summarised reasoning and the partial JSON as they
+                arrive (throttled, called from the current thread).
 
         Returns:
             A validated instance of ``schema``.
@@ -628,7 +640,13 @@ class ClaudeGateway:
             clock = time.perf_counter()
             log = {"agent": agent, "started_at": started_at, "attempt": attempt + 1}
             try:
-                response = self._create(agent=agent, system=system, messages=messages, output_config=output_config)
+                response = self._create(
+                    agent=agent,
+                    system=system,
+                    messages=messages,
+                    output_config=output_config,
+                    on_stream=partial(on_stream, attempt + 1) if on_stream else None,
+                )
             except AgentError as exc:
                 self.tracker.log_call(**log, duration_s=time.perf_counter() - clock, status="error",
                                       error=exc.user_message)  # fmt: skip
@@ -684,8 +702,9 @@ class ClaudeGateway:
         system: str,
         messages: list[anthropic.types.MessageParam],
         output_config: dict,
+        on_stream: Callable[[str, str], None] | None = None,
     ) -> anthropic.types.Message:
-        """Send one Messages API request, translating SDK errors."""
+        """Send one Messages API request (streamed when ``on_stream`` is given), translating SDK errors."""
         if self.budget_usd is not None and self.tracker.cost_usd(self.settings.pricing) >= self.budget_usd:
             raise AgentBudgetError(
                 "Budget de la requête atteint : l'exécution a été interrompue pour respecter votre quota.",
@@ -693,16 +712,17 @@ class ClaudeGateway:
             )
         started = time.perf_counter()
         try:
-            response = self._client.messages.create(
-                model=self.settings.model,
-                max_tokens=self.settings.max_tokens,
-                system=system,
-                messages=messages,
+            params: dict[str, Any] = {
+                "model": self.settings.model,
+                "max_tokens": self.settings.max_tokens,
+                "system": system,
+                "messages": messages,
                 # "summarized" returns a readable summary of the reasoning for the
                 # admin agent journal (the raw chain of thought is never exposed).
-                thinking={"type": "adaptive", "display": "summarized"},
-                output_config=output_config,  # type: ignore[arg-type]
-            )
+                "thinking": {"type": "adaptive", "display": "summarized"},
+                "output_config": output_config,
+            }
+            response = self._client.messages.create(**params) if on_stream is None else self._stream(params, on_stream)
         except anthropic.AuthenticationError as exc:
             raise AgentAuthError(
                 "Clé API Anthropic invalide ou révoquée. Vérifiez ANTHROPIC_API_KEY.",
@@ -762,6 +782,37 @@ class ClaudeGateway:
             elapsed = time.perf_counter() - started
 
         self.tracker.record(agent, response.usage, elapsed)
+        return response
+
+    def _stream(self, params: dict[str, Any], on_stream: Callable[[str, str], None]) -> anthropic.types.Message:
+        """Same request as ``messages.create``, streamed so progress can be shown live.
+
+        The live display is best effort: a failing callback is logged and
+        muted, it never interrupts the agent.
+        """
+        thinking, text, last = "", "", 0.0
+
+        def notify() -> None:
+            nonlocal on_stream
+            try:
+                on_stream(thinking, text)
+            except Exception:  # noqa: BLE001 — display only
+                logger.exception("Live progress callback failed; muting it for this request.")
+                on_stream = lambda _thinking, _text: None  # noqa: E731
+
+        with self._client.messages.stream(**params) as stream:
+            for event in stream:
+                if event.type == "thinking":
+                    thinking = event.snapshot
+                elif event.type == "text":
+                    text = event.snapshot
+                else:
+                    continue
+                if (now := time.perf_counter()) - last >= self.STREAM_INTERVAL_S:
+                    last = now
+                    notify()
+            response = stream.get_final_message()
+        notify()
         return response
 
     @staticmethod
@@ -861,12 +912,15 @@ class FeedbackAnalyst(BaseAgent):
     MIN_CHARS = 40
     MAX_CHARS = 150_000
 
-    def run(self, raw_feedback: str, context: ProductContext) -> FeedbackAnalysis:
+    def run(
+        self, raw_feedback: str, context: ProductContext, on_stream: StreamCallback | None = None
+    ) -> FeedbackAnalysis:
         """Analyse a raw feedback dump.
 
         Args:
             raw_feedback: Unstructured text (mixed emails, tickets, reviews…).
             context: Product context.
+            on_stream: Optional live-progress callback (see :meth:`ClaudeGateway.structured`).
 
         Returns:
             A validated :class:`FeedbackAnalysis` with sequential feature ids.
@@ -899,6 +953,7 @@ class FeedbackAnalyst(BaseAgent):
             schema=FeedbackAnalysis,
             effort=self.effort,
             validator=self._validate,
+            on_stream=on_stream,
         )
         return self._normalise(analysis)
 
@@ -980,12 +1035,15 @@ class PrioritizationStrategist(BaseAgent):
 
     name = "PrioritizationStrategist"
 
-    def run(self, analysis: FeedbackAnalysis, context: ProductContext) -> Prioritization:
+    def run(
+        self, analysis: FeedbackAnalysis, context: ProductContext, on_stream: StreamCallback | None = None
+    ) -> Prioritization:
         """Prioritise every feature request of an analysis.
 
         Args:
             analysis: Output of :class:`FeedbackAnalyst`.
             context: Product context (user base anchors Reach).
+            on_stream: Optional live-progress callback (see :meth:`ClaudeGateway.structured`).
 
         Returns:
             Ranked, scored features and a portfolio-level insight.
@@ -1023,6 +1081,7 @@ class PrioritizationStrategist(BaseAgent):
             schema=PrioritizationOutput,
             effort=self.effort,
             validator=validator,
+            on_stream=on_stream,
         )
         by_id = {a.feature_id: a for a in output.assessments}
         scored = score_portfolio([(f, by_id[f.id]) for f in features], context.active_users)
@@ -1128,6 +1187,59 @@ class PipelineEvent:
 ProgressCallback = Callable[[PipelineEvent], None]
 
 
+@dataclass(frozen=True)
+class LiveUpdate:
+    """What a streaming agent has produced so far, for a live progress display.
+
+    ``found`` lists ``(kind, label)`` pairs already complete in the partial
+    answer: ``theme`` and ``feature`` for the analyst, ``scored`` for the
+    strategist.
+    """
+
+    step: StepName
+    attempt: int
+    thinking: str
+    found: tuple[tuple[str, str], ...]
+
+
+LiveCallback = Callable[[LiveUpdate], None]
+
+
+def _partial_json(text: str) -> dict[str, Any]:
+    """Parse a JSON answer that is still streaming in (unfinished strings are kept)."""
+    if not text:
+        return {}
+    try:
+        data = jiter.from_json(text.encode("utf-8"), partial_mode="trailing-strings")
+    except ValueError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _complete(items: Any, next_key: str) -> list[dict[str, Any]]:
+    """Objects of a streamed list whose ``next_key`` has started, i.e. whose earlier fields are final."""
+    return [i for i in items if isinstance(i, dict) and next_key in i] if isinstance(items, list) else []
+
+
+def analyst_findings(text: str) -> tuple[tuple[str, str], ...]:
+    """Themes and feature requests already complete in a partial analyst answer."""
+    data = _partial_json(text)
+    themes = [("theme", str(t.get("name", ""))) for t in _complete(data.get("themes"), "description")]
+    features = [
+        ("feature", str(f.get("title", ""))) for f in _complete(data.get("feature_requests"), "problem_statement")
+    ]
+    return tuple((kind, label) for kind, label in themes + features if label)
+
+
+def strategist_findings(text: str, titles: dict[str, str]) -> tuple[tuple[str, str], ...]:
+    """Features already scored in a partial strategist answer (label: title, impact and effort)."""
+    scored = []
+    for a in _complete(_partial_json(text).get("assessments"), "effort_rationale"):
+        title = titles.get(str(a.get("feature_id")), str(a.get("feature_id", "")))
+        scored.append(("scored", f"{title} · impact {a.get('impact')}/5 · effort {a.get('effort')}/5"))
+    return tuple(scored)
+
+
 class POAssistantPipeline:
     """Orchestrates the three agents end-to-end.
 
@@ -1141,6 +1253,7 @@ class POAssistantPipeline:
         settings: Settings,
         on_event: ProgressCallback | None = None,
         budget_usd: float | None = None,
+        on_live: LiveCallback | None = None,
     ) -> None:
         """Wire the agents together.
 
@@ -1148,6 +1261,10 @@ class POAssistantPipeline:
             settings: Application settings.
             on_event: Progress callback (called from the caller's thread).
             budget_usd: Hard spending cap for this pipeline instance (quota).
+            on_live: Live-progress callback. When given, the analyst and the
+                strategist stream their answers and report what they have
+                found so far (called from the caller's thread). The story
+                writers run in worker threads and are not streamed.
         """
         self.settings = settings
         self.tracker = UsageTracker()
@@ -1156,9 +1273,17 @@ class POAssistantPipeline:
         self.strategist = PrioritizationStrategist(self.gateway, settings.efforts.strategist)
         self.writer = UserStoryWriter(self.gateway, settings.efforts.writer)
         self._on_event = on_event or (lambda _event: None)
+        self._on_live = on_live
 
     def _emit(self, step: StepName, status: StepStatus, message: str) -> None:
         self._on_event(PipelineEvent(step, status, message))
+
+    def _live(self, step: StepName, findings: Callable[[str], tuple[tuple[str, str], ...]]) -> StreamCallback | None:
+        """Stream callback that turns raw deltas into :class:`LiveUpdate` objects (``None`` if nobody listens)."""
+        on_live = self._on_live
+        if on_live is None:
+            return None
+        return lambda attempt, thinking, text: on_live(LiveUpdate(step, attempt, thinking, findings(text)))
 
     def run(self, raw_feedback: str, context: ProductContext, top_n: int = 3) -> PipelineResult:
         """Run analysis → prioritisation → user stories for the top features.
@@ -1181,7 +1306,7 @@ class POAssistantPipeline:
 
         self._emit("analyst", "running", "Lecture et segmentation des feedbacks…")
         try:
-            analysis = self.analyst.run(raw_feedback, context)
+            analysis = self.analyst.run(raw_feedback, context, on_stream=self._live("analyst", analyst_findings))
         except AgentError as exc:
             self._emit("analyst", "error", exc.user_message)
             raise
@@ -1194,7 +1319,10 @@ class POAssistantPipeline:
 
         self._emit("strategist", "running", "Estimation Reach · Impact · Confidence · Effort…")
         try:
-            prioritization = self.strategist.run(analysis, context)
+            titles = {f.id: f.title for f in analysis.feature_requests}
+            prioritization = self.strategist.run(
+                analysis, context, on_stream=self._live("strategist", partial(strategist_findings, titles=titles))
+            )
         except AgentError as exc:
             self._emit("strategist", "error", exc.user_message)
             raise
