@@ -64,6 +64,7 @@ def test_admin_console_and_demo_run() -> None:
     next(b for b in app.button if b.label == "Générer 60 jours").click().run()
     assert not app.exception
     assert any(m.label == "Dépense du mois" for m in app.metric)
+    next(b for b in app.button if b.key == "load_notifications").click().run()
     next(b for b in app.button if b.label == "Lancer l'analyse").click().run()  # offline demo replay
     assert not app.exception
     assert app.session_state["result"] is not None
@@ -77,3 +78,13 @@ def test_onboarding_launch_runs_the_demo() -> None:
     app.run()
     assert not app.exception
     assert app.session_state["result"] is not None and app.session_state["result"].is_demo
+
+
+def test_inbox_starts_empty_with_a_prompt() -> None:
+    app = login("demo@local.dev")
+    assert app.session_state["feedback_text"] == ""
+    assert not any(b.label == "Lancer l'analyse" for b in app.button)  # nothing to run yet
+    assert sum(b.label == "Charger ce cas" for b in app.button) == 3
+    next(b for b in app.button if b.key == "load_mobile").click().run()
+    assert any(b.label == "Lancer l'analyse" for b in app.button)
+    assert any("Tri instantané" in e.label for e in app.expander)

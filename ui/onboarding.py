@@ -157,10 +157,10 @@ def _launch(settings: Settings, top_n: int) -> None:
         "dans l'ordre : Analyse, Priorisation, User stories, Export.</div>"
     )
     options: dict[str, str] = {}
+    if sample_key == DEMO_SAMPLE_KEY:  # quick demo first, so it is pre-selected
+        options["demo"] = "Démo rapide — résultat pré-calculé, instantané et sans coût"
     if settings.has_api_key:
         options["live"] = f"En direct avec Claude — 1 à 2 minutes, environ {euros(estimate.point_eur)}"
-    if sample_key == DEMO_SAMPLE_KEY:
-        options["demo"] = "Démonstration instantanée — résultat pré-calculé, sans coût"
     if not options:
         st.info(
             "La démonstration instantanée n'existe que pour le cas « Notifications & churn », et aucune clé "

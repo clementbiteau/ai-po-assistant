@@ -35,7 +35,7 @@ from exporters import to_feature_files, to_jira_csv, to_json, to_markdown
 from governance import evaluate_quota
 from samples import DEMO_SAMPLE_KEY, SAMPLES
 from store import Profile, StoreError
-from triage import triage
+from triage import InboxItem, triage
 from ui import session
 from ui.admin import render_admin
 from ui.greeting import render_greeting
@@ -107,7 +107,7 @@ ADMIN_TAB = "Admin"
 def init_state() -> None:
     """Initialise session keys once per browser session."""
     defaults: dict[str, Any] = {
-        "feedback_text": SAMPLES[DEMO_SAMPLE_KEY].text,
+        "feedback_text": "",  # empty inbox: the user picks a case or pastes feedback
         "result": None,
         "run_id": 0,
         "nav": TABS[0],
@@ -387,10 +387,12 @@ def render_kpis(result: PipelineResult, scored: list[ScoredFeature]) -> None:
 # ══════════════════════════════════════════════════════════════════════════
 
 
-def render_inbox(settings: Settings, profile: Profile, context: ProductContext, top_n: int, demo_mode: bool) -> None:
-    """Sample picker, raw input and the run button."""
-    intro("Point de départ", "Choisissez un cas client ou collez vos propres retours, puis lancez les agents.")
-    st.markdown("#### Cas clients prêts à l'emploi")
+def current_case(text: str) -> str | None:
+    """Key of the ready-made case currently in the inbox, if the text is unchanged."""
+    return next((key for key, sample in SAMPLES.items() if sample.text.strip() == text.strip()), None)
+
+
+def _case_cards() -> None:
     cols = st.columns(len(SAMPLES))
     for i, (col, sample) in enumerate(zip(cols, SAMPLES.values(), strict=True), start=1):
         with col, st.container(border=True):
@@ -400,23 +402,52 @@ def render_inbox(settings: Settings, profile: Profile, context: ProductContext, 
             st.button("Charger ce cas", key=f"load_{sample.key}", on_click=load_sample, args=(sample.key,),
                       width="stretch")  # fmt: skip
 
+
+def render_inbox(settings: Settings, profile: Profile, context: ProductContext, top_n: int, demo_mode: bool) -> None:
+    """Empty state with a clear prompt, or a compact view of the loaded inbox and the run button."""
     text = st.session_state.feedback_text or ""
-    render_inbox_list(text)
-    with st.expander("Texte brut — modifier ou coller vos propres retours", expanded=not text.strip()):
+    pending = st.session_state.pop("pending_run", None)  # set by the onboarding dialog
+
+    if not text.strip():
+        render_html(
+            '<div class="empty"><div class="eyebrow">Inbox vide</div>'
+            "<h3>Par quel cas client commencer ?</h3>"
+            "<p>Choisissez un cas prêt à l'emploi pour une démonstration, ou collez les retours de vos propres "
+            "clients : emails, tickets du support, verbatims NPS, notes d'appel.</p></div>"
+        )
+        _case_cards()
+        st.markdown("#### Ou collez vos propres retours")
         st.text_area(
             "Feedbacks",
             key="feedback_text",
-            height=320,
+            height=170,
             label_visibility="collapsed",
             placeholder="Collez ici un mélange d'emails, tickets, verbatims NPS, notes d'appel…",
         )
-        st.caption(f"{len(text):,} caractères · {len(text.split()):,} mots".replace(",", " "))
+        st.caption("Validez avec Ctrl + Entrée (ou cliquez en dehors du champ) pour charger vos retours.")
+        return
 
-    left, mid, _ = st.columns([2.2, 1, 3])
-    run = left.button("Lancer l'analyse", type="primary", width="stretch", disabled=not text.strip())
-    mid.button("Effacer", on_click=clear_input, type="tertiary")
+    items = triage(text)
+    urgent = sum(i.urgent for i in items)
+    case = current_case(text)
+    title = SAMPLES[case].label if case else "Vos retours clients"
+    head, switch = st.columns([4, 1.3], vertical_alignment="bottom")
+    with head:
+        render_html(f'<div class="eyebrow">Cas en cours</div><h3 class="case-title">{esc(title)}</h3>')
+        st.caption(f"{len(items)} messages · {urgent} urgents · {len(text):,} caractères".replace(",", " "))
+    with switch, st.popover("Changer de cas", width="stretch"):
+        for sample in SAMPLES.values():
+            st.button(sample.label, key=f"switch_{sample.key}", on_click=load_sample, args=(sample.key,),
+                      width="stretch", disabled=sample.key == case)  # fmt: skip
+        st.button("Vider l'inbox", on_click=clear_input, type="tertiary", width="stretch", key="switch_clear")
 
-    pending = st.session_state.pop("pending_run", None)  # set by the onboarding dialog
+    with st.expander(f"Tri instantané · {len(items)} messages, dont {urgent} urgents", expanded=False):
+        render_inbox_list(items)
+    with st.expander("Texte brut · modifier les retours", expanded=False):
+        st.text_area("Feedbacks", key="feedback_text", height=300, label_visibility="collapsed")
+
+    left, _ = st.columns([2.2, 4])
+    run = left.button("Lancer l'analyse", type="primary", width="stretch")
     if not (run or pending):
         return
     if (pending or ("demo" if demo_mode else "live")) == "demo":
@@ -427,7 +458,11 @@ def render_inbox(settings: Settings, profile: Profile, context: ProductContext, 
 
 _INBOX_CSS = """
 <style>
-.inbox {border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 14px; background: var(--surface);}
+.inbox {border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 6px; background: var(--surface);}
+.empty {padding: 8px 0 10px;}
+.empty h3 {font-family: 'Kanit', sans-serif; font-weight: 500; font-size: 1.9rem; margin: 6px 0 6px; padding: 0;}
+.empty p {max-width: 64ch; opacity: .82; line-height: 1.55; margin: 0 0 16px;}
+.case-title {font-family: 'Kanit', sans-serif; font-weight: 500; font-size: 1.5rem; margin: 2px 0 0; padding: 0;}
 .inbox .row {display: grid; grid-template-columns: 132px 1fr auto; gap: 14px; align-items: baseline;
   padding: 11px 16px; border-top: 1px solid var(--line);}
 .inbox .row:first-child {border-top: 0;}
@@ -444,15 +479,9 @@ _INBOX_CSS = """
 """
 
 
-def render_inbox_list(text: str) -> None:
+def render_inbox_list(items: list[InboxItem]) -> None:
     """The raw dump as an inbox: one row per message, urgent ones first (rule-based, no AI)."""
-    items = triage(text)
-    if not items:
-        st.info("L'inbox est vide. Chargez un cas client ou collez vos retours dans le texte brut ci-dessous.")
-        return
-    urgent = sum(i.urgent for i in items)
-    st.markdown(f"#### Boîte de réception · {len(items)} messages, dont {urgent} urgents")
-    st.caption("Tri instantané par règles (canal, mots-clés, notes NPS et étoiles), avant tout appel à l'IA.")
+    st.caption("Tri par règles (canal, mots-clés, notes NPS et étoiles), instantané et sans IA.")
     rows = "".join(
         f'<div class="row"><div class="ch">{esc(i.channel)}</div>'
         f'<div><div class="ti">{esc(shorten(i.title, 90))}</div><div class="sn">{esc(i.snippet)}</div>'

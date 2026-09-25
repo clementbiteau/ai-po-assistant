@@ -65,15 +65,16 @@ def render_greeting(email: str, messages: int, urgent: int, fallback_tz: str) ->
     hello = f"{salutation(_local_now(fallback_tz))} {display_name(email)} !"
     plural = "s" if messages > 1 else ""
     urgent_txt = f", dont <b>{urgent} en urgence</b>" if urgent else ""
+    line = (
+        f"Ravi de te revoir. Tu as <b>{messages} notification{plural}</b> dans ton inbox{urgent_txt}."
+        if messages
+        else "Ravi de te revoir. Ton inbox est vide : choisis un cas client prêt à l'emploi ou colle tes retours."
+    )
     render_html(_CSS)
     with st.container(key=_KEY):
         text_col, close_col = st.columns([24, 1], vertical_alignment="top")
         with text_col:
-            render_html(
-                f'<div class="hello">{esc(hello)}</div>'
-                f'<div class="line">Ravi de te revoir. Tu as <b>{messages} notification{plural}</b> dans ton inbox'
-                f"{urgent_txt}.</div>"
-            )
+            render_html(f'<div class="hello">{esc(hello)}</div><div class="line">{line}</div>')
         with close_col:
             st.button("", icon=":material/close:", type="tertiary", key="greet_close", help="Fermer",
                       on_click=_dismiss)  # fmt: skip
