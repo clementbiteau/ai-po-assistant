@@ -12,6 +12,7 @@ import streamlit as st
 from config import Settings
 from governance import CostEstimator
 from samples import DEMO_SAMPLE_KEY, SAMPLES
+from ui import session
 from ui.style import euros, render_html
 
 _STEPS = ("Le cas d'usage", "Les agents", "Choisir un cas", "Lancer")
@@ -42,6 +43,7 @@ _CSS = """
 def _done() -> None:
     st.session_state["onboarded"] = True
     st.session_state["_ob_step"] = 0
+    session.mark_onboarded()  # not shown again at the next sign-in
 
 
 def _go(step: int) -> None:
@@ -78,8 +80,8 @@ def onboarding_dialog(settings: Settings, top_n: int) -> None:
 
 def _use_case() -> None:
     render_html(
-        '<div class="ob-title">Vous êtes Product Owner chez Orbit.</div>'
-        '<div class="ob-lead">Orbit est une startup SaaS qui édite une <b>plateforme de gestion de projets</b> : '
+        '<div class="ob-title">Vous êtes Product Owner chez EwokAI.</div>'
+        '<div class="ob-lead">EwokAI est une startup SaaS qui édite une <b>plateforme de gestion de projets</b> : '
         "planification, diagrammes de Gantt, charge des équipes. Ses clients sont des PME et des ETI. Chaque "
         "semaine, les retours clients arrivent de partout : emails, tickets du support, enquêtes NPS, remontées "
         "des équipes Customer Success et Sales, avis sur les stores. Le PO est submergé : il doit tout lire, "
@@ -92,7 +94,7 @@ def _use_case() -> None:
         '<div class="ob-quote">L\'assistant fait le travail de fond : lire, trier, prioriser, rédiger. '
         "Le PO garde la décision.</div>"
     )
-    st.caption("Orbit et tous les clients cités sont fictifs.")
+    st.caption("EwokAI et tous les clients cités sont fictifs.")
     left, right = st.columns([1, 1])
     if left.button("Passer l'introduction", type="tertiary", key="ob_skip0"):
         _done()

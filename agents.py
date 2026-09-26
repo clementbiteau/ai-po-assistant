@@ -120,7 +120,7 @@ LANGUAGE_NAMES: dict[Language, str] = {"fr": "French", "en": "English"}
 class ProductContext(BaseModel):
     """Business context injected into every agent prompt."""
 
-    product_name: str = "Orbit"
+    product_name: str = "EwokAI"
     product_description: str = (
         "Plateforme SaaS B2B de gestion de projets et de planification d'équipes, éditée par une startup "
         "(clients PME et ETI, 50 à 2 000 salariés)."

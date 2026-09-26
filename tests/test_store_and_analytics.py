@@ -133,3 +133,17 @@ def test_agent_journal_roundtrip(repo: SQLiteRepository) -> None:
     assert list(calls["agent"]) == ["FeedbackAnalyst", "PrioritizationStrategist"]
     assert calls.loc[0, "thinking"] == "Je segmente…" and calls.loc[1, "status"] == "retry"
     assert repo.fetch_calls([]).empty
+
+
+def test_onboarding_is_remembered_per_user_across_sign_ins(tmp_path) -> None:
+    db = str(tmp_path / "onboarding.db")
+    first = LocalAuthService(db, "pw-local")
+    first.sign_in("demo@local.dev", "pw-local")
+    assert not first.is_onboarded()
+    first.mark_onboarded()
+
+    later = LocalAuthService(db, "pw-local")  # a new browser session, another day
+    later.sign_in("demo@local.dev", "pw-local")
+    assert later.is_onboarded()
+    later.sign_in("admin@local.dev", "pw-local")
+    assert not later.is_onboarded()  # per user, not per machine

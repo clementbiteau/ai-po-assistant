@@ -13,11 +13,26 @@ Sommaire : [1. Le cas d'usage](#1-le-cas-dusage) · [2. Vue d'ensemble](#2-vue-d
 
 ## 1. Le cas d'usage
 
+La consigne de Thiga : **créer un agent IA qui assiste un Product Owner au quotidien**. Il doit analyser les retours utilisateurs, prioriser les fonctionnalités et aider à rédiger les user stories.
+
 > *You work for a SaaS startup that develops a project management platform. The Product Owner is
 > overwhelmed with client feedback, feature requests, and must constantly prioritize the backlog.
 > They need an intelligent assistant to help with their decisions.*
 
-Dans la démo, la startup s'appelle **Orbit** (fictive). Elle édite une plateforme de gestion de projets :
+Ce qui est attendu, en résumé :
+
+| Domaine | Fonctionnalités attendues |
+|---|---|
+| Analyse des retours | Traiter les retours clients (emails, tickets, commentaires) ; repérer les tendances et récurrences ; extraire les demandes de fonctionnalités |
+| Aide à la priorisation | Noter les fonctionnalités selon plusieurs critères ; appliquer des méthodes (MoSCoW, RICE…) ; expliquer et justifier les recommandations |
+| Aide à la rédaction | Générer des user stories structurées selon les standards ; proposer des critères d'acceptation ; estimer la complexité relative |
+
+- **Livrables** : le code source (langage et framework libres), une démonstration avec des cas concrets, une documentation de l'approche et des choix techniques, et les tests jugés nécessaires.
+- **Présentation de 15 minutes** : démonstration (8 à 10 min), architecture (3 à 4 min), défis rencontrés et solutions (2 à 3 min).
+- **Aucune contrainte technique.** Python, Streamlit, Claude et Supabase sont nos choix, justifiés en section 4.
+- **Critères d'évaluation** : compréhension du métier de PO, qualité technique (architecture, code, tests), expérience utilisateur (simplicité, efficacité), complétude (jusqu'où va la réflexion), clarté de la présentation.
+
+Dans la démo, la startup s'appelle **EwokAI** (fictive). Elle édite une plateforme de gestion de projets :
 planification, diagrammes de Gantt, charge des équipes, pour des PME et des ETI.
 
 Le problème du PO n'est pas de manquer d'idées, c'est d'en recevoir trop, par trop de canaux, sous des
@@ -136,7 +151,7 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 - **Compromis** : une citation correcte mais retouchée (ponctuation, faute corrigée) peut être signalée à tort. C'est un faux positif prudent.
 
 ### D8. Le modèle et le raisonnement
-- **Décision** : Claude **Sonnet 5**. Claude 3.5 Sonnet, demandé initialement, a été retiré de l'API en octobre 2025 ; Sonnet 5 est son successeur. On utilise le **raisonnement adaptatif** (le modèle décide combien réfléchir) avec un **niveau d'effort par agent** : moyen pour l'analyste et le rédacteur, élevé pour le stratège, dont les scores conditionnent toute la suite.
+- **Décision** : Claude **Sonnet 5** (la consigne laisse le choix du modèle). On utilise le **raisonnement adaptatif** (le modèle décide combien réfléchir) avec un **niveau d'effort par agent** : moyen pour l'analyste et le rédacteur, élevé pour le stratège, dont les scores conditionnent toute la suite.
 - **Pourquoi** : le bon compromis qualité / coût / latence pour de la compréhension de texte et du jugement. L'effort se règle sans changer de modèle.
 - **Réflexion affichée** : l'API renvoie un **résumé** du raisonnement (`display: "summarized"`), jamais le raisonnement brut. C'est ce résumé qui apparaît dans le journal des agents.
 - **Écarté** : un modèle plus puissant (Opus) partout, plus cher et plus lent sans gain net sur cette tâche. On peut le changer via `ANTHROPIC_MODEL`.
@@ -152,7 +167,7 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 - **Compromis** : plus de tokens par minute consommés d'un coup. Sur un compte neuf aux limites basses, on peut passer à 1 (`STORY_WORKERS=1`).
 
 ### D10. Streamlit pour l'interface
-- **Décision** : Streamlit, imposé par la stack, avec un design éditorial et sobre :
+- **Décision** : Streamlit (la consigne laisse le choix du framework), avec un design éditorial et sobre :
   - un seul accent vert profond (`#1F6E57`, `#14352C` pour les bandeaux), fond beige `#F4F1EA`, encre `#1C1B19` ;
   - titres en serif (Newsreader), interface en Geist, chiffres en Geist Mono ;
   - mode clair sur fond beige avec des cartes papier plus claires, pour éviter l'éblouissement du blanc ;
@@ -164,6 +179,7 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 - **Pourquoi** : c'est le moyen le plus rapide de livrer une application de données interactive en Python.
 - **Compromis** : Streamlit réexécute le script à chaque interaction. D'où les caches par session (quotas, données admin) et l'état stocké dans `st.session_state`.
 - **Déploiements sans redémarrage** : un serveur Streamlit garde les modules déjà importés. Après une mise à jour, `app.py` pouvait donc être neuf et `agents.py` encore ancien, ce qui provoquait une `ImportError` jusqu'au redémarrage. `reload_guard.py` détecte les fichiers modifiés depuis leur import (date du fichier, ou cache de bytecode au premier passage) et recharge le code du projet. Un test simule le cas.
+- **Guide de démarrage une seule fois par personne** : une fois vu ou passé, il ne s'ouvre plus aux connexions suivantes, sur n'importe quel appareil. L'information est rangée dans les métadonnées du compte Supabase, que chaque utilisateur peut modifier pour lui-même : ni nouvelle table, ni règle de sécurité à ouvrir. Le bouton « Guide de démarrage » le rouvre à la demande.
 - **Ajouts visibles** : les onglets qui dépassent la consigne (Connecteurs, Admin) sont affichés en pâle, avec une légende en bout de barre, tout comme le réglage des modèles réservé à l'admin. On distingue ainsi d'un coup d'œil le sujet de ses extensions (voir 7.3).
 
 ### D11. Authentification Supabase et sécurité dans la base
@@ -200,11 +216,12 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 - **Décision** : le mode démo rejoue **un vrai run Claude enregistré** sur le cas « Notifications & churn » : Sonnet 5 partout, le 26/09/2026, 110 s, 0,16 €, 14 verbatims sur 14 exacts. La progression en direct (D17) est rejouée avec la vraie réflexion résumée du stratège, et les chiffres affichés (sources, thèmes, n°1) viennent du résultat.
 - **Pourquoi** : une démo live ne doit pas dépendre du réseau, et ce qu'elle montre doit être ce que l'IA produit réellement.
 - **Pour le mettre à jour** : lancer le cas en direct, télécharger « JSON typé » dans l'onglet Export, et l'enregistrer sous `data/demo_result.json`.
+- **Le nom du produit a été changé après l'enregistrement** (Orbit est devenu EwokAI), partout et de façon cohérente : texte source, citations et sorties. Les 14 verbatims restent exacts.
 - **Les tests ne s'appuient pas sur ce fichier**, mais sur un résultat de référence figé (`tests/fixtures/reference_result.json`). Changer la démo ne casse donc jamais les tests.
 
 ### D16. Les tests
 - **Décision** :
-  - 74 tests hors ligne, sur un faux client Claude : aucune clé, aucun coût, moins de 30 secondes (dont deux rejeux de la démo, avec leurs pauses).
+  - 75 tests hors ligne, sur un faux client Claude : aucune clé, aucun coût, moins de 30 secondes (dont deux rejeux de la démo, avec leurs pauses).
   - Tests d'interface avec `AppTest` : connexion, droits, lancement.
   - Tests SQL des règles de sécurité sur PostgreSQL.
   - Lint avec `ruff`.
@@ -259,7 +276,7 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
   - Chaque agent est facturé au prix de son propre modèle, dans les quotas comme dans les estimations.
 - **Écartés** :
   - **Opus 5 et Fable 5.1** : surdimensionnés. Lire, regrouper et noter des retours clients avec une grille explicite ne demande pas le modèle le plus puissant. Ils coûteraient 1,5 à 5 fois le run de référence (environ 0,24 € et 0,80 €), sans gain mesuré. Le bon réflexe est l'inverse : partir de Sonnet et vérifier ce que l'on peut confier à Haiku.
-  - **D'autres fournisseurs** (modèles open source, etc.) : hors consigne, et l'app s'appuie sur des fonctions de l'API Claude (JSON garanti par schéma, réflexion résumée, effort). L'appel au modèle étant isolé dans `agents.py`, c'est une évolution possible, à mesurer avec D19.
+  - **D'autres fournisseurs** (modèles open source, etc.) : la consigne le permettrait, mais l'app s'appuie sur des fonctions de l'API Claude (JSON garanti par schéma, réflexion résumée, effort). L'appel au modèle étant isolé dans `agents.py`, c'est une évolution possible, à mesurer avec D19.
 
 ### D19. Le suivi des runs (Admin › Runs)
 - **Décision** : chaque analyse enregistre, dans la table `run_details`, **sa configuration** (modèle et effort de chaque agent), **le cas** utilisé, **son classement** (rang, RICE, MoSCoW, estimations) et **son résultat complet**. L'onglet *Admin › Runs* liste les runs avec leur latence par étape, leur coût et leur top 3.
@@ -329,21 +346,26 @@ Une relecture critique : est-ce que le POC répond à ce qui est demandé, où s
 
 ### 7.1 Ce qui est demandé, et ce que fait le POC
 
-| Demande de la consigne | Réponse du POC | Statut |
+| Attendu par la consigne | Réponse du POC | Statut |
 |---|---|---|
-| Une startup SaaS qui édite une plateforme de gestion de projets | Orbit (fictive) : planification, Gantt, charge des équipes, clients PME et ETI. 3 cas prêts à l'emploi | Couvert |
-| Un PO submergé par les retours clients et les demandes | Inbox multicanale (emails, tickets, NPS, Slack, stores, notes d'appel), triée instantanément par règles | Couvert |
-| Module 1 : analyser les retours | `FeedbackAnalyst` : thèmes, demandes formulées comme des problèmes, autres signaux, verbatims vérifiés mot pour mot | Couvert |
-| Module 2 : prioriser avec un RICE justifié | `PrioritizationStrategist` estime R, I, C et E avec une justification par critère ; le code calcule le score. Le PO peut corriger chaque estimation | Couvert |
-| Module 3 : rédiger des user stories avec critères Gherkin | `UserStoryWriter` : persona, besoin, bénéfice, points, 3 à 6 scénarios Gherkin ; export Jira et `.feature` | Couvert |
-| Aider le PO à décider | L'IA prépare, le PO tranche : estimations modifiables, recalcul instantané, preuves visibles | Couvert |
-| Interface Streamlit | Oui | Couvert |
-| Claude 3.5 Sonnet | Claude Sonnet 5 | Écart assumé (7.2) |
+| Traiter les retours clients (emails, tickets, commentaires) | Inbox multicanale : emails, tickets Zendesk, NPS, Slack, avis store, notes d'appel ; 3 cas réalistes en 2 langues | Couvert |
+| Repérer les tendances et récurrences | Thèmes avec nombre de mentions et sentiment ; besoins dédoublonnés entre sources | Couvert sur un lot ; l'évolution dans le temps demande un historique (7.4) |
+| Extraire les demandes de fonctionnalités | Besoins formulés comme des problèmes, avec segments, sources et verbatims vérifiés mot pour mot | Couvert |
+| Noter selon plusieurs critères | Reach, Impact, Confidence et Effort, chacun justifié | Couvert |
+| Appliquer des méthodes (MoSCoW, RICE…) | RICE calculé par le code, MoSCoW dérivé du score, contrainte non négociable | Couvert |
+| Expliquer et justifier les recommandations | Justification par critère, avis d'ensemble du stratège, correction possible par le PO | Couvert |
+| Générer des user stories structurées selon les standards | Persona, besoin, bénéfice (« As a… I want… so that… »), INVEST, découpe en tranches | Couvert |
+| Proposer des critères d'acceptation | 3 à 6 scénarios Gherkin testables | Couvert |
+| Estimer la complexité relative | Effort de 1 à 5 (RICE) et story points en suite de Fibonacci | Couvert |
+| Livrables : code, démo, documentation, tests | Dépôt GitHub ; app en ligne et mode démo ; README et ce document ; 75 tests et règles de sécurité testées | Couvert |
+| Présentation en 15 minutes | Déroulé préparé : démo, architecture, défis et solutions | Préparé |
 
-### 7.2 Les écarts assumés
+### 7.2 Les choix libres, et pourquoi
 
-- **Le modèle.** Claude 3.5 Sonnet a été retiré de l'API en octobre 2025 : il ne peut plus être appelé. Sonnet 5 est son successeur dans la même gamme (voir D8).
-- **MoSCoW en plus de RICE.** La consigne demande RICE. MoSCoW est ajouté parce que RICE seul classe mal les obligations (le SSO du cas de démo). Ses seuils, relatifs au meilleur score, sont un choix de conception (voir D4).
+La consigne n'impose aucune technologie. Chaque choix est justifié en section 4 :
+- **Claude Sonnet 5** : le meilleur équilibre qualité, coût et latence, mesuré contre Haiku (D8, D18).
+- **Streamlit** : le plus rapide pour une application de données en Python, avec la logique séparée de l'interface (D10).
+- **RICE et MoSCoW ensemble** : la consigne cite les deux. RICE chiffre, MoSCoW tranche, et la contrainte non négociable corrige le point faible de RICE (D4).
 
 ### 7.3 Ce qui dépasse la consigne, et pourquoi
 
@@ -370,11 +392,12 @@ Dans l'app, ces ajouts sont signalés en pâle (onglets Connecteurs et Admin, r�
 
 ### 7.4 Ce qui reste à faire
 
-Rien de ce que demande la consigne connue ne manque. Les suites naturelles sont listées en limites connues (section 6) : mémoire du backlog existant, évaluation continue de la qualité, connecteurs actifs.
+- **Les tendances dans le temps** : le POC repère les récurrences dans un lot de retours, pas leur évolution d'une semaine à l'autre. Il faut pour cela un historique, que les connecteurs apporteraient (D20).
+- Les autres suites naturelles sont listées en limites connues (section 6) : mémoire du backlog existant, évaluation continue de la qualité, connecteurs actifs.
 
 ### 7.5 Verdict
 
-- **Le cœur de la consigne est entièrement couvert** : les trois modules fonctionnent de bout en bout, sur Claude et Streamlit.
+- **Les neuf fonctionnalités attendues sont couvertes**, les tendances dans le temps en partie : les trois domaines fonctionnent de bout en bout. Les quatre livrables sont prêts.
 - **Les ajouts ne concurrencent pas le sujet.** Soit ils servent directement le PO (tri, preuves, exports), soit ils rendent possible une démo ouverte et sûre (connexion, quotas, admin).
 - **Le risque est de paraître sur-dimensionné.** La parade : présenter d'abord les trois modules, puis l'infrastructure en une minute. La logique métier tient dans un seul fichier (`agents.py`), sans dépendance à l'interface.
 - **Ce qui manquerait pour un vrai usage** (connecteurs, mémoire du backlog existant, évaluation continue) est listé dans les limites connues (section 6) et relève de la feuille de route, pas du POC.

@@ -60,10 +60,20 @@ def repository() -> Repository:
 
 def sign_in(settings: Settings, email: str, password: str) -> Profile:
     """Authenticate and store the profile in the session."""
-    profile = auth_service(settings).sign_in(email, password)
+    service = auth_service(settings)
+    profile = service.sign_in(email, password)
     st.session_state["_profile"] = profile
     st.session_state.pop("_consumption", None)
+    # The guide opens once per user, not once per browser session.
+    st.session_state["onboarded"] = st.session_state.get("onboarded") or service.is_onboarded()
     return profile
+
+
+def mark_onboarded() -> None:
+    """Remember that the signed-in user saw the guide (best effort)."""
+    service = st.session_state.get("_auth_service")
+    if service is not None:
+        service.mark_onboarded()
 
 
 def sign_out() -> None:

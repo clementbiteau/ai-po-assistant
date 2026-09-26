@@ -11,6 +11,7 @@ Dernière mise à jour : 2026-09-26
 
 _Aucune tâche en cours._
 
+
 ---
 
 ## À faire — prochaine session
@@ -41,6 +42,10 @@ _Aucune tâche en cours._
 ## Terminé
 
 ### 2026-09-26
+- [x] **Doc et déroulé alignés sur la vraie consigne Thiga** : aucune contrainte technique (Streamlit et Claude sont des choix, plus « imposés »), MoSCoW explicitement demandé, adéquation revue sur les 9 fonctionnalités attendues et les 4 livrables (`HOWHY.md` sections 1 et 7). Seul point partiel : les tendances dans le temps. Déroulé refait au format réel : démo 8-10 min, architecture 3-4 min, défis 2-3 min, avec la correspondance aux critères du jury.
+- [x] **Orbit renommé en EwokAI** : cas de démo, contexte produit, guide, docs, et dans le run de démo enregistré de façon cohérente (14/14 verbatims toujours exacts).
+- [x] **Guide de démarrage une seule fois par utilisateur** : mémorisé dans les métadonnées du compte Supabase (en local, dans la base SQLite), testé.
+- [x] **Données synthétiques** : requête de suppression définitive fournie à Clément (optionnelle, elles sont déjà ignorées partout).
 - [x] **Données synthétiques retirées** de la console admin (générateur, bouton « Données de démo », interrupteur d'inclusion) : l'admin n'affiche que l'usage réel, et d'éventuelles anciennes lignes synthétiques restent ignorées partout.
 - [x] **Onglets ajoutés en pâle** (Connecteurs, Admin) avec la légende « En pâle : ajouts au-delà de la consigne », ainsi que le réglage des modèles réservé à l'admin. Les cinq raisons de ces ajouts sont dans `HOWHY.md` (7.3).
 - [x] **Fin des erreurs après déploiement** (`ImportError` qui exigeait « Reboot app ») : `reload_guard.py` recharge les modules modifiés sans redémarrer. Reproduit puis corrigé sur une copie locale, et couvert par un test.

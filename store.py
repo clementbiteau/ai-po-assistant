@@ -21,7 +21,7 @@ import secrets
 import sqlite3
 import uuid
 from collections.abc import Iterator, Sequence
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -526,6 +526,9 @@ class SQLiteRepository:
         self._memory = sqlite3.connect(":memory:", check_same_thread=False) if str(path) == ":memory:" else None
         with self._conn() as con:
             con.executescript(_SQLITE_SCHEMA)
+            # Local databases created before the onboarding flag existed get the column; others already have it.
+            with suppress(sqlite3.OperationalError):
+                con.execute("alter table profiles add column onboarded integer not null default 0")
 
     @contextmanager
     def _conn(self) -> Iterator[sqlite3.Connection]:
@@ -552,11 +555,23 @@ class SQLiteRepository:
             user_id = str(uuid.uuid4())
             q = quota if quota is not None else (Quota() if role == "admin" else DEFAULT_MEMBER_QUOTA)
             con.execute(
-                "insert into profiles values (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "insert into profiles (id, email, role, password_hash, max_eur_per_request, daily_eur_limit, "
+                "weekly_eur_limit, monthly_eur_limit, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (user_id, email.lower(), role, hash_password(password), *_quota_row(q).values(),
                  datetime.now(timezone.utc).isoformat()),
             )  # fmt: skip
             return user_id
+
+    def is_onboarded(self, user_id: str) -> bool:
+        """Whether this local user already went through the onboarding."""
+        with self._conn() as con:
+            row = con.execute("select onboarded from profiles where id = ?", (user_id,)).fetchone()
+        return bool(row and row["onboarded"])
+
+    def mark_onboarded(self, user_id: str) -> None:
+        """Remember that this local user went through the onboarding."""
+        with self._conn() as con:
+            con.execute("update profiles set onboarded = 1 where id = ?", (user_id,))
 
     def authenticate(self, email: str, password: str) -> Profile | None:
         """Return the profile when the credentials are valid."""

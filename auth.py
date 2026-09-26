@@ -49,6 +49,13 @@ class AuthService(Protocol):
 
     def sign_in(self, email: str, password: str) -> Profile: ...
     def sign_out(self) -> None: ...
+    def is_onboarded(self) -> bool:
+        """Whether the signed-in user already went through the onboarding (any device)."""
+        ...
+
+    def mark_onboarded(self) -> None:
+        """Remember it for the next sign-ins (best effort: never raises)."""
+        ...
 
 
 def _validate_input(email: str, password: str) -> tuple[str, str]:
@@ -71,6 +78,7 @@ class SupabaseAuthService:
 
         self.client = create_client(url, key, options=SyncClientOptions(auto_refresh_token=True))
         self.repository: Repository = SupabaseRepository(self.client)
+        self._metadata: dict = {}
 
     def sign_in(self, email: str, password: str) -> Profile:
         """Authenticate and load the user's profile (role + quotas).
@@ -99,11 +107,24 @@ class SupabaseAuthService:
 
         if response.user is None:
             raise AuthError("Email ou mot de passe incorrect.")
+        self._metadata = dict(response.user.user_metadata or {})
         try:
             return self.repository.get_profile(response.user.id)
         except StoreError as exc:
             self.sign_out()
             raise AuthError(exc.user_message) from exc
+
+    def is_onboarded(self) -> bool:
+        """Read from the user's own metadata in Supabase Auth, set at the first onboarding."""
+        return bool(self._metadata.get("onboarded"))
+
+    def mark_onboarded(self) -> None:
+        """Store the flag in the user's metadata: users may update their own, no table or policy needed."""
+        try:
+            self.client.auth.update_user({"data": {"onboarded": True}})
+            self._metadata["onboarded"] = True
+        except Exception:  # noqa: BLE001 — worst case the guide shows again next time
+            logger.warning("Could not store the onboarding flag", exc_info=True)
 
     def sign_out(self) -> None:
         """Revoke the session (best effort)."""
@@ -130,6 +151,7 @@ class LocalAuthService:
         self.repository: SQLiteRepository = SQLiteRepository(db_path)
         self.repository.ensure_user(self.ADMIN_EMAIL, dev_password, role="admin")
         self.repository.ensure_user(self.MEMBER_EMAIL, dev_password, role="member")
+        self._user_id: str | None = None
 
     def sign_in(self, email: str, password: str) -> Profile:
         """Check credentials against the local SQLite accounts."""
@@ -138,7 +160,17 @@ class LocalAuthService:
         if profile is None:
             time.sleep(0.5)  # slow down brute force
             raise AuthError("Email ou mot de passe incorrect.")
+        self._user_id = profile.id
         return profile
+
+    def is_onboarded(self) -> bool:
+        """Stored on the local profile."""
+        return bool(self._user_id and self.repository.is_onboarded(self._user_id))
+
+    def mark_onboarded(self) -> None:
+        """Stored on the local profile."""
+        if self._user_id:
+            self.repository.mark_onboarded(self._user_id)
 
     def sign_out(self) -> None:
         """Nothing to revoke locally."""

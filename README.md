@@ -3,7 +3,7 @@
 > **Du feedback client brut au backlog Jira priorisé — en une minute.**
 > Trois agents Claude transforment un mélange d'emails, de tickets Zendesk, de verbatims NPS et de notes d'appel en **priorités RICE justifiées** et en **user stories Gherkin** prêtes pour le sprint.
 
-POC réalisé pour **Thiga**. Cas d'usage : une startup SaaS qui édite une plateforme de gestion de projets (« Orbit », fictive), dont le Product Owner est submergé de retours clients.
+POC réalisé pour **Thiga**. Cas d'usage : une startup SaaS qui édite une plateforme de gestion de projets (« EwokAI », fictive), dont le Product Owner est submergé de retours clients.
 
 L'architecture et **les raisons de chaque décision** sont détaillées dans **[HOWHY.md](HOWHY.md)**, qui contient aussi un glossaire.
 
@@ -95,7 +95,7 @@ Le MoSCoW est relatif au meilleur score du lot (Must ≥ 60 %, Should ≥ 30 %, 
 - Les feedbacks sont traités comme des **données** (protection contre l'injection de prompt), et toute sortie LLM est échappée avant le rendu HTML.
 
 **7. Modèle et raisonnement.**
-Claude 3.5 Sonnet a été retiré de l'API en octobre 2025. Son successeur direct, **Claude Sonnet 5**, est utilisé avec **adaptive thinking** et un niveau d'`effort` propre à chaque agent : `high` pour le stratège, dont les scores pilotent tout le reste, et `medium` pour l'extraction et la rédaction. Le modèle se change dans `ANTHROPIC_MODEL`.
+La consigne laisse le choix du modèle : **Claude Sonnet 5** est utilisé avec **adaptive thinking** et un niveau d'`effort` propre à chaque agent : `high` pour le stratège, dont les scores pilotent tout le reste, et `medium` pour l'extraction et la rédaction. Le modèle se change dans `ANTHROPIC_MODEL`.
 
 **8. Observabilité.**
 Tokens, latence et coût estimé par agent sont affichés dans l'onglet Export.

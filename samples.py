@@ -29,7 +29,7 @@ Date : lundi 8 septembre, 08:12
 Bonjour,
 
 Je me permets de vous écrire directement car la situation devient intenable. Mes 180 \
-collaborateurs reçoivent en moyenne 60 à 80 notifications Orbit par jour. Résultat : \
+collaborateurs reçoivent en moyenne 60 à 80 notifications EwokAI par jour. Résultat : \
 plus personne ne les lit, et la semaine dernière nous avons raté une échéance client \
 parce que l'alerte de retard était noyée au milieu de 40 mails "X a commenté une tâche".
 
@@ -53,7 +53,7 @@ Idem pour mes collègues. C'est vraiment pénible vu la quantité qu'on reçoit 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [NPS — Score 4/10] Utilisateur : chef de projet, compte Mid-Market (Kraft & Lemoine)
-"Je passe la première heure de ma journée à trier les notifs Orbit. Mettez un résumé \
+"Je passe la première heure de ma journée à trier les notifs EwokAI. Mettez un résumé \
 quotidien svp, et laissez-nous couper les notifs d'un projet quand on n'est plus dessus."
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -70,7 +70,7 @@ Hi team,
 
 Our IT security review is scheduled for Q3. Procurement has made it clear: without SSO \
 through Azure AD (SAML) and automatic deprovisioning of leavers, they will not sign the \
-renewal for our 450 seats. We currently manage Orbit accounts manually and last month a \
+renewal for our 450 seats. We currently manage EwokAI accounts manually and last month a \
 former contractor still had access for three weeks — that is a finding for our auditors.
 
 Can you share your roadmap on this?
@@ -81,7 +81,7 @@ Lars Eriksen — IT Manager, Nordvik Energy
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [SLACK #cs-feedback] Julie (Customer Success Manager) — mardi 14:32
 Petit récap de ma semaine : 3 comptes Mid-Market (Logitrans, Kraft & Lemoine, Hexa \
-Conseil) m'ont demandé de recevoir les alertes Orbit directement dans Slack / Teams \
+Conseil) m'ont demandé de recevoir les alertes EwokAI directement dans Slack / Teams \
 plutôt que par email. Hexa dit que "l'email c'est là où les notifs vont mourir". \
 Ça revient TRÈS souvent dans mes QBR.
 
@@ -168,7 +168,7 @@ de cocher une tâche ou de prendre une photo pour le suivi. On repasse au papier
 [EMAIL] De : Claire Dumont <c.dumont@batipro-ouest.fr>
 Objet : Mode hors ligne — renouvellement
 Nos 220 compagnons travaillent sur des chantiers en zone blanche. Sans mode hors ligne \
-avec synchronisation au retour du réseau, nous ne pourrons pas généraliser Orbit au-delà \
+avec synchronisation au retour du réseau, nous ne pourrons pas généraliser EwokAI au-delà \
 des bureaux d'études. Un concurrent spécialisé BTP nous a fait une offre.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

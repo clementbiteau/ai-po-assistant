@@ -1,6 +1,6 @@
 {
   "context": {
-    "product_name": "Orbit",
+    "product_name": "EwokAI",
     "product_description": "Plateforme SaaS B2B de gestion de projets et de planification d'équipes, éditée par une startup (clients PME et ETI, 50 à 2 000 salariés).",
     "active_users": 12000,
     "strategic_goal": "Réduire le churn des comptes Mid-Market de 20 % d'ici la fin de l'année.",
@@ -20,7 +20,7 @@
     "themes": [
       {
         "name": "Gestion des notifications",
-        "description": "Les utilisateurs sont submergés par le volume et le manque de contrôle sur les notifications Orbit, ce qui leur fait manquer des informations importantes.",
+        "description": "Les utilisateurs sont submergés par le volume et le manque de contrôle sur les notifications EwokAI, ce qui leur fait manquer des informations importantes.",
         "sentiment": "critical",
         "mention_count": 6
       },
@@ -75,9 +75,9 @@
       },
       {
         "id": "F2",
-        "title": "Notifications Orbit dans Slack/Teams",
-        "problem_statement": "Les équipes utilisent Slack/Teams comme outils principaux et considèrent l'email comme un canal où les notifications sont ignorées, ce qui réduit la réactivité aux alertes Orbit.",
-        "desired_outcome": "Les alertes Orbit peuvent être envoyées directement dans Slack ou Teams plutôt que par email, augmentant leur visibilité et leur taux de lecture.",
+        "title": "Notifications EwokAI dans Slack/Teams",
+        "problem_statement": "Les équipes utilisent Slack/Teams comme outils principaux et considèrent l'email comme un canal où les notifications sont ignorées, ce qui réduit la réactivité aux alertes EwokAI.",
+        "desired_outcome": "Les alertes EwokAI peuvent être envoyées directement dans Slack ou Teams plutôt que par email, augmentant leur visibilité et leur taux de lecture.",
         "user_segments": [
           "Customer Success Manager (retours clients)",
           "Comptes Mid-Market"
@@ -85,7 +85,7 @@
         "theme": "Gestion des notifications",
         "mention_count": 3,
         "evidence_quotes": [
-          "3 comptes Mid-Market (Logitrans, Kraft & Lemoine, Hexa Conseil) m'ont demandé de recevoir les alertes Orbit directement dans Slack / Teams plutôt que par email.",
+          "3 comptes Mid-Market (Logitrans, Kraft & Lemoine, Hexa Conseil) m'ont demandé de recevoir les alertes EwokAI directement dans Slack / Teams plutôt que par email.",
           "Hexa dit que \"l'email c'est là où les notifs vont mourir\"."
         ],
         "sources": [
@@ -95,8 +95,8 @@
       {
         "id": "F3",
         "title": "Vue de la charge de travail par personne",
-        "problem_statement": "Les managers et directions n'ont pas de vue consolidée de la charge de travail de chaque collaborateur dans Orbit, et doivent recourir à des outils externes (Excel) ou perdent des deals faute de cette fonctionnalité.",
-        "desired_outcome": "Un manager peut visualiser directement dans Orbit la charge de travail de chaque personne, semaine par semaine, pour identifier les surcharges et arbitrer les ressources sans outil externe.",
+        "problem_statement": "Les managers et directions n'ont pas de vue consolidée de la charge de travail de chaque collaborateur dans EwokAI, et doivent recourir à des outils externes (Excel) ou perdent des deals faute de cette fonctionnalité.",
+        "desired_outcome": "Un manager peut visualiser directement dans EwokAI la charge de travail de chaque personne, semaine par semaine, pour identifier les surcharges et arbitrer les ressources sans outil externe.",
         "user_segments": [
           "Directrice PMO",
           "DAF (prospect)"
@@ -115,7 +115,7 @@
       {
         "id": "F4",
         "title": "SSO Azure AD et déprovisioning automatique",
-        "problem_statement": "Les comptes utilisateurs Orbit sont gérés manuellement, ce qui expose l'entreprise à des risques de sécurité (accès non révoqués) et bloque la validation de la revue de sécurité IT nécessaire au renouvellement.",
+        "problem_statement": "Les comptes utilisateurs EwokAI sont gérés manuellement, ce qui expose l'entreprise à des risques de sécurité (accès non révoqués) et bloque la validation de la revue de sécurité IT nécessaire au renouvellement.",
         "desired_outcome": "L'entreprise peut activer le SSO via Azure AD (SAML) et automatiser le déprovisionnement des comptes des collaborateurs sortants, satisfaisant ainsi les exigences d'audit de sécurité.",
         "user_segments": [
           "IT Manager"
@@ -200,7 +200,7 @@
       "assessment": {
         "feature_id": "F1",
         "reach_percent": 60,
-        "reach_rationale": "Le thème 'Gestion des notifications' est critique avec 6 mentions et touche des segments transverses (Head of Operations, chefs de projet, CSM) qui utilisent Orbit quotidiennement ; on estime qu'une majorité des utilisateurs actifs reçoit des notifications chaque semaine.",
+        "reach_rationale": "Le thème 'Gestion des notifications' est critique avec 6 mentions et touche des segments transverses (Head of Operations, chefs de projet, CSM) qui utilisent EwokAI quotidiennement ; on estime qu'une majorité des utilisateurs actifs reçoit des notifications chaque semaine.",
         "impact": 4,
         "impact_rationale": "Niveau 4 (Élevé) : le résumé quotidien et le filtrage font gagner du temps chaque jour et évitent de manquer des alertes critiques, un irritant répété dans 3 sources différentes.",
         "confidence": 80,
@@ -219,8 +219,8 @@
       "feature": {
         "id": "F3",
         "title": "Vue de la charge de travail par personne",
-        "problem_statement": "Les managers et directions n'ont pas de vue consolidée de la charge de travail de chaque collaborateur dans Orbit, et doivent recourir à des outils externes (Excel) ou perdent des deals faute de cette fonctionnalité.",
-        "desired_outcome": "Un manager peut visualiser directement dans Orbit la charge de travail de chaque personne, semaine par semaine, pour identifier les surcharges et arbitrer les ressources sans outil externe.",
+        "problem_statement": "Les managers et directions n'ont pas de vue consolidée de la charge de travail de chaque collaborateur dans EwokAI, et doivent recourir à des outils externes (Excel) ou perdent des deals faute de cette fonctionnalité.",
+        "desired_outcome": "Un manager peut visualiser directement dans EwokAI la charge de travail de chaque personne, semaine par semaine, pour identifier les surcharges et arbitrer les ressources sans outil externe.",
         "user_segments": [
           "Directrice PMO",
           "DAF (prospect)"
@@ -257,9 +257,9 @@
     {
       "feature": {
         "id": "F2",
-        "title": "Notifications Orbit dans Slack/Teams",
-        "problem_statement": "Les équipes utilisent Slack/Teams comme outils principaux et considèrent l'email comme un canal où les notifications sont ignorées, ce qui réduit la réactivité aux alertes Orbit.",
-        "desired_outcome": "Les alertes Orbit peuvent être envoyées directement dans Slack ou Teams plutôt que par email, augmentant leur visibilité et leur taux de lecture.",
+        "title": "Notifications EwokAI dans Slack/Teams",
+        "problem_statement": "Les équipes utilisent Slack/Teams comme outils principaux et considèrent l'email comme un canal où les notifications sont ignorées, ce qui réduit la réactivité aux alertes EwokAI.",
+        "desired_outcome": "Les alertes EwokAI peuvent être envoyées directement dans Slack ou Teams plutôt que par email, augmentant leur visibilité et leur taux de lecture.",
         "user_segments": [
           "Customer Success Manager (retours clients)",
           "Comptes Mid-Market"
@@ -267,7 +267,7 @@
         "theme": "Gestion des notifications",
         "mention_count": 3,
         "evidence_quotes": [
-          "3 comptes Mid-Market (Logitrans, Kraft & Lemoine, Hexa Conseil) m'ont demandé de recevoir les alertes Orbit directement dans Slack / Teams plutôt que par email.",
+          "3 comptes Mid-Market (Logitrans, Kraft & Lemoine, Hexa Conseil) m'ont demandé de recevoir les alertes EwokAI directement dans Slack / Teams plutôt que par email.",
           "Hexa dit que \"l'email c'est là où les notifs vont mourir\"."
         ],
         "sources": [
@@ -296,7 +296,7 @@
       "feature": {
         "id": "F4",
         "title": "SSO Azure AD et déprovisioning automatique",
-        "problem_statement": "Les comptes utilisateurs Orbit sont gérés manuellement, ce qui expose l'entreprise à des risques de sécurité (accès non révoqués) et bloque la validation de la revue de sécurité IT nécessaire au renouvellement.",
+        "problem_statement": "Les comptes utilisateurs EwokAI sont gérés manuellement, ce qui expose l'entreprise à des risques de sécurité (accès non révoqués) et bloque la validation de la revue de sécurité IT nécessaire au renouvellement.",
         "desired_outcome": "L'entreprise peut activer le SSO via Azure AD (SAML) et automatiser le déprovisionnement des comptes des collaborateurs sortants, satisfaisant ainsi les exigences d'audit de sécurité.",
         "user_segments": [
           "IT Manager"
@@ -371,9 +371,9 @@
       "feature_id": "F3",
       "jira_summary": "Afficher la charge de travail hebdomadaire par collaborateur",
       "persona": "Directrice PMO",
-      "goal": "visualiser directement dans Orbit la charge de travail de chaque collaborateur de mon équipe, semaine par semaine",
+      "goal": "visualiser directement dans EwokAI la charge de travail de chaque collaborateur de mon équipe, semaine par semaine",
       "benefit": "identifier rapidement les surcharges et arbitrer les ressources sans avoir à maintenir un fichier Excel externe",
-      "context": "Une directrice PMO cliente (Groupe Aldane) maintient aujourd'hui un fichier Excel parallèle pour suivre la charge de ses équipes, faute de vue native dans Orbit. Un deal a été perdu chez Ventura Group car le concurrent propose une vue « capacité équipe » permettant d'arbitrer les recrutements, fonctionnalité absente d'Orbit. Cette vue est jugée clé pour réduire le churn Mid-Market ce trimestre.",
+      "context": "Une directrice PMO cliente (Groupe Aldane) maintient aujourd'hui un fichier Excel parallèle pour suivre la charge de ses équipes, faute de vue native dans EwokAI. Un deal a été perdu chez Ventura Group car le concurrent propose une vue « capacité équipe » permettant d'arbitrer les recrutements, fonctionnalité absente d'EwokAI. Cette vue est jugée clé pour réduire le churn Mid-Market ce trimestre.",
       "acceptance_criteria": [
         {
           "title": "Consultation de la charge hebdomadaire de l'équipe",
@@ -459,7 +459,7 @@
         "Historique de charge sur des périodes passées au-delà de 4 semaines"
       ],
       "dependencies": [
-        "Modèle de données des affectations et capacités hebdomadaires par collaborateur déjà disponible dans Orbit",
+        "Modèle de données des affectations et capacités hebdomadaires par collaborateur déjà disponible dans EwokAI",
         "Système de permissions/rôles (manager vs contributeur) existant"
       ],
       "open_questions": [
@@ -467,27 +467,27 @@
         "Faut-il inclure les absences (congés, arrêts) dans le calcul de la charge disponible ?",
         "Le DAF doit-il avoir accès à cette vue au niveau de toute l'organisation, au-delà de son équipe directe ?"
       ],
-      "split_suggestion": "Slice 2 : ajout de l'export CSV/Excel de la vue pour partage hors Orbit. Slice 3 : vue agrégée multi-équipes avec alertes automatiques de surcharge par email pour les directions (DAF, PMO)."
+      "split_suggestion": "Slice 2 : ajout de l'export CSV/Excel de la vue pour partage hors EwokAI. Slice 3 : vue agrégée multi-équipes avec alertes automatiques de surcharge par email pour les directions (DAF, PMO)."
     },
     "F4": {
       "feature_id": "F4",
-      "jira_summary": "Activer la connexion SSO SAML via Azure AD pour Orbit",
-      "persona": "IT Manager d'une entreprise Mid-Market cliente d'Orbit",
-      "goal": "configurer l'authentification unique (SSO) de l'espace de travail Orbit via Azure AD (SAML 2.0)",
+      "jira_summary": "Activer la connexion SSO SAML via Azure AD pour EwokAI",
+      "persona": "IT Manager d'une entreprise Mid-Market cliente d'EwokAI",
+      "goal": "configurer l'authentification unique (SSO) de l'espace de travail EwokAI via Azure AD (SAML 2.0)",
       "benefit": "sécuriser les accès des collaborateurs et satisfaire les exigences de l'audit de sécurité IT conditionnant le renouvellement du contrat de 450 sièges",
       "context": "Nordvik Energy, client Mid-Market de 450 sièges, conditionne le renouvellement de son contrat à la mise en place du SSO Azure AD et refuse de signer sans cette garantie de sécurité. La gestion manuelle actuelle des comptes expose l'entreprise à des risques d'audit (accès non révoqués). Cette story couvre la première brique indispensable : permettre à l'IT Manager de configurer et activer le SSO SAML, préalable technique au déprovisionnement automatique qui sera traité dans une story ultérieure.",
       "acceptance_criteria": [
         {
           "title": "Configuration réussie du SSO Azure AD par l'IT Manager",
           "given": [
-            "l'IT Manager est connecté à la console d'administration Orbit avec le rôle 'Administrateur'",
-            "l'entreprise dispose d'une application d'entreprise Azure AD configurée avec les métadonnées SAML de Orbit"
+            "l'IT Manager est connecté à la console d'administration EwokAI avec le rôle 'Administrateur'",
+            "l'entreprise dispose d'une application d'entreprise Azure AD configurée avec les métadonnées SAML de EwokAI"
           ],
           "when": [
             "l'IT Manager saisit l'URL des métadonnées Azure AD, le certificat X.509 et l'Entity ID dans le formulaire de configuration SSO puis clique sur 'Activer le SSO'"
           ],
           "then": [
-            "Orbit valide la configuration en moins de 5 secondes et affiche le statut 'SSO actif'",
+            "EwokAI valide la configuration en moins de 5 secondes et affiche le statut 'SSO actif'",
             "un log d'audit horodaté enregistre l'activation avec l'identifiant de l'IT Manager",
             "tous les nouveaux utilisateurs du domaine 'nordvik-energy.com' sont redirigés vers Azure AD lors de leur prochaine connexion"
           ]
@@ -499,11 +499,11 @@
             "Julie Marchand, chef de projet, possède un compte Azure AD actif avec l'email julie.marchand@nordvik-energy.com"
           ],
           "when": [
-            "Julie Marchand clique sur 'Se connecter avec Azure AD' depuis la page de login Orbit et s'authentifie via son compte Microsoft"
+            "Julie Marchand clique sur 'Se connecter avec Azure AD' depuis la page de login EwokAI et s'authentifie via son compte Microsoft"
           ],
           "then": [
-            "Julie Marchand est redirigée vers son tableau de bord Orbit en moins de 3 secondes sans ressaisir d'identifiants Orbit",
-            "un compte Orbit est automatiquement créé ou associé si aucun compte n'existait déjà, avec le rôle par défaut 'Membre'"
+            "Julie Marchand est redirigée vers son tableau de bord EwokAI en moins de 3 secondes sans ressaisir d'identifiants EwokAI",
+            "un compte EwokAI est automatiquement créé ou associé si aucun compte n'existait déjà, avec le rôle par défaut 'Membre'"
           ]
         },
         {
@@ -513,11 +513,11 @@
             "l'option 'Provisionnement automatique à la première connexion' est désactivée dans les paramètres SSO"
           ],
           "when": [
-            "un collaborateur externe non enregistré dans Orbit tente de se connecter via Azure AD"
+            "un collaborateur externe non enregistré dans EwokAI tente de se connecter via Azure AD"
           ],
           "then": [
-            "Orbit affiche le message 'Accès refusé : compte non autorisé, contactez votre administrateur'",
-            "aucun compte Orbit n'est créé",
+            "EwokAI affiche le message 'Accès refusé : compte non autorisé, contactez votre administrateur'",
+            "aucun compte EwokAI n'est créé",
             "une tentative est journalisée dans le log d'audit avec l'email et l'horodatage"
           ]
         },
@@ -530,7 +530,7 @@
             "l'IT Manager soumet un certificat X.509 expiré ou une URL de métadonnées invalide"
           ],
           "then": [
-            "Orbit rejette la configuration et affiche le message 'Certificat invalide ou expiré, veuillez vérifier vos métadonnées Azure AD'",
+            "EwokAI rejette la configuration et affiche le message 'Certificat invalide ou expiré, veuillez vérifier vos métadonnées Azure AD'",
             "le statut SSO reste 'Inactif'",
             "aucune modification n'est appliquée à la configuration existante"
           ]
@@ -542,10 +542,10 @@
             "le service Azure AD de l'entreprise est indisponible (timeout supérieur à 10 secondes)"
           ],
           "when": [
-            "un administrateur Orbit ayant conservé un mot de passe local tente de se connecter via l'option 'Connexion de secours'"
+            "un administrateur EwokAI ayant conservé un mot de passe local tente de se connecter via l'option 'Connexion de secours'"
           ],
           "then": [
-            "Orbit authentifie l'administrateur via son mot de passe local en moins de 3 secondes",
+            "EwokAI authentifie l'administrateur via son mot de passe local en moins de 3 secondes",
             "un événement d'audit 'Connexion de secours utilisée' est enregistré avec l'identifiant de l'administrateur"
           ]
         }
@@ -559,21 +559,21 @@
       ],
       "out_of_scope": [
         "Déprovisionnement automatique des comptes sortants (traité dans une story dédiée)",
-        "Synchronisation des groupes et rôles Azure AD vers les rôles Orbit",
+        "Synchronisation des groupes et rôles Azure AD vers les rôles EwokAI",
         "Support d'autres fournisseurs d'identité (Okta, Google Workspace)",
         "Interface de mapping avancé des attributs SAML personnalisés"
       ],
       "dependencies": [
-        "Disponibilité de l'API d'administration Orbit pour la gestion des configurations SSO",
+        "Disponibilité de l'API d'administration EwokAI pour la gestion des configurations SSO",
         "Accès test à un tenant Azure AD de Nordvik Energy ou d'un environnement de démonstration équivalent",
         "Bibliothèque ou service SAML 2.0 validé par l'équipe sécurité"
       ],
       "open_questions": [
         "Le provisionnement automatique à la première connexion (JIT provisioning) doit-il être activé par défaut ou configurable ?",
-        "Quel rôle Orbit par défaut attribuer aux utilisateurs provisionnés automatiquement via SSO ?",
+        "Quel rôle EwokAI par défaut attribuer aux utilisateurs provisionnés automatiquement via SSO ?",
         "Faut-il conserver l'authentification par mot de passe classique pour tous les utilisateurs ou uniquement pour les administrateurs en cas de panne ?"
       ],
-      "split_suggestion": "Slice 2 : Déprovisionnement automatique des comptes sortants via synchronisation SCIM ou webhook Azure AD (détection de désactivation/suppression et révocation immédiate des accès Orbit, avec log d'audit dédié). Slice 3 : Mapping des groupes Azure AD vers les rôles et permissions Orbit pour automatiser la gestion des droits à l'échelle de l'organisation."
+      "split_suggestion": "Slice 2 : Déprovisionnement automatique des comptes sortants via synchronisation SCIM ou webhook Azure AD (détection de désactivation/suppression et révocation immédiate des accès EwokAI, avec log d'audit dédié). Slice 3 : Mapping des groupes Azure AD vers les rôles et permissions EwokAI pour automatiser la gestion des droits à l'échelle de l'organisation."
     },
     "F1": {
       "feature_id": "F1",
@@ -722,7 +722,7 @@
         "input_tokens": 4843,
         "output_tokens": 3112,
         "thinking": "",
-        "output_excerpt": "{\"executive_summary\":\"Les clients Mid-Market, dont plusieurs comptes stratégiques proches du renouvellement, alertent sur une surcharge de notifications qui masque les alertes critiques et fait perdre du temps quotidien. Deux comptes Enterprise/Mid-Market conditionnent leur renouvellement à des besoins précis : SSO/déprovisioning automatique pour la sécurité, et une vue de charge de travail par personne, ce dernier point ayant déjà coûté un deal de 300 sièges. Un bug de duplication de notifications post-MAJ et des frictions UX/mobile s'ajoutent au risque de churn.\",\"sources_count\":10,\"channels\":[\"Email\",\"Zendesk\",\"NPS\",\"Slack\",\"App Store\",\"Note d'appel Sales\"],\"themes\":[{\"name\":\"Gestion des notifications\",\"description\":\"Les utilisateurs sont submergés par le volume et le manque de contrôle sur les notifications Orbit, ce qui leur fait manquer des informations importantes.\",\"sentiment\":\"critical\",\"mention_count\":6},{\"name\":\"Visibilité de la charge de travail\",\"description\":\"Les managers et directions manquent d'une vue consolidée de la charge de travail par personne pour arbitrer les ressources.\",\"sentiment\":\"negative\",\"mention_count\":2},{\"name\":\"Sécurité et gouvernance des accès\",\"description\":\"Les clients Enterprise exigent des mécanismes d'authentification et de gestion des accès conformes aux exigences de sécurité IT.\",\"sentiment\":\"critical\",\"mention_count\":1},{\"name\":\"Reporting et exports\",\"description\":\"Les utilisateurs souhaitent automatiser la production de rapports et peinent à trouver les fonctions d'export existantes.\",\"sentiment\":\"neutral\",\"mention_count\":2},{\"name\":\"Qualité et ergonomie mobile\",\"description\":\"Des bugs et manques ergonomiques sur l'application mobile et l'interface web nuisent à l'expérience utilisateur.\",\"sentiment\":\"negative\",\"mention_count\":2}],\"feature_requests\":[{\"id\":\"F1\",\"title\":\"Résumé quotidien et filtrage des notifications\",\"problem_statement\":\"Les utilisateurs reçoivent un flux ininterrompu de notifications par email, sans poss",
+        "output_excerpt": "{\"executive_summary\":\"Les clients Mid-Market, dont plusieurs comptes stratégiques proches du renouvellement, alertent sur une surcharge de notifications qui masque les alertes critiques et fait perdre du temps quotidien. Deux comptes Enterprise/Mid-Market conditionnent leur renouvellement à des besoins précis : SSO/déprovisioning automatique pour la sécurité, et une vue de charge de travail par personne, ce dernier point ayant déjà coûté un deal de 300 sièges. Un bug de duplication de notifications post-MAJ et des frictions UX/mobile s'ajoutent au risque de churn.\",\"sources_count\":10,\"channels\":[\"Email\",\"Zendesk\",\"NPS\",\"Slack\",\"App Store\",\"Note d'appel Sales\"],\"themes\":[{\"name\":\"Gestion des notifications\",\"description\":\"Les utilisateurs sont submergés par le volume et le manque de contrôle sur les notifications EwokAI, ce qui leur fait manquer des informations importantes.\",\"sentiment\":\"critical\",\"mention_count\":6},{\"name\":\"Visibilité de la charge de travail\",\"description\":\"Les managers et directions manquent d'une vue consolidée de la charge de travail par personne pour arbitrer les ressources.\",\"sentiment\":\"negative\",\"mention_count\":2},{\"name\":\"Sécurité et gouvernance des accès\",\"description\":\"Les clients Enterprise exigent des mécanismes d'authentification et de gestion des accès conformes aux exigences de sécurité IT.\",\"sentiment\":\"critical\",\"mention_count\":1},{\"name\":\"Reporting et exports\",\"description\":\"Les utilisateurs souhaitent automatiser la production de rapports et peinent à trouver les fonctions d'export existantes.\",\"sentiment\":\"neutral\",\"mention_count\":2},{\"name\":\"Qualité et ergonomie mobile\",\"description\":\"Des bugs et manques ergonomiques sur l'application mobile et l'interface web nuisent à l'expérience utilisateur.\",\"sentiment\":\"negative\",\"mention_count\":2}],\"feature_requests\":[{\"id\":\"F1\",\"title\":\"Résumé quotidien et filtrage des notifications\",\"problem_statement\":\"Les utilisateurs reçoivent un flux ininterrompu de notifications par email, sans poss",
         "error": null
       },
       {
@@ -737,7 +737,7 @@
         "input_tokens": 4955,
         "output_tokens": 4973,
         "thinking": "I'm evaluating the first feature, daily digest and notification filtering, looking at how critical it is, how many sources mention it (email, NPS feedback, App Store review), and which user segments it touches—Head of Operations, project managers, CSMs—suggesting it affects a broad, active portion of users.\n\nI'll estimate reach around 60% given the notification issue is generic and daily-frequency, likely touching most active users across the quarter. For impact, I'm leaning toward rating it 4 (High) since it causes missed critical alerts and workflow friction across multiple segments, even if it's not an explicit churn driver. For confidence, I'm noting the three distinct sources supporting this feature.\n\nEffort-wise, building a daily summary email plus granular per-project, per-event notification preferences requires new settings UI and backend logic - a new preferences entity, so I'd size this as moderate, roughly 2-3 weeks, giving effort a rating of 3.\n\nNow looking at the Slack/Teams notification integration feature, I see it's tied to three named Mid-Market accounts and directly connects to the Mid-Market churn goal, which makes it notable despite coming from a single source. I'm estimating its reach as smaller, maybe 20-25% of active users, since it's specific to those relying on Slack/Teams as their primary tool.\n\nFor impact, I'm rating it a 5 since it's directly linked to churn risk for a strategic segment, with an explicit quote showing dissatisfaction with email notifications getting lost. On confidence, I'm weighing whether the single-source nature (one Slack feedback channel, though covering three named accounts) should count as 50 or higher, and I'm settling on 50 since it's still one aggregated source rather than independent verification. For effort, I'm now considering what it takes to integrate Slack/Teams APIs - webhook setup, OAuth, and event mapping - which spans multiple systems.\n\nGiven the third-party integration complexity, I'm setting effort to 4 (large, 1-2 months). This feature isn't mandatory since it's not tied to legal or security requirements, even though it affects churn.\n\nMoving to the next feature - workload visibility per person - I see it mentioned twice, from a PMO director in an NPS survey and a DAF prospect in a lost deal note. This affects mainly managers, so I'm estimating reach around 15%. For impact, I'm leaning toward a 4 since it unlocks a key resource-arbitration workflow and one mention ties it to a lost deal, though I'm weighing whether it meets the threshold for a 5 given the explicit deal-loss connection.\n\nThe Ventura Group deal was explicitly lost because the competitor offered this capacity-planning view, letting the DAF arbitrate hiring decisions - that's a clear, already-realized business loss, so I'm bumping impact to 5. For confidence, I have two converging sources (NPS plus the lost deal note) with one explicitly quantified through a lost deal, which puts me at 80. For effort, this requires building a new weekly per-person capacity view with fresh data aggregation across tasks and assignments - a moderate-complexity dashboard, so I'll rate it 3. This isn't mandatory either.\n\nNow looking at SSO with Azure AD and automatic deprovisioning, I have just one source - an IT manager's email - but I'm considering whether this warrants special treatment given its compliance angle.\n\nSince the SSO requirement is tied directly to the renewal of 450 seats for Nordvik Energy, with an explicit contractual/security threat of non-renewal and an audit finding referenced, this is clearly a mandatory security/compliance constraint. Reach is narrow since it only affects one account (roughly 3.75% of the 12,000 MAU base), though broader enterprise demand for SSO likely exists beyond this case - regardless, mandatory status overrides the reach calculation for prioritization. Impact is a 5 since it removes a direct blocker to renewal with explicit churn risk. Confidence lands at 80 since it's a single source but strongly quantified (450 seats explicitly on the line). Effort is a 4, given this requires substantial engineering work - SAML/Azure AD integration plus automatic deprovisioning is security-sensitive and non-trivial.\n\nFor the automatic PDF progress report request (F5), I'm seeing this from a single Zendesk ticket in a niche \"Responsable de cabinet\" segment, so reach is low around 5%. Impact is a 2 since it's a nice-to-have with a workaround already available via screenshots, and confidence sits at 50 given it's a single, somewhat vague source. Effort is moderate at 2, since scheduled PDF generation could likely reuse existing export functionality with a contained frontend/backend change - not mandatory.\n\nNow I'm moving to write the rationales in French, keeping them concise per the rubric, and finalizing the reach/impact/confidence/effort numbers for each feature: F1 at 60/4/80/3, F2 at 25/5/50/4, and starting to work out F3's reach value.\n\nNow I'm finalizing the remaining scores for F3 and F4, noting that F4 is mandatory due to churn and renewal risk. I'm thinking through the portfolio insight next - contrasting quick wins versus bigger bets and how to sequence them: F4 (SSO) has to come first regardless of RICE score because of contractual/renewal urgency, F1 is a good early quick win given its broad reach and moderate effort, F2 is the bigger strategic bet tied to churn reduction despite higher effort, and F3 falls somewhere in between. I'm drafting the insight text emphasizing SSO as non-negotiable, F1 as the quick win, and F2 as the bigger bet, before assembling everything into the final single-line JSON output.\n\n",
-        "output_excerpt": "{\"assessments\":[{\"feature_id\":\"F1\",\"reach_percent\":60,\"reach_rationale\":\"Le thème 'Gestion des notifications' est critique avec 6 mentions et touche des segments transverses (Head of Operations, chefs de projet, CSM) qui utilisent Orbit quotidiennement ; on estime qu'une majorité des utilisateurs actifs reçoit des notifications chaque semaine.\",\"impact\":4,\"impact_rationale\":\"Niveau 4 (Élevé) : le résumé quotidien et le filtrage font gagner du temps chaque jour et évitent de manquer des alertes critiques, un irritant répété dans 3 sources différentes.\",\"confidence\":80,\"confidence_rationale\":\"Trois sources indépendantes convergent (email, NPS, App Store) mais l'impact reste qualitatif, sans chiffrage business direct, d'où un niveau 80.\",\"effort\":3,\"effort_rationale\":\"Niveau 3 (M) : nécessite une nouvelle logique de préférences par projet/type d'événement et un digest quotidien, soit environ un sprint pour une équipe.\",\"is_mandatory\":false,\"mandatory_reason\":\"\"},{\"feature_id\":\"F2\",\"reach_percent\":25,\"reach_rationale\":\"Trois comptes Mid-Market nommément cités (Logitrans, Kraft & Lemoine, Hexa Conseil) demandent cette intégration ; le segment concerné (utilisateurs Slack/Teams) reste une portion significative mais minoritaire de la base active.\",\"impact\":5,\"impact_rationale\":\"Niveau 5 (Massif) : la demande émane directement de comptes Mid-Market, cœur de cible du churn, avec une citation explicite ('l'email c'est là où les notifs vont mourir') indiquant un risque de désengagement.\",\"confidence\":50,\"confidence_rationale\":\"Une seule source (canal Slack #cs-feedback) rapporte le besoin, même si elle agrège plusieurs comptes ; absence de validation croisée par une autre source, d'où confiance 50.\",\"effort\":4,\"effort_rationale\":\"Niveau 4 (L) : intégration tierce (API Slack/Teams, gestion des webhooks et de l'authentification), estimée à 1-2 mois pour une équipe.\",\"is_mandatory\":false,\"mandatory_reason\":\"\"},{\"feature_id\":\"F3\",\"reach_percent\":15,\"reach_rationale\":\"Le besoin con",
+        "output_excerpt": "{\"assessments\":[{\"feature_id\":\"F1\",\"reach_percent\":60,\"reach_rationale\":\"Le thème 'Gestion des notifications' est critique avec 6 mentions et touche des segments transverses (Head of Operations, chefs de projet, CSM) qui utilisent EwokAI quotidiennement ; on estime qu'une majorité des utilisateurs actifs reçoit des notifications chaque semaine.\",\"impact\":4,\"impact_rationale\":\"Niveau 4 (Élevé) : le résumé quotidien et le filtrage font gagner du temps chaque jour et évitent de manquer des alertes critiques, un irritant répété dans 3 sources différentes.\",\"confidence\":80,\"confidence_rationale\":\"Trois sources indépendantes convergent (email, NPS, App Store) mais l'impact reste qualitatif, sans chiffrage business direct, d'où un niveau 80.\",\"effort\":3,\"effort_rationale\":\"Niveau 3 (M) : nécessite une nouvelle logique de préférences par projet/type d'événement et un digest quotidien, soit environ un sprint pour une équipe.\",\"is_mandatory\":false,\"mandatory_reason\":\"\"},{\"feature_id\":\"F2\",\"reach_percent\":25,\"reach_rationale\":\"Trois comptes Mid-Market nommément cités (Logitrans, Kraft & Lemoine, Hexa Conseil) demandent cette intégration ; le segment concerné (utilisateurs Slack/Teams) reste une portion significative mais minoritaire de la base active.\",\"impact\":5,\"impact_rationale\":\"Niveau 5 (Massif) : la demande émane directement de comptes Mid-Market, cœur de cible du churn, avec une citation explicite ('l'email c'est là où les notifs vont mourir') indiquant un risque de désengagement.\",\"confidence\":50,\"confidence_rationale\":\"Une seule source (canal Slack #cs-feedback) rapporte le besoin, même si elle agrège plusieurs comptes ; absence de validation croisée par une autre source, d'où confiance 50.\",\"effort\":4,\"effort_rationale\":\"Niveau 4 (L) : intégration tierce (API Slack/Teams, gestion des webhooks et de l'authentification), estimée à 1-2 mois pour une équipe.\",\"is_mandatory\":false,\"mandatory_reason\":\"\"},{\"feature_id\":\"F3\",\"reach_percent\":15,\"reach_rationale\":\"Le besoin con",
         "error": null
       },
       {
@@ -752,7 +752,7 @@
         "input_tokens": 2864,
         "output_tokens": 1881,
         "thinking": "Je vais définir la story pour une vue de charge de travail hebdomadaire par personne, destinée à un manager. J'estime l'effort à 5 points et je prévois des critères d'acceptation couvrant le cas nominal, l'absence d'affectations, l'accès refusé pour un non-manager, et la mise en évidence des surcharges. Je rédige le tout en français.\n\n",
-        "output_excerpt": "{\"feature_id\":\"F3\",\"jira_summary\":\"Afficher la charge de travail hebdomadaire par collaborateur\",\"persona\":\"Directrice PMO\",\"goal\":\"visualiser directement dans Orbit la charge de travail de chaque collaborateur de mon équipe, semaine par semaine\",\"benefit\":\"identifier rapidement les surcharges et arbitrer les ressources sans avoir à maintenir un fichier Excel externe\",\"context\":\"Une directrice PMO cliente (Groupe Aldane) maintient aujourd'hui un fichier Excel parallèle pour suivre la charge de ses équipes, faute de vue native dans Orbit. Un deal a été perdu chez Ventura Group car le concurrent propose une vue « capacité équipe » permettant d'arbitrer les recrutements, fonctionnalité absente d'Orbit. Cette vue est jugée clé pour réduire le churn Mid-Market ce trimestre.\",\"acceptance_criteria\":[{\"title\":\"Consultation de la charge hebdomadaire de l'équipe\",\"given\":[\"je suis connectée en tant que 'Directrice PMO' sur le compte 'Groupe Aldane'\",\"mon équipe compte 8 collaborateurs avec des affectations actives sur les 4 prochaines semaines\"],\"when\":[\"j'ouvre l'écran 'Charge de travail par personne' depuis le menu Planification\"],\"then\":[\"je vois un tableau avec une ligne par collaborateur et une colonne par semaine (S1 à S4)\",\"chaque cellule affiche le nombre d'heures affectées et le pourcentage de charge par rapport à la capacité hebdomadaire du collaborateur (ex : '38h / 106%')\",\"l'affichage se charge en moins de 2 secondes pour les 8 collaborateurs\"]},{\"title\":\"Mise en évidence visuelle des surcharges\",\"given\":[\"le collaborateur 'Karim Benali' a 42h affectées en semaine 3 pour une capacité de 35h\"],\"when\":[\"j'affiche la vue 'Charge de travail par personne' pour la semaine 3\"],\"then\":[\"la cellule correspondant à 'Karim Benali' en semaine 3 est colorée en rouge\",\"le pourcentage affiché est '120%'\",\"un badge 'Surcharge' apparaît au survol de la cellule\"]},{\"title\":\"Collaborateur sans affectation sur la période\",\"given\":[\"le collaborateur 'Sophie Marchal' n'a aucune tâche ",
+        "output_excerpt": "{\"feature_id\":\"F3\",\"jira_summary\":\"Afficher la charge de travail hebdomadaire par collaborateur\",\"persona\":\"Directrice PMO\",\"goal\":\"visualiser directement dans EwokAI la charge de travail de chaque collaborateur de mon équipe, semaine par semaine\",\"benefit\":\"identifier rapidement les surcharges et arbitrer les ressources sans avoir à maintenir un fichier Excel externe\",\"context\":\"Une directrice PMO cliente (Groupe Aldane) maintient aujourd'hui un fichier Excel parallèle pour suivre la charge de ses équipes, faute de vue native dans EwokAI. Un deal a été perdu chez Ventura Group car le concurrent propose une vue « capacité équipe » permettant d'arbitrer les recrutements, fonctionnalité absente d'EwokAI. Cette vue est jugée clé pour réduire le churn Mid-Market ce trimestre.\",\"acceptance_criteria\":[{\"title\":\"Consultation de la charge hebdomadaire de l'équipe\",\"given\":[\"je suis connectée en tant que 'Directrice PMO' sur le compte 'Groupe Aldane'\",\"mon équipe compte 8 collaborateurs avec des affectations actives sur les 4 prochaines semaines\"],\"when\":[\"j'ouvre l'écran 'Charge de travail par personne' depuis le menu Planification\"],\"then\":[\"je vois un tableau avec une ligne par collaborateur et une colonne par semaine (S1 à S4)\",\"chaque cellule affiche le nombre d'heures affectées et le pourcentage de charge par rapport à la capacité hebdomadaire du collaborateur (ex : '38h / 106%')\",\"l'affichage se charge en moins de 2 secondes pour les 8 collaborateurs\"]},{\"title\":\"Mise en évidence visuelle des surcharges\",\"given\":[\"le collaborateur 'Karim Benali' a 42h affectées en semaine 3 pour une capacité de 35h\"],\"when\":[\"j'affiche la vue 'Charge de travail par personne' pour la semaine 3\"],\"then\":[\"la cellule correspondant à 'Karim Benali' en semaine 3 est colorée en rouge\",\"le pourcentage affiché est '120%'\",\"un badge 'Surcharge' apparaît au survol de la cellule\"]},{\"title\":\"Collaborateur sans affectation sur la période\",\"given\":[\"le collaborateur 'Sophie Marchal' n'a aucune tâche ",
         "error": null
       },
       {
@@ -767,7 +767,7 @@
         "input_tokens": 2836,
         "output_tokens": 2417,
         "thinking": "Given the effort is large, combining full SSO SAML Azure AD setup with auto-deprovisioning likely exceeds a single sprint slice, so I'm thinking the MVP should be SSO SAML login configuration first, with deprovisioning sync split into a follow-up story—though the original problem statement stresses deprovisioning as important too.\n\n",
-        "output_excerpt": "{\"feature_id\":\"F4\",\"jira_summary\":\"Activer la connexion SSO SAML via Azure AD pour Orbit\",\"persona\":\"IT Manager d'une entreprise Mid-Market cliente d'Orbit\",\"goal\":\"configurer l'authentification unique (SSO) de l'espace de travail Orbit via Azure AD (SAML 2.0)\",\"benefit\":\"sécuriser les accès des collaborateurs et satisfaire les exigences de l'audit de sécurité IT conditionnant le renouvellement du contrat de 450 sièges\",\"context\":\"Nordvik Energy, client Mid-Market de 450 sièges, conditionne le renouvellement de son contrat à la mise en place du SSO Azure AD et refuse de signer sans cette garantie de sécurité. La gestion manuelle actuelle des comptes expose l'entreprise à des risques d'audit (accès non révoqués). Cette story couvre la première brique indispensable : permettre à l'IT Manager de configurer et activer le SSO SAML, préalable technique au déprovisionnement automatique qui sera traité dans une story ultérieure.\",\"acceptance_criteria\":[{\"title\":\"Configuration réussie du SSO Azure AD par l'IT Manager\",\"given\":[\"l'IT Manager est connecté à la console d'administration Orbit avec le rôle 'Administrateur'\",\"l'entreprise dispose d'une application d'entreprise Azure AD configurée avec les métadonnées SAML de Orbit\"],\"when\":[\"l'IT Manager saisit l'URL des métadonnées Azure AD, le certificat X.509 et l'Entity ID dans le formulaire de configuration SSO puis clique sur 'Activer le SSO'\"],\"then\":[\"Orbit valide la configuration en moins de 5 secondes et affiche le statut 'SSO actif'\",\"un log d'audit horodaté enregistre l'activation avec l'identifiant de l'IT Manager\",\"tous les nouveaux utilisateurs du domaine 'nordvik-energy.com' sont redirigés vers Azure AD lors de leur prochaine connexion\"]},{\"title\":\"Connexion réussie d'un utilisateur via SSO\",\"given\":[\"le SSO Azure AD est actif pour le compte Nordvik Energy\",\"Julie Marchand, chef de projet, possède un compte Azure AD actif avec l'email julie.marchand@nordvik-energy.com\"],\"when\":[\"Julie Marchand clique sur 'Se connec",
+        "output_excerpt": "{\"feature_id\":\"F4\",\"jira_summary\":\"Activer la connexion SSO SAML via Azure AD pour EwokAI\",\"persona\":\"IT Manager d'une entreprise Mid-Market cliente d'EwokAI\",\"goal\":\"configurer l'authentification unique (SSO) de l'espace de travail EwokAI via Azure AD (SAML 2.0)\",\"benefit\":\"sécuriser les accès des collaborateurs et satisfaire les exigences de l'audit de sécurité IT conditionnant le renouvellement du contrat de 450 sièges\",\"context\":\"Nordvik Energy, client Mid-Market de 450 sièges, conditionne le renouvellement de son contrat à la mise en place du SSO Azure AD et refuse de signer sans cette garantie de sécurité. La gestion manuelle actuelle des comptes expose l'entreprise à des risques d'audit (accès non révoqués). Cette story couvre la première brique indispensable : permettre à l'IT Manager de configurer et activer le SSO SAML, préalable technique au déprovisionnement automatique qui sera traité dans une story ultérieure.\",\"acceptance_criteria\":[{\"title\":\"Configuration réussie du SSO Azure AD par l'IT Manager\",\"given\":[\"l'IT Manager est connecté à la console d'administration EwokAI avec le rôle 'Administrateur'\",\"l'entreprise dispose d'une application d'entreprise Azure AD configurée avec les métadonnées SAML de EwokAI\"],\"when\":[\"l'IT Manager saisit l'URL des métadonnées Azure AD, le certificat X.509 et l'Entity ID dans le formulaire de configuration SSO puis clique sur 'Activer le SSO'\"],\"then\":[\"EwokAI valide la configuration en moins de 5 secondes et affiche le statut 'SSO actif'\",\"un log d'audit horodaté enregistre l'activation avec l'identifiant de l'IT Manager\",\"tous les nouveaux utilisateurs du domaine 'nordvik-energy.com' sont redirigés vers Azure AD lors de leur prochaine connexion\"]},{\"title\":\"Connexion réussie d'un utilisateur via SSO\",\"given\":[\"le SSO Azure AD est actif pour le compte Nordvik Energy\",\"Julie Marchand, chef de projet, possède un compte Azure AD actif avec l'email julie.marchand@nordvik-energy.com\"],\"when\":[\"Julie Marchand clique sur 'Se connec",
         "error": null
       },
       {
@@ -804,5 +804,5 @@
   },
   "generated_at": "2026-09-26T12:38:08+00:00",
   "is_demo": false,
-  "source_text": "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[EMAIL] De : Sophie Marchand <s.marchand@logitrans.fr>\nObjet : Trop de notifications = on rate l'essentiel (URGENT)\nDate : lundi 8 septembre, 08:12\n\nBonjour,\n\nJe me permets de vous écrire directement car la situation devient intenable. Mes 180 collaborateurs reçoivent en moyenne 60 à 80 notifications Orbit par jour. Résultat : plus personne ne les lit, et la semaine dernière nous avons raté une échéance client parce que l'alerte de retard était noyée au milieu de 40 mails \"X a commenté une tâche\".\n\nCe qu'il nous faudrait, c'est simple : un récapitulatif quotidien au lieu d'un mail par action, et la possibilité de choisir QUOI on reçoit (par projet, par type d'évènement). Aujourd'hui c'est tout ou rien.\n\nJe vous le dis franchement : notre renouvellement est en mars, et en l'état je ne suis pas certaine de le défendre en comité de direction.\n\nSophie Marchand\nHead of Operations — Logitrans\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[ZENDESK #48213] Priorité : Normale — Statut : Ouvert\nSujet : notifs email en double depuis la MAJ\nClient : Atelier Bévin (32 utilisateurs)\n\nDepuis la mise à jour 4.2 de jeudi, chaque notification arrive deux fois dans ma boîte. Idem pour mes collègues. C'est vraiment pénible vu la quantité qu'on reçoit déjà...\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[NPS — Score 4/10] Utilisateur : chef de projet, compte Mid-Market (Kraft & Lemoine)\n\"Je passe la première heure de ma journée à trier les notifs Orbit. Mettez un résumé quotidien svp, et laissez-nous couper les notifs d'un projet quand on n'est plus dessus.\"\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[NPS — Score 9/10] Utilisateur : directrice PMO (Groupe Aldane)\n\"Super outil, le Gantt est top et l'équipe l'a adopté en 2 semaines. Il manque juste une vue de la charge de travail par personne : aujourd'hui je fais ça dans un Excel à côté pour savoir qui est surchargé.\"\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[EMAIL] From: Lars Eriksen <lars.eriksen@nordvik-energy.no>\nSubject: SSO requirement before security review\n\nHi team,\n\nOur IT security review is scheduled for Q3. Procurement has made it clear: without SSO through Azure AD (SAML) and automatic deprovisioning of leavers, they will not sign the renewal for our 450 seats. We currently manage Orbit accounts manually and last month a former contractor still had access for three weeks — that is a finding for our auditors.\n\nCan you share your roadmap on this?\n\nBest regards,\nLars Eriksen — IT Manager, Nordvik Energy\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[SLACK #cs-feedback] Julie (Customer Success Manager) — mardi 14:32\nPetit récap de ma semaine : 3 comptes Mid-Market (Logitrans, Kraft & Lemoine, Hexa Conseil) m'ont demandé de recevoir les alertes Orbit directement dans Slack / Teams plutôt que par email. Hexa dit que \"l'email c'est là où les notifs vont mourir\". Ça revient TRÈS souvent dans mes QBR.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[ZENDESK #48240] Priorité : Basse — Statut : En attente\nSujet : rapport hebdo automatique ?\nClient : Cabinet Rousseau & Associés (18 utilisateurs)\n\nBonjour, est-il possible de programmer l'envoi automatique d'un rapport d'avancement en PDF à notre direction chaque lundi ? Pour l'instant je fais des captures d'écran du tableau de bord. Merci !\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[APP STORE — ★★☆☆☆] \"Bien sur ordi, bof sur mobile\"\nL'appli mobile plante systématiquement quand j'ouvre une pièce jointe PDF dans une tâche. Et impossible de mettre les notifications en sourdine le week-end, mon téléphone vibre le dimanche pour des commentaires sans importance.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[ZENDESK #48302] Priorité : Basse — Statut : Résolu\nSujet : où est l'export Excel ???\nJ'ai cherché 20 minutes l'export Excel du reporting. Votre support m'a dit qu'il est dans \"...\" > \"Plus d'options\" > \"Exporter\". Sérieusement, personne ne peut trouver ça.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[NOTE D'APPEL — Sales] Karim B., Account Executive — deal perdu : Ventura Group (300 sièges)\nRaison principale de la perte : le concurrent propose une vue \"capacité équipe\" qui montre la charge de chaque personne semaine par semaine. Le DAF voulait arbitrer les recrutements avec. On était mieux placés sur le prix et le Gantt.\n"
+  "source_text": "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[EMAIL] De : Sophie Marchand <s.marchand@logitrans.fr>\nObjet : Trop de notifications = on rate l'essentiel (URGENT)\nDate : lundi 8 septembre, 08:12\n\nBonjour,\n\nJe me permets de vous écrire directement car la situation devient intenable. Mes 180 collaborateurs reçoivent en moyenne 60 à 80 notifications EwokAI par jour. Résultat : plus personne ne les lit, et la semaine dernière nous avons raté une échéance client parce que l'alerte de retard était noyée au milieu de 40 mails \"X a commenté une tâche\".\n\nCe qu'il nous faudrait, c'est simple : un récapitulatif quotidien au lieu d'un mail par action, et la possibilité de choisir QUOI on reçoit (par projet, par type d'évènement). Aujourd'hui c'est tout ou rien.\n\nJe vous le dis franchement : notre renouvellement est en mars, et en l'état je ne suis pas certaine de le défendre en comité de direction.\n\nSophie Marchand\nHead of Operations — Logitrans\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[ZENDESK #48213] Priorité : Normale — Statut : Ouvert\nSujet : notifs email en double depuis la MAJ\nClient : Atelier Bévin (32 utilisateurs)\n\nDepuis la mise à jour 4.2 de jeudi, chaque notification arrive deux fois dans ma boîte. Idem pour mes collègues. C'est vraiment pénible vu la quantité qu'on reçoit déjà...\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[NPS — Score 4/10] Utilisateur : chef de projet, compte Mid-Market (Kraft & Lemoine)\n\"Je passe la première heure de ma journée à trier les notifs EwokAI. Mettez un résumé quotidien svp, et laissez-nous couper les notifs d'un projet quand on n'est plus dessus.\"\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[NPS — Score 9/10] Utilisateur : directrice PMO (Groupe Aldane)\n\"Super outil, le Gantt est top et l'équipe l'a adopté en 2 semaines. Il manque juste une vue de la charge de travail par personne : aujourd'hui je fais ça dans un Excel à côté pour savoir qui est surchargé.\"\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[EMAIL] From: Lars Eriksen <lars.eriksen@nordvik-energy.no>\nSubject: SSO requirement before security review\n\nHi team,\n\nOur IT security review is scheduled for Q3. Procurement has made it clear: without SSO through Azure AD (SAML) and automatic deprovisioning of leavers, they will not sign the renewal for our 450 seats. We currently manage EwokAI accounts manually and last month a former contractor still had access for three weeks — that is a finding for our auditors.\n\nCan you share your roadmap on this?\n\nBest regards,\nLars Eriksen — IT Manager, Nordvik Energy\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[SLACK #cs-feedback] Julie (Customer Success Manager) — mardi 14:32\nPetit récap de ma semaine : 3 comptes Mid-Market (Logitrans, Kraft & Lemoine, Hexa Conseil) m'ont demandé de recevoir les alertes EwokAI directement dans Slack / Teams plutôt que par email. Hexa dit que \"l'email c'est là où les notifs vont mourir\". Ça revient TRÈS souvent dans mes QBR.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[ZENDESK #48240] Priorité : Basse — Statut : En attente\nSujet : rapport hebdo automatique ?\nClient : Cabinet Rousseau & Associés (18 utilisateurs)\n\nBonjour, est-il possible de programmer l'envoi automatique d'un rapport d'avancement en PDF à notre direction chaque lundi ? Pour l'instant je fais des captures d'écran du tableau de bord. Merci !\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[APP STORE — ★★☆☆☆] \"Bien sur ordi, bof sur mobile\"\nL'appli mobile plante systématiquement quand j'ouvre une pièce jointe PDF dans une tâche. Et impossible de mettre les notifications en sourdine le week-end, mon téléphone vibre le dimanche pour des commentaires sans importance.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[ZENDESK #48302] Priorité : Basse — Statut : Résolu\nSujet : où est l'export Excel ???\nJ'ai cherché 20 minutes l'export Excel du reporting. Votre support m'a dit qu'il est dans \"...\" > \"Plus d'options\" > \"Exporter\". Sérieusement, personne ne peut trouver ça.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[NOTE D'APPEL — Sales] Karim B., Account Executive — deal perdu : Ventura Group (300 sièges)\nRaison principale de la perte : le concurrent propose une vue \"capacité équipe\" qui montre la charge de chaque personne semaine par semaine. Le DAF voulait arbitrer les recrutements avec. On était mieux placés sur le prix et le Gantt.\n"
 }
