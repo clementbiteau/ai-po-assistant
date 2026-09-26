@@ -1171,13 +1171,24 @@ def main() -> None:
     """Application entry point: auth gate, then the PO workspace (+ admin console)."""
     session.load_secrets_into_env()
     render_html(CSS + addition_tabs_css(TABS.index(FIRST_ADDITION_TAB) + 1))
+    # One slot each for the sign-in screen and the workspace. Streamlit matches elements
+    # by position across reruns: without them, the sign-in form lingered (faded) inside
+    # the greeting banner until the first signed-in run finished, and the workspace
+    # under the form after a sign-out. Each run now empties the other slot first thing.
+    login_slot, workspace_slot = st.empty(), st.empty()
     base_settings = get_settings()
 
     profile = session.current_profile()
     if profile is None:
-        render_login(base_settings)
+        with login_slot.container():
+            render_login(base_settings)
         return
+    with workspace_slot.container():
+        render_workspace(base_settings, profile)
 
+
+def render_workspace(base_settings: Settings, profile: Profile) -> None:
+    """The signed-in PO workspace: sidebar, greeting, tabs and the onboarding dialog."""
     init_state()
     tabs = [*TABS, ADMIN_TAB] if profile.is_admin else TABS
     if st.session_state.get("nav") not in tabs:

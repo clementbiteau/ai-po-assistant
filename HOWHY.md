@@ -222,7 +222,7 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 
 ### D16. Les tests
 - **Décision** :
-  - 75 tests hors ligne, sur un faux client Claude : aucune clé, aucun coût, moins de 30 secondes (dont deux rejeux de la démo, avec leurs pauses).
+  - 76 tests hors ligne, sur un faux client Claude : aucune clé, aucun coût, moins de 30 secondes (dont deux rejeux de la démo, avec leurs pauses).
   - Tests d'interface avec `AppTest` : connexion, droits, lancement.
   - Tests SQL des règles de sécurité sur PostgreSQL.
   - Lint avec `ruff`.
@@ -358,7 +358,7 @@ Une relecture critique : est-ce que le POC répond à ce qui est demandé, où s
 | Générer des user stories structurées selon les standards | Persona, besoin, bénéfice (« As a… I want… so that… »), INVEST, découpe en tranches | Couvert |
 | Proposer des critères d'acceptation | 3 à 6 scénarios Gherkin testables | Couvert |
 | Estimer la complexité relative | Effort de 1 à 5 (RICE) et story points en suite de Fibonacci | Couvert |
-| Livrables : code, démo, documentation, tests | Dépôt GitHub ; app en ligne et mode démo ; README et ce document ; 75 tests et règles de sécurité testées | Couvert |
+| Livrables : code, démo, documentation, tests | Dépôt GitHub ; app en ligne et mode démo ; README et ce document ; 76 tests et règles de sécurité testées | Couvert |
 | Présentation en 15 minutes | Déroulé préparé : démo, architecture, défis et solutions | Préparé |
 
 ### 7.2 Les choix libres, et pourquoi

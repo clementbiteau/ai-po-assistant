@@ -25,7 +25,7 @@ Le texte intégral est en tête du [README](README.md#la-consigne-de-thiga--la-r
 
 ## Point de reprise (pour une nouvelle session)
 
-**État au 2026-09-26 (soir)** : le POC couvre les 9 fonctionnalités attendues (les tendances dans le temps en partie) et les 4 livrables. Il est en ligne, la CI est au vert (75 tests, règles de sécurité testées sur PostgreSQL) et le dernier commit est poussé sur `main`.
+**État au 2026-09-26 (soir)** : le POC couvre les 9 fonctionnalités attendues (les tendances dans le temps en partie) et les 4 livrables. Il est en ligne, la CI est au vert (76 tests, règles de sécurité testées sur PostgreSQL) et le dernier commit est poussé sur `main`.
 
 - **À lire d'abord** : la consigne en tête du [README](README.md), puis `HOWHY.md` (le quoi, le comment, le pourquoi ; section 7 = adéquation à la consigne).
 - **Dépôt** : `clementbiteau/ai-po-assistant` (public). Tout push sur `main` redéploie Streamlit Cloud (Python 3.12). `reload_guard.py` évite l'ancien « Reboot app » après un déploiement.
@@ -75,8 +75,8 @@ _Aucune tâche en cours._
 ### Repères techniques pour reprendre
 - **Migrations Supabase**, toutes exécutées en production : `20260925000000_init.sql`, `20260926000000_agent_calls.sql`, `20260927000000_run_details.sql`.
 - **Secrets Streamlit** : `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_KEY` (clé *publishable*), `ANTHROPIC_CREDITS_USD = "10"`, `EFFORT_STRATEGIST = "high"`.
-- **Vérifier avant de pousser** : `ruff check .`, `ruff format --check .` et `pytest -q` (75 tests). Les règles de sécurité se testent avec `scripts/test_schema.sh` sur un PostgreSQL jetable.
-- **Aperçu local** : le serveur d'aperçu n'a pas accès au dossier Documents (permission macOS). Il faut copier l'app et les paquets du `.venv` dans le dossier temporaire de la session, puis lancer en `AUTH_MODE=local`.
+- **Vérifier avant de pousser** : `ruff check .`, `ruff format --check .` et `pytest -q` (76 tests). Les règles de sécurité se testent avec `scripts/test_schema.sh` sur un PostgreSQL jetable.
+- **Aperçu local** : le serveur d'aperçu n'a pas accès au dossier Documents (permission macOS). Il faut copier l'app et les paquets du `.venv` dans le dossier temporaire de la session, puis lancer en `AUTH_MODE=local` avec `--global.developmentMode false` (hors d'un dossier `site-packages`, Streamlit se croit en mode développement et refuse `--server.port`).
 - **Tests d'interface** : les tests Streamlit (`AppTest`) ne savent pas afficher le guide ; ils le marquent « vu » avant la connexion.
 
 ---
@@ -84,6 +84,7 @@ _Aucune tâche en cours._
 ## Terminé
 
 ### 2026-09-26
+- [x] **Plus de formulaire fantôme dans le bandeau vert après la connexion** (vu par Clément). Cause : Streamlit associe les éléments d'un run à l'autre par position ; la colonne du formulaire restait affichée, estompée, dans le bandeau d'accueil tant que le premier run connecté n'était pas fini (plusieurs secondes pour un admin). La connexion et l'espace de travail ont désormais chacun leur emplacement, vidé au début de l'autre run ; le même défaut à la déconnexion (l'app estompée sous le formulaire) disparaît aussi. Reproduit puis vérifié sur une copie locale, couvert par un test.
 - [x] Priorité « latence et adéquation » close : `max_tokens` et `STORY_WORKERS` écartés (sans effet sur la vitesse), effort du stratège mesuré et gardé en élevé, revue d'adéquation faite.
 - [x] **Interface épurée** : bandeaux « Étape x sur 4 » retirés ; thèmes en lignes compactes ; graphiques, justifications, détails des stories, rédaction à la demande, détails techniques, autres signaux et phases 2-3 des connecteurs dans des sections repliées. Barre latérale réduite au compte, au thème (icônes soleil et lune dessinées en CSS), au mode démo et au nombre de stories ; contexte produit, « Sous le capot », quotas et crédit retirés (ces derniers restent dans Admin).
 - [x] **Graphique « Tokens consommés par jour »** : il était tracé en aire, invisible avec des données sur un ou deux jours ; passé en barres (idem pour la dépense quotidienne).

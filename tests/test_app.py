@@ -45,6 +45,16 @@ def test_anonymous_visitor_only_sees_the_login_form() -> None:
     assert not app.tabs
 
 
+def test_sign_in_form_and_workspace_never_share_a_slot() -> None:
+    # Streamlit matches elements by position across reruns: when they shared one, the
+    # faded sign-in form stayed inside the greeting banner during the first signed-in run.
+    app = AppTest.from_file("../app.py", default_timeout=60)
+    app.run()
+    assert app.main.children[1].text_input and app.main.children[2].type == "empty"
+    app = login("demo@local.dev")
+    assert app.main.children[1].type == "empty" and app.main.children[2].tabs
+
+
 def test_wrong_password_is_rejected() -> None:
     app = login("demo@local.dev", "wrong")
     assert "incorrect" in app.error[0].value
