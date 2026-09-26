@@ -41,6 +41,7 @@ from store import Profile, RunDetails, StoreError
 from triage import InboxItem, triage
 from ui import session
 from ui.admin import render_admin
+from ui.connectors import render_connectors
 from ui.greeting import render_greeting
 from ui.live import demo_updates, live_html
 from ui.login import render_login
@@ -101,7 +102,7 @@ AGENTS_META: list[tuple[str, str, str, str]] = [
     ("strategist", "PrioritizationStrategist", "Prioriser", "Score RICE justifié, arbitrage MoSCoW."),
     ("writer", "UserStoryWriter", "Rédiger", "User stories et critères Gherkin, prêts pour Jira."),
 ]
-TABS = ["Inbox", "Analyse", "Priorisation", "User stories", "Export"]
+TABS = ["Inbox", "Analyse", "Priorisation", "User stories", "Export", "Connecteurs"]
 ADMIN_TAB = "Admin"
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -1251,11 +1252,13 @@ def main() -> None:
         view = result.model_copy(update={"scored_features": scored})
 
     containers = st.tabs(tabs, key="nav", on_change="rerun")
-    inbox, analysis_tab, prio_tab, stories_tab, export_tab = containers[:5]
+    inbox, analysis_tab, prio_tab, stories_tab, export_tab, connectors_tab = containers[:6]
     with inbox:
         render_inbox(settings, profile, context, top_n, demo_mode)
+    with connectors_tab:
+        render_connectors()
     if profile.is_admin:
-        with containers[5]:
+        with containers[6]:
             render_admin(settings, profile)
 
     if not st.session_state.get("onboarded"):

@@ -52,6 +52,7 @@ flowchart LR
 | Interface | `app.py`, `ui/` | Écrans Streamlit uniquement : aucune logique métier |
 | Métier | `agents.py` | Contrats de données, prompts, passerelle Claude, 3 agents, scoring, orchestrateur |
 | Règles | `triage.py`, `governance.py` | Tri de l'Inbox, quotas, modèles de coût |
+| Feuille de route | `connectors.py` | Connecteurs prévus pour la production (onglet Connecteurs) |
 | Données | `store.py`, `supabase/` | Persistance (Supabase ou SQLite), schéma SQL et règles de sécurité |
 | Analytique | `analytics.py` | Requêtes SQL de la console admin (DuckDB) |
 | Accès | `auth.py`, `config.py` | Connexion et configuration |
@@ -270,6 +271,26 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 - **En plus** : un run enregistré peut être **rouvert** tel quel, ce qui évite de relancer l'IA pour montrer un résultat.
 - **Compromis** : le résultat complet contient les retours clients collés. Il suit donc les mêmes règles RLS que le journal : visible par son auteur et par les admins seulement.
 
+### D20. Les connecteurs, du POC à la production
+- **Décision** : un onglet **Connecteurs** montre où le PO brancherait ses outils. Aucun connecteur n'est actif : les boutons « Connecter » restent désactivés, et le POC ne demande jamais d'identifiants tiers.
+
+  | Phase | Connecteurs | Pourquoi dans cet ordre |
+  |---|---|---|
+  | 1 · Le socle | Zendesk, Jira (entrée et sortie), Outlook / Gmail | L'essentiel des retours arrive par le support et l'email ; le backlog part dans Jira |
+  | 2 · La voix du client élargie | Slack / Teams, outil NPS, App Store / Google Play | Plus de volume, des signaux plus courts |
+  | 3 · L'enjeu business | Salesforce / HubSpot | Relie chaque besoin à du chiffre d'affaires (deal perdu, renouvellement) |
+
+- **Pourquoi** :
+  - Le passage en production est concret : ce que chaque connecteur apporte, comment il s'autorise (OAuth, lecture seule), à quelle fréquence il se synchronise.
+  - **Jira fonctionne dans les deux sens.** En sortie, il reçoit les stories validées. En entrée, il donne à l'outil la mémoire du backlog existant, ce qui corrige une limite du POC.
+- **Conçu pour s'emboîter** : chaque connecteur préfixe ses éléments du même en-tête que les cas de démo (`[ZENDESK #…]`, `[EMAIL]`…). Le tri par règles (D6) les classe donc sans changement, et un test le vérifie.
+- **Principes de production** :
+  - accès en lecture seule et minimal ;
+  - jetons OAuth gérés côté serveur ;
+  - données personnelles pseudonymisées avant l'envoi à Claude (RGPD) ;
+  - dédoublonnage entre canaux ;
+  - validation du PO avant tout envoi vers Jira.
+
 ---
 
 ## 5. Sécurité
@@ -294,8 +315,8 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 - **Seuils MoSCoW** : relatifs au lot analysé, donc un choix de conception.
 - **Variabilité des estimations** : deux runs du même modèle sur le même cas donnent des scores RICE différents (le Reach du SSO varie de 5 % à 15 %). Le classement tient grâce aux règles (contrainte non négociable, MoSCoW relatif), mais les chiffres fins ne sont pas stables : ils s'arbitrent en revue, ce que permet la correction des estimations par le PO.
 - **Tri de l'Inbox** : par règles, donc grossier (voir D6).
-- **Pas de connecteurs** : dans le POC, les retours sont collés à la main. En production, ils arriveraient par API : Zendesk, messagerie, outil NPS, Slack, stores, CRM.
-- **Pas de mémoire** : l'outil ne sait pas ce qui est déjà livré ou en cours, donc il peut re-prioriser l'existant.
+- **Pas de connecteurs actifs** : dans le POC, les retours sont collés à la main. L'onglet Connecteurs montre comment ils arriveraient en production (voir D20).
+- **Pas de mémoire** : l'outil ne sait pas ce qui est déjà livré ou en cours, donc il peut re-prioriser l'existant. Le connecteur Jira en lecture (D20) comblerait ce manque.
 - **Pas d'évaluation continue** : il manque un jeu de retours annotés pour mesurer la qualité à chaque changement de prompt.
 
 ---
@@ -329,6 +350,7 @@ Une relecture critique : est-ce que le POC répond à ce qui est demandé, où s
 | Tri de l'Inbox par règles | Répond directement au « PO submergé » : il voit tout de suite ce qui est urgent | Au cœur |
 | Vérification des verbatims | Rend l'analyse digne de confiance : chaque preuve est vérifiable | Au cœur |
 | Exports Jira, Markdown, `.feature` | Les stories quittent l'outil et entrent dans le flux de l'équipe | Au cœur |
+| Onglet Connecteurs | Montre comment l'outil passerait du copier-coller à des retours qui arrivent seuls, puis à Jira | En conclusion, pour ouvrir sur la suite |
 | Progression en direct | Rend l'attente lisible pendant un run | En passant |
 | Authentification et RLS | L'app est en ligne, le dépôt est public, la clé API est payante : sans cela, impossible d'ouvrir l'app aux relecteurs | Une phrase |
 | Quotas et estimation du coût | Même raison : maîtriser la dépense réelle | Une phrase |
@@ -366,6 +388,9 @@ Une relecture critique : est-ce que le POC répond à ce qui est demandé, où s
 | **Churn** | Perte de clients, par non-renouvellement ou résiliation. |
 | **Mid-Market** | Segment des entreprises de taille intermédiaire. |
 | **SSO, SAML, SCIM** | Authentification unique via l'annuaire de l'entreprise (SSO), protocole standard pour la mettre en place (SAML), protocole de création et suppression automatique des comptes (SCIM). |
+| **Connecteur** | Intégration qui relie l'outil à un autre logiciel (Zendesk, Jira, Outlook…) pour en importer ou y exporter des données automatiquement. |
+| **OAuth** | Protocole d'autorisation : l'utilisateur accorde à une application un accès limité à son compte (par exemple en lecture seule), sans lui donner son mot de passe. |
+| **Webhook** | Notification envoyée automatiquement par un logiciel quand un événement se produit (nouveau ticket, nouvel avis), ce qui permet une synchronisation en temps réel. |
 | **Jira** | Outil de gestion de backlog et de tickets le plus répandu chez les équipes produit. |
 | **LLM** | Grand modèle de langage, par exemple Claude. |
 | **Prompt / prompt système** | Les instructions données au modèle. Le prompt système définit le rôle et la méthode de chaque agent. |

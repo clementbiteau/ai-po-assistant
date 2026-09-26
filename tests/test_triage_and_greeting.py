@@ -39,3 +39,13 @@ def test_greeting_parts() -> None:
     assert salutation(datetime(2026, 9, 25, 14)) == "Bon après-midi"
     assert salutation(datetime(2026, 9, 25, 21)) == "Bonsoir"
     assert salutation(datetime(2026, 9, 25, 2)) == "Bonsoir"
+
+
+def test_connectors_feed_the_existing_triage_rules() -> None:
+    from connectors import CONNECTORS, PHASES, by_phase
+    from triage import channel_for
+
+    feeds = [c for c in CONNECTORS if c.direction in ("in", "both") and c.header_tag]
+    assert feeds and all(channel_for(c.header_tag) != "Message" for c in feeds)  # every source lands on a known channel
+    assert next(c for c in CONNECTORS if c.key == "jira").direction == "both"  # backlog out, existing backlog in
+    assert {c.phase for c in CONNECTORS} == set(PHASES) and sum(map(len, by_phase().values())) == len(CONNECTORS)

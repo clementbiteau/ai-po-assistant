@@ -52,7 +52,7 @@ flowchart LR
 
 | Fichier | Rôle |
 |---|---|
-| [`app.py`](app.py) | Point d'entrée Streamlit : garde d'authentification, espace PO (5 onglets), onglet Admin |
+| [`app.py`](app.py) | Point d'entrée Streamlit : garde d'authentification, espace PO (5 onglets), Connecteurs, onglet Admin |
 | [`agents.py`](agents.py) | Logique métier : contrats Pydantic, prompts, passerelle Claude, 3 agents, orchestrateur, scoring, plafond budgétaire |
 | [`governance.py`](governance.py) | Quotas (requête / jour / semaine / mois), fenêtres calendaires, **modèles ML** de coût et de prévision |
 | [`store.py`](store.py) | Persistance de l'usage : `SupabaseRepository` (RLS) ou `SQLiteRepository` (dev) |
@@ -63,6 +63,7 @@ flowchart LR
 | [`supabase/`](supabase/) | Migration SQL (tables, RLS, trigger) + tests des policies |
 | [`config.py`](config.py) · [`exporters.py`](exporters.py) · [`samples.py`](samples.py) | Configuration, exports Jira / Markdown / Gherkin / JSON, feedbacks de démo |
 | [`triage.py`](triage.py) | Tri instantané de l'Inbox par règles (canal, urgence), sans IA |
+| [`connectors.py`](connectors.py) | Feuille de route des connecteurs (Zendesk, Jira, Outlook…), affichée dans l'onglet Connecteurs |
 | [`tests/`](tests/) | 56 tests hors-ligne (LLM simulé, UI via `AppTest`) + tests SQL des policies RLS en CI |
 
 `agents.py` ne dépend pas de Streamlit : le même pipeline peut tourner dans un job batch, une API FastAPI ou un bot Slack.

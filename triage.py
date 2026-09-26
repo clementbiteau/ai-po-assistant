@@ -54,7 +54,8 @@ class InboxItem:
     reasons: tuple[str, ...] = field(default_factory=tuple)
 
 
-def _channel(tag: str) -> str:
+def channel_for(tag: str) -> str:
+    """Display channel of a header tag (``ZENDESK #48213`` → ``Ticket support``); connectors reuse it."""
     low = tag.lower()
     return next((label for key, label in _CHANNELS if key in low), "Message")
 
@@ -112,7 +113,7 @@ def triage(raw: str) -> list[InboxItem]:
         reasons = _urgency(tag, message)
         items.append(
             InboxItem(
-                channel=_channel(tag) if tag else "Message",
+                channel=channel_for(tag) if tag else "Message",
                 title=_title(tag, rest, body) or "Sans titre",
                 snippet=_snippet(body),
                 urgent=bool(reasons),

@@ -124,3 +124,11 @@ def test_member_has_no_model_picker() -> None:
     assert not app.exception
     assert not [s for s in app.selectbox if s.key == "adm_preset"]
     assert any("Modèles : Sonnet 5" in c.value for c in app.sidebar.caption)
+
+
+def test_connectors_tab_is_a_roadmap_with_no_live_connection() -> None:
+    app = login("demo@local.dev")
+    assert not app.exception
+    assert "Connecteurs" in tab_labels(app)
+    buttons = [b for b in app.button if (b.key or "").startswith("connect_")]
+    assert len(buttons) >= 6 and all(b.disabled for b in buttons)

@@ -9,7 +9,7 @@ Dernière mise à jour : 2026-09-26
 
 ## En cours
 
-_Aucune tâche en cours._
+- [ ] **Déroulé de démo** pour l'entretien (page privée).
 
 ---
 
@@ -31,7 +31,7 @@ _Aucune tâche en cours._
 - [ ] **Bouton « Actualiser » dans Admin** : les chiffres de la console sont mis en cache 2 minutes par session.
 - [ ] Optimisations secondaires, à ne faire que si la mesure le justifie : entrée allégée pour le stratège, prompt caching (gain probablement faible). Haiku a été mesuré le 26/09 et écarté (D18).
 - [ ] **Modèles d'autres fournisseurs** (open source via une API compatible OpenAI, Mistral…) : hors consigne, qui impose Claude. À présenter comme feuille de route, puisque l'appel au modèle est isolé dans `agents.py`. Points à traiter : format JSON strict, réflexion résumée et effort, qui ne sont pas disponibles partout.
-- [ ] Connecteurs d'entrée (Zendesk, messagerie, outil NPS, Slack). Hors POC, à présenter comme roadmap.
+- [ ] **Connecteurs réels** (phase 1 : Zendesk, Jira, Outlook / Gmail) : hors POC. La feuille de route est visible dans l'onglet Connecteurs (D20).
 
 ### Actions côté Clément (configuration)
 - [ ] *Admin › Quotas* : relever les limites du compte relecteur `test@thiga.com` pour le jour de l'entretien, une fois le coût d'un run connu.
@@ -41,6 +41,7 @@ _Aucune tâche en cours._
 ## Terminé
 
 ### 2026-09-26
+- [x] **Onglet Connecteurs** : 7 connecteurs en 3 phases (Zendesk, Jira en entrée et en sortie, Outlook / Gmail ; Slack / Teams, NPS, stores ; CRM), avec ce qu'ils apportent, l'autorisation, la fréquence et le canal d'arrivée. Aucune connexion active. Chaque source arrive sur un canal que le tri par règles connaît déjà (testé). Décision D20 dans `HOWHY.md`, glossaire complété (Connecteur, OAuth, Webhook).
 - [x] **Démo = vrai run** : l'export du run « Référence » (Sonnet partout, 110 s, 0,16 €, 14/14 verbatims) remplace le résultat rédigé à la main. Les chiffres du rejeu viennent du résultat. Les tests utilisent un résultat de référence figé (`tests/fixtures/reference_result.json`).
 - [x] Comparaison des stories : Sonnet 20 à 29 s, 5 scénarios, découpe claire ; Haiku 43 à 64 s, 2 stories sur 9 hors règle, points irréguliers. Verdict final dans `HOWHY.md` (D18) : Sonnet 5 partout.
 - [x] Comparaison des modèles sur 5 runs : Haiku est 1,5 à 2,4 fois plus lent par agent, seulement 20 % moins cher par run (il écrit plus), et moins bon sur l'analyse (découpage, un verbatim retouché, une erreur de fait). Le top 3 et le SSO obligatoire tiennent partout. Décision : Sonnet 5 partout par défaut. Détail dans `HOWHY.md` (D18).
