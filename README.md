@@ -128,12 +128,12 @@ flowchart LR
 | [`auth.py`](auth.py) | Authentification Supabase (email + mot de passe) ou locale, fermée par défaut |
 | [`analytics.py`](analytics.py) | Requêtes SQL (DuckDB) de la console admin, affichées telles quelles dans l'UI |
 | [`reload_guard.py`](reload_guard.py) | Recharge les modules modifiés par un déploiement sans redémarrer le serveur |
-| [`ui/`](ui/) | Écrans : `login`, `admin`, `theme` (bascule clair/sombre), `session`, `style` |
-| [`supabase/`](supabase/) | Migration SQL (tables, RLS, trigger) + tests des policies |
+| [`ui/`](ui/) | Écrans : `login`, `onboarding` (guide), `greeting`, `live` (progression en direct), `runs` (Admin › Runs), `connectors`, `admin`, `theme` (bascule clair/sombre), `session`, `style` |
+| [`supabase/`](supabase/) | Migrations SQL (tables, RLS, trigger ; journal des agents ; détails des runs) + tests des policies |
 | [`config.py`](config.py) · [`exporters.py`](exporters.py) · [`samples.py`](samples.py) | Configuration, exports Jira / Markdown / Gherkin / JSON, feedbacks de démo |
 | [`triage.py`](triage.py) | Tri instantané de l'Inbox par règles (canal, urgence), sans IA |
 | [`connectors.py`](connectors.py) | Feuille de route des connecteurs (Zendesk, Jira, Outlook…), affichée dans l'onglet Connecteurs |
-| [`tests/`](tests/) | 56 tests hors-ligne (LLM simulé, UI via `AppTest`) + tests SQL des policies RLS en CI |
+| [`tests/`](tests/) | 75 tests hors-ligne (LLM simulé, UI via `AppTest`) + tests SQL des policies RLS en CI |
 
 `agents.py` ne dépend pas de Streamlit : le même pipeline peut tourner dans un job batch, une API FastAPI ou un bot Slack.
 
@@ -247,7 +247,7 @@ Sur Streamlit Community Cloud, déclarez ces variables dans *Secrets* : elles so
 
 ```bash
 pip install -r requirements-dev.txt
-pytest -q                          # 56 tests : LLM simulé, UI via AppTest, aucune clé ni aucun coût
+pytest -q                          # 75 tests : LLM simulé, UI via AppTest, aucune clé ni aucun coût
 ruff check . && ruff format --check .
 DATABASE_URL=postgresql://postgres@localhost:5432/scratch scripts/test_schema.sh   # migration + RLS
 ```

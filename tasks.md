@@ -23,42 +23,68 @@ Le texte intégral est en tête du [README](README.md#la-consigne-de-thiga--la-r
 
 ---
 
+## Point de reprise (pour une nouvelle session)
+
+**État au 2026-09-26 (soir)** : le POC couvre les 9 fonctionnalités attendues (les tendances dans le temps en partie) et les 4 livrables. Il est en ligne, la CI est au vert (75 tests, règles de sécurité testées sur PostgreSQL) et le dernier commit est poussé sur `main`.
+
+- **À lire d'abord** : la consigne en tête du [README](README.md), puis `HOWHY.md` (le quoi, le comment, le pourquoi ; section 7 = adéquation à la consigne).
+- **Dépôt** : `clementbiteau/ai-po-assistant` (public). Tout push sur `main` redéploie Streamlit Cloud (Python 3.12). `reload_guard.py` évite l'ancien « Reboot app » après un déploiement.
+- **Déroulé de la présentation** (page privée, format 15 min de la consigne) : https://claude.ai/artifact/TxaWoGuHFrooBaLK7hhEV6
+- **Produit fictif** : EwokAI. **Cas de démo** : « Notifications & churn » (le mode démo hors-ligne rejoue un vrai run Sonnet 5 du 26/09 : 110 s, 0,16 €).
+- **Modèle** : Sonnet 5 partout, stratège en effort élevé. Haiku mesuré et écarté ; Opus et Fable écartés (D8, D18).
+
+---
+
 ## En cours
 
 _Aucune tâche en cours._
-
 
 ---
 
 ## À faire — prochaine session
 
-### Priorité 1 · Latence et adéquation au use case (le « point 3 ») : terminée
+### 1 · Ce qui reste (à discuter avec Clément en ouverture)
+- [ ] **Vérifier l'app en ligne après le dernier déploiement** : barre latérale épurée (icônes soleil et lune), sections repliées, graphique des tokens en barres, guide affiché une seule fois, EwokAI partout, onglets pâles (Connecteurs, Admin).
+- [ ] **Seul point partiel de la consigne : les tendances dans le temps.** Décider : le présenter comme feuille de route (historique via les connecteurs) ou ajouter une petite vue d'évolution entre deux runs.
+- [ ] **Répéter la présentation** avec le déroulé (démo 8-10 min, architecture 3-4 min, défis 2-3 min) et ajuster les timings.
 
-Écartés : `max_tokens` (plafond de sécurité, sans effet sur la vitesse) et `STORY_WORKERS` (les 3 stories tournent déjà en parallèle).
+### 2 · Le petit manuel « What / How / Why » pour les lecteurs Thiga
+- [ ] **Définir avec Clément** : le public (Renaud, Sébastien, Laura), le format (page, PDF, guide dans l'app) et la longueur.
+- [ ] **Contenu pressenti** :
+  - quoi : ce que fait l'assistant ;
+  - comment : se connecter, parcourir un cas, lire la priorisation, exporter ;
+  - pourquoi : les choix clés et les ajouts en pâle.
 
-### Priorité 1 bis · Comparer les runs devant le CTO : terminée (verdict dans `HOWHY.md`, D18)
-
-### Priorité 2 · Démo
-- [ ] **Vérifier en ligne**, après redéploiement : accueil vide, onboarding avec démo rapide présélectionnée, tri instantané replié, bandeau d'accueil fermable, palette vert et beige dans les deux thèmes.
-
-### Priorité 3 · Améliorations proposées
-- [ ] **Prénom affiché** : ajouter un champ « nom affiché » au profil (Supabase `profiles.display_name`, éditable dans *Admin › Quotas*), pour afficher « Clément » avec l'accent au lieu du prénom déduit de l'email.
-- [ ] **Jeu d'évaluation** : une dizaine de dumps annotés (demandes attendues, bugs, verbatims) pour mesurer la qualité à chaque changement de prompt.
-- [ ] **Résister à un rafraîchissement de page** : aujourd'hui, F5 déconnecte l'utilisateur et fait disparaître l'analyse affichée. Les dépenses, elles, restent en base. Un run enregistré peut déjà être rouvert depuis *Admin › Runs* ; reste à garder la session et à recharger le dernier résultat automatiquement.
-- [ ] **Bouton « Actualiser » dans Admin** : les chiffres de la console sont mis en cache 2 minutes par session.
-- [ ] Optimisations secondaires, à ne faire que si la mesure le justifie : entrée allégée pour le stratège, prompt caching (gain probablement faible). Haiku a été mesuré le 26/09 et écarté (D18).
-- [ ] **Modèles d'autres fournisseurs** (open source via une API compatible OpenAI, Mistral…) : hors consigne, qui impose Claude. À présenter comme feuille de route, puisque l'appel au modèle est isolé dans `agents.py`. Points à traiter : format JSON strict, réflexion résumée et effort, qui ne sont pas disponibles partout.
-- [ ] **Connecteurs réels** (phase 1 : Zendesk, Jira, Outlook / Gmail) : hors POC. La feuille de route est visible dans l'onglet Connecteurs (D20).
+  Il doit rester court et renvoyer à `HOWHY.md` pour le détail.
 
 ### Actions côté Clément (configuration)
-- [ ] **Rôles des invités** : passer renaud@thiga.test et sebastien@thiga.test en admin (Admin › Quotas, ou la requête SQL fournie) ; laura@thiga.test reste membre.
-- [ ] *Admin › Quotas* : relever les limites du compte relecteur `test@thiga.com` pour le jour de l'entretien, une fois le coût d'un run connu.
+- [ ] **Rôles des invités** : passer renaud@thiga.test et sebastien@thiga.test en admin (Admin › Quotas, ou la requête SQL `update public.profiles set role = 'admin' where email in (...)`), avec un plafond (par exemple 3 € par jour) ; laura@thiga.test reste membre.
+- [ ] **Envoyer les accès** aux invités : un mot de passe fort et unique par personne (`openssl rand -base64 12`).
+- [ ] **Crédit API** : garder au moins 2 € de crédit restant (visible dans Admin) pour les runs des invités.
+- [ ] Facultatif : supprimer d'éventuelles anciennes données synthétiques (`delete from public.runs where is_synthetic;`) et décider du sort du compte `test@thiga.com`.
+
+### Backlog · améliorations possibles (hors consigne, à arbitrer)
+- [ ] **Prénom affiché** : un champ « nom affiché » au profil (`profiles.display_name`), pour afficher « Clément » avec l'accent au lieu du prénom déduit de l'email.
+- [ ] **Jeu d'évaluation** : une dizaine de dumps annotés (demandes attendues, bugs, verbatims), rejoués à chaque changement de prompt ou de modèle.
+- [ ] **Résister à un rafraîchissement de page** : aujourd'hui, F5 déconnecte. Un run enregistré peut déjà être rouvert depuis *Admin › Runs* ; reste à garder la session et à recharger le dernier résultat automatiquement.
+- [ ] **Bouton « Actualiser » dans Admin** : les chiffres de la console sont mis en cache 2 minutes par session.
+- [ ] Optimisations, seulement si la mesure le justifie : entrée allégée pour le stratège, prompt caching (gain probablement faible). Haiku a été mesuré et écarté (D18).
+- [ ] **Autres fournisseurs de modèles** (open source, etc.) : la consigne le permettrait, mais l'app s'appuie sur des fonctions de l'API Claude (format JSON strict, réflexion résumée, effort). À présenter comme piste, l'appel au modèle étant isolé dans `agents.py`.
+- [ ] **Connecteurs réels** (phase 1 : Zendesk, Jira, Outlook / Gmail) : hors POC ; feuille de route visible dans l'onglet Connecteurs (D20).
+
+### Repères techniques pour reprendre
+- **Migrations Supabase**, toutes exécutées en production : `20260925000000_init.sql`, `20260926000000_agent_calls.sql`, `20260927000000_run_details.sql`.
+- **Secrets Streamlit** : `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_KEY` (clé *publishable*), `ANTHROPIC_CREDITS_USD = "10"`, `EFFORT_STRATEGIST = "high"`.
+- **Vérifier avant de pousser** : `ruff check .`, `ruff format --check .` et `pytest -q` (75 tests). Les règles de sécurité se testent avec `scripts/test_schema.sh` sur un PostgreSQL jetable.
+- **Aperçu local** : le serveur d'aperçu n'a pas accès au dossier Documents (permission macOS). Il faut copier l'app et les paquets du `.venv` dans le dossier temporaire de la session, puis lancer en `AUTH_MODE=local`.
+- **Tests d'interface** : les tests Streamlit (`AppTest`) ne savent pas afficher le guide ; ils le marquent « vu » avant la connexion.
 
 ---
 
 ## Terminé
 
 ### 2026-09-26
+- [x] Priorité « latence et adéquation » close : `max_tokens` et `STORY_WORKERS` écartés (sans effet sur la vitesse), effort du stratège mesuré et gardé en élevé, revue d'adéquation faite.
 - [x] **Interface épurée** : bandeaux « Étape x sur 4 » retirés ; thèmes en lignes compactes ; graphiques, justifications, détails des stories, rédaction à la demande, détails techniques, autres signaux et phases 2-3 des connecteurs dans des sections repliées. Barre latérale réduite au compte, au thème (icônes soleil et lune dessinées en CSS), au mode démo et au nombre de stories ; contexte produit, « Sous le capot », quotas et crédit retirés (ces derniers restent dans Admin).
 - [x] **Graphique « Tokens consommés par jour »** : il était tracé en aire, invisible avec des données sur un ou deux jours ; passé en barres (idem pour la dépense quotidienne).
 - [x] **Consigne Thiga en tête du README** (texte intégral) **et de `tasks.md`** (résumé), comme référence absolue du projet.
@@ -70,7 +96,7 @@ _Aucune tâche en cours._
 - [x] **Données synthétiques retirées** de la console admin (générateur, bouton « Données de démo », interrupteur d'inclusion) : l'admin n'affiche que l'usage réel, et d'éventuelles anciennes lignes synthétiques restent ignorées partout.
 - [x] **Onglets ajoutés en pâle** (Connecteurs, Admin) avec la légende « En pâle : ajouts au-delà de la consigne », ainsi que le réglage des modèles réservé à l'admin. Les cinq raisons de ces ajouts sont dans `HOWHY.md` (7.3).
 - [x] **Fin des erreurs après déploiement** (`ImportError` qui exigeait « Reboot app ») : `reload_guard.py` recharge les modules modifiés sans redémarrer. Reproduit puis corrigé sur une copie locale, et couvert par un test.
-- [x] **Déroulé de démo** pour l'entretien, en page privée : https://claude.ai/artifact/TxaWoGuHFrooBaLK7hhEV6 (12 min minutées, écrans, phrases clés, chiffres, questions probables du CTO, plans B, limites à assumer).
+- [x] **Déroulé de démo** pour l'entretien, en page privée : https://claude.ai/artifact/TxaWoGuHFrooBaLK7hhEV6. Version 3 au format réel de la consigne (15 min : démo, architecture, défis), avec la correspondance aux critères du jury, les questions probables, les plans B et les limites à assumer.
 - [x] **Onglet Connecteurs** : 7 connecteurs en 3 phases (Zendesk, Jira en entrée et en sortie, Outlook / Gmail ; Slack / Teams, NPS, stores ; CRM), avec ce qu'ils apportent, l'autorisation, la fréquence et le canal d'arrivée. Aucune connexion active. Chaque source arrive sur un canal que le tri par règles connaît déjà (testé). Décision D20 dans `HOWHY.md`, glossaire complété (Connecteur, OAuth, Webhook).
 - [x] **Démo = vrai run** : l'export du run « Référence » (Sonnet partout, 110 s, 0,16 €, 14/14 verbatims) remplace le résultat rédigé à la main. Les chiffres du rejeu viennent du résultat. Les tests utilisent un résultat de référence figé (`tests/fixtures/reference_result.json`).
 - [x] Comparaison des stories : Sonnet 20 à 29 s, 5 scénarios, découpe claire ; Haiku 43 à 64 s, 2 stories sur 9 hors règle, points irréguliers. Verdict final dans `HOWHY.md` (D18) : Sonnet 5 partout.

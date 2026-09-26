@@ -175,7 +175,7 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 
   Une palette aux couleurs de Thiga (indigo et framboise) a été essayée puis écartée : trop voyante pour un outil de travail.
 
-  Les couleurs des graphiques ont été choisies pour rester distinctes pour les daltoniens et contrastées sur les deux fonds. Les accents qui dépendent du thème sont des variables CSS basculées par l'interrupteur Clair / Sombre.
+  Les couleurs des graphiques ont été choisies pour rester distinctes pour les daltoniens et contrastées sur les deux fonds. Les accents qui dépendent du thème sont des variables CSS basculées par l'interrupteur clair / sombre (icônes soleil et lune).
 - **Pourquoi** : c'est le moyen le plus rapide de livrer une application de données interactive en Python.
 - **Compromis** : Streamlit réexécute le script à chaque interaction. D'où les caches par session (quotas, données admin) et l'état stocké dans `st.session_state`.
 - **Déploiements sans redémarrage** : un serveur Streamlit garde les modules déjà importés. Après une mise à jour, `app.py` pouvait donc être neuf et `agents.py` encore ancien, ce qui provoquait une `ImportError` jusqu'au redémarrage. `reload_guard.py` détecte les fichiers modifiés depuis leur import (date du fichier, ou cache de bytecode au premier passage) et recharge le code du projet. Un test simule le cas.
