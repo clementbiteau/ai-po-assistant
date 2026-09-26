@@ -3,7 +3,7 @@
 > **Règle** : ce fichier est mis à jour **dès qu'une tâche est inscrite** (ajout dans « À faire » ou « En cours »)
 > et **dès qu'elle est terminée** (déplacée dans « Terminé », avec la date). Il sert de passation entre les sessions.
 
-Dernière mise à jour : 2026-09-25
+Dernière mise à jour : 2026-09-26
 
 ---
 
@@ -18,13 +18,12 @@ _Aucune tâche en cours._
 ### Priorité 1 · Latence et adéquation au use case (le « point 3 »)
 - [ ] **Mesurer un run de référence** : 3 runs en direct sur « Notifications & churn », puis une requête SQL sur `agent_calls` pour obtenir la durée par agent, la part des corrections (tentative 2), les tokens et le coût par run. Vérifier au passage qu'un run reste sous le plafond de 0,50 € par requête du compte relecteur.
 - [ ] **Effort du stratège** : si c'est l'étape la plus lente, comparer `EFFORT_STRATEGIST` en `high` et en `medium` sur la durée et la stabilité du classement RICE.
-- [ ] **Vérifier le streaming en direct** lors du premier run réel : fluidité de l'affichage, et langue de la réflexion résumée (elle peut arriver en anglais, car les prompts système sont en anglais).
 
 Écartés : `max_tokens` (plafond de sécurité, sans effet sur la vitesse) et `STORY_WORKERS` (les 3 stories tournent déjà en parallèle).
 
 ### Priorité 2 · Démo
 - [ ] **Remplacer le résultat de démo rédigé à la main par un vrai run** : lancer en direct le cas « Notifications & churn », télécharger *Export › JSON typé*, l'enregistrer sous `data/demo_result.json`, puis commit.
-- [ ] **Vérifier en ligne**, après redéploiement : accueil vide, onboarding avec démo rapide présélectionnée, tri instantané replié, bandeau d'accueil fermable, couleurs Thiga dans les deux thèmes.
+- [ ] **Vérifier en ligne**, après redéploiement : accueil vide, onboarding avec démo rapide présélectionnée, tri instantané replié, bandeau d'accueil fermable, palette vert et beige dans les deux thèmes.
 
 ### Priorité 3 · Améliorations proposées
 - [ ] **Prénom affiché** : ajouter un champ « nom affiché » au profil (Supabase `profiles.display_name`, éditable dans *Admin › Quotas*), pour afficher « Clément » avec l'accent au lieu du prénom déduit de l'email.
@@ -40,6 +39,10 @@ _Aucune tâche en cours._
 ---
 
 ## Terminé
+
+### 2026-09-26
+- [x] Streaming vérifié en ligne sur un vrai run (« tout marche très bien »). Premier run réel : 0,163 €, bien sous le plafond de 0,50 € par requête.
+- [x] Retour à la palette vert et beige (accent vert profond, fond beige, titres Newsreader), à la demande de Clément : la charte Thiga faisait trop voyant. Fond beige plutôt que quasi blanc pour éviter l'éblouissement ; couleurs des graphiques revalidées sur les deux fonds.
 
 ### 2026-09-25
 - [x] Revue d'adéquation à la consigne : section 7 de `HOWHY.md` (demandes couvertes, écarts assumés, ajouts et leur place dans la présentation, verdict).

@@ -20,20 +20,20 @@ _LOGIN_CSS = """
 section[data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] {display: none;}
 .block-container {max-width: 1120px; padding-top: 7vh;}
 .pitch {padding: 8px 28px 0 0;}
-.pitch h1 {font-family: 'Kanit', sans-serif; font-weight: 600; font-size: 3rem; line-height: 1.05;
+.pitch h1 {font-family: 'Newsreader', Georgia, serif; font-weight: 500; font-size: 3rem; line-height: 1.05;
   margin: 14px 0 16px; padding: 0; letter-spacing: -0.015em;}
-.pitch h1 em {font-style: normal; color: var(--accent);}
+.pitch h1 em {font-style: italic; color: var(--accent-text);}
 .pitch p.lead {font-size: 1.05rem; line-height: 1.6; opacity: .85; max-width: 46ch; margin: 0 0 28px;}
 .pitch ol {list-style: none; padding: 0; margin: 0; counter-reset: s;}
 .pitch li {counter-increment: s; display: grid; grid-template-columns: 44px 1fr; padding: 12px 0;
   border-top: 1px solid var(--line); font-size: .95rem; line-height: 1.45;}
-.pitch li::before {content: "0" counter(s); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: .74rem;
+.pitch li::before {content: "0" counter(s); font-family: 'Geist Mono', ui-monospace, monospace; font-size: .74rem;
   color: var(--accent-text); padding-top: 3px;}
 .pitch li b {font-weight: 600;}
 .pitch .sub {opacity: .78;}
-.form-head {font-family: 'Kanit', sans-serif; font-size: 1.6rem; font-weight: 500; margin: 0 0 2px;}
+.form-head {font-family: 'Newsreader', Georgia, serif; font-size: 1.6rem; font-weight: 500; margin: 0 0 2px;}
 .form-note {font-size: .86rem; opacity: .75; margin-bottom: 8px;}
-.login-foot {font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: .68rem; letter-spacing: .12em;
+.login-foot {font-family: 'Geist Mono', ui-monospace, monospace; font-size: .68rem; letter-spacing: .12em;
   text-transform: uppercase; opacity: .7; text-align: right;}
 </style>
 """

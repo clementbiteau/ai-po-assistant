@@ -25,7 +25,7 @@ _TEMPLATE = """
   line-height: 1; white-space: nowrap; padding: 6px 11px; border-radius: 999px; color: inherit; opacity: .7;
   transition: all .15s ease;}}
 #{id} button:hover {{opacity: 1;}}
-#{id} button.on {{background: #C50041; color: #FFFCF9; opacity: 1;}}
+#{id} button.on {{background: #1F6E57; color: #F2EEE4; opacity: 1;}}
 </style>
 <div id="{id}" role="group" aria-label="Thème">
   <button type="button" data-mode="Light" aria-label="Thème clair">Clair</button>

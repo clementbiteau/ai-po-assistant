@@ -15,14 +15,14 @@ _CSS = """
 <style>
 @keyframes po-greet-in {from {opacity: 0; transform: translateY(6px);} to {opacity: 1; transform: none;}}
 .st-key-greet_box {animation: po-greet-in .6s ease-out both; border-radius: 14px; padding: 18px 16px 18px 24px;
-  margin-bottom: 18px; color: #FFFCF9; background-color: #1B0442;
-  background-image: radial-gradient(rgba(255,252,249,.07) 1px, transparent 1.2px); background-size: 16px 16px;}
-.st-key-greet_box .hello {font-family: 'Kanit', sans-serif; font-size: 1.55rem; font-weight: 500; line-height: 1.2;
-  color: #FFFCF9;}
-.st-key-greet_box .line {font-size: .96rem; color: rgba(255,252,249,.86); margin-top: 4px;}
-.st-key-greet_box .line b {color: #FF9BBB; font-weight: 600;}
-.st-key-greet_box button {color: rgba(255,252,249,.8) !important; min-height: 2rem;}
-.st-key-greet_box button:hover {color: #FFFCF9 !important; background: rgba(255,252,249,.1) !important;}
+  margin-bottom: 18px; color: #F2EEE4; background-color: #14352C;
+  background-image: radial-gradient(rgba(242,238,228,.07) 1px, transparent 1.2px); background-size: 16px 16px;}
+.st-key-greet_box .hello {font-family: 'Newsreader', Georgia, serif; font-size: 1.65rem; font-weight: 500;
+  line-height: 1.2; color: #F2EEE4;}
+.st-key-greet_box .line {font-size: .96rem; color: rgba(242,238,228,.84); margin-top: 4px;}
+.st-key-greet_box .line b {color: #A9D3C3; font-weight: 600;}
+.st-key-greet_box button {color: rgba(242,238,228,.8) !important; min-height: 2rem;}
+.st-key-greet_box button:hover {color: #F2EEE4 !important; background: rgba(242,238,228,.1) !important;}
 @media (prefers-reduced-motion: reduce) {.st-key-greet_box {animation: none;}}
 </style>
 """

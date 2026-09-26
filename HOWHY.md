@@ -146,12 +146,13 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 - **Compromis** : plus de tokens par minute consommés d'un coup. Sur un compte neuf aux limites basses, on peut passer à 1 (`STORY_WORKERS=1`).
 
 ### D10. Streamlit pour l'interface
-- **Décision** : Streamlit, imposé par la stack, avec un design aux couleurs de Thiga :
-  - indigo `#1B0442`, framboise `#C50041`, bordeaux `#5E0028`, violet `#5818FF`, crème `#FFFCF9` ;
-  - titres en Kanit, texte en Inter ;
-  - barre latérale indigo dans les deux thèmes ;
-  - mode clair sur fond crème avec cartes blanches, pour éviter l'éblouissement ;
+- **Décision** : Streamlit, imposé par la stack, avec un design éditorial et sobre :
+  - un seul accent vert profond (`#1F6E57`, `#14352C` pour les bandeaux), fond beige `#F4F1EA`, encre `#1C1B19` ;
+  - titres en serif (Newsreader), interface en Geist, chiffres en Geist Mono ;
+  - mode clair sur fond beige avec des cartes papier plus claires, pour éviter l'éblouissement du blanc ;
   - aucun emoji.
+
+  Une palette aux couleurs de Thiga (indigo et framboise) a été essayée puis écartée : trop voyante pour un outil de travail.
 
   Les couleurs des graphiques ont été choisies pour rester distinctes pour les daltoniens et contrastées sur les deux fonds. Les accents qui dépendent du thème sont des variables CSS basculées par l'interrupteur Clair / Sombre.
 - **Pourquoi** : c'est le moyen le plus rapide de livrer une application de données interactive en Python.
