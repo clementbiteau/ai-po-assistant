@@ -1,0 +1,80 @@
+"""Time-aware welcome banner, dismissible with a close button."""
+
+from __future__ import annotations
+
+import re
+from datetime import datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+import streamlit as st
+
+from ui.style import esc, render_html
+
+_KEY = "greet_box"
+_CSS = """
+<style>
+@keyframes po-greet-in {from {opacity: 0; transform: translateY(6px);} to {opacity: 1; transform: none;}}
+.st-key-greet_box {animation: po-greet-in .6s ease-out both; border-radius: 14px; padding: 18px 16px 18px 24px;
+  margin-bottom: 18px; color: #F2EEE4; background-color: #14352C;
+  background-image: radial-gradient(rgba(242,238,228,.07) 1px, transparent 1.2px); background-size: 16px 16px;}
+.st-key-greet_box .hello {font-family: 'Newsreader', Georgia, serif; font-size: 1.65rem; font-weight: 500;
+  line-height: 1.2; color: #F2EEE4;}
+.st-key-greet_box .line {font-size: .96rem; color: rgba(242,238,228,.84); margin-top: 4px;}
+.st-key-greet_box .line b {color: #A9D3C3; font-weight: 600;}
+.st-key-greet_box button {color: rgba(242,238,228,.8) !important; min-height: 2rem;}
+.st-key-greet_box button:hover {color: #F2EEE4 !important; background: rgba(242,238,228,.1) !important;}
+@media (prefers-reduced-motion: reduce) {.st-key-greet_box {animation: none;}}
+</style>
+"""
+
+
+def display_name(email: str) -> str:
+    """``camille.durand@example.com`` → ``Camille``."""
+    local = (email or "").split("@")[0]
+    first = re.split(r"[._\-+0-9]", local)[0]
+    return first.capitalize() or "toi"
+
+
+def salutation(now: datetime) -> str:
+    """Bonjour (morning), Bon après-midi (afternoon), Bonsoir (evening and night)."""
+    if 5 <= now.hour < 12:
+        return "Bonjour"
+    if 12 <= now.hour < 18:
+        return "Bon après-midi"
+    return "Bonsoir"
+
+
+def _local_now(fallback_tz: str) -> datetime:
+    for tz in (getattr(st.context, "timezone", None), fallback_tz):
+        if tz:
+            try:
+                return datetime.now(ZoneInfo(tz))
+            except ZoneInfoNotFoundError:
+                continue
+    return datetime.now()
+
+
+def _dismiss() -> None:
+    st.session_state["_greet_dismissed"] = True
+
+
+def render_greeting(email: str, messages: int, urgent: int, fallback_tz: str, name: str | None = None) -> None:
+    """Welcome banner with live inbox counts; stays until the user closes it (per session)."""
+    if st.session_state.get("_greet_dismissed"):
+        return
+    hello = f"{salutation(_local_now(fallback_tz))} {name or display_name(email)} !"
+    plural = "s" if messages > 1 else ""
+    urgent_txt = f", dont <b>{urgent} en urgence</b>" if urgent else ""
+    line = (
+        f"Vous avez <b>{messages} notification{plural}</b> dans votre inbox{urgent_txt}."
+        if messages
+        else "Votre inbox est vide : choisissez un cas client prêt à l'emploi ou collez vos retours."
+    )
+    render_html(_CSS)
+    with st.container(key=_KEY):
+        text_col, close_col = st.columns([24, 1], vertical_alignment="top")
+        with text_col:
+            render_html(f'<div class="hello">{esc(hello)}</div><div class="line">{line}</div>')
+        with close_col:
+            st.button("", icon=":material/close:", type="tertiary", key="greet_close", help="Fermer",
+                      on_click=_dismiss)  # fmt: skip

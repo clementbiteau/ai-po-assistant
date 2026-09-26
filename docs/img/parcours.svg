@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" width="960" height="430" role="img" aria-labelledby="t d">
+  <title id="t">Le parcours d'un run, de l'Inbox au backlog</title>
+  <desc id="d">Huit étapes. Entrée : l'Inbox. Code : tri par règles, vérification des verbatims, score et classement, Gherkin et exports. IA : l'analyste, le stratège et les rédacteurs. Le PO peut corriger une estimation, et le classement se recalcule sans IA.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7A756B"/>
+    </marker>
+    <marker id="arrow-po" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1F6E57"/>
+    </marker>
+    <style>
+      .t {font-family: Geist, "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 600;}
+      .s {font-family: Geist, "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 13px;}
+      .n {font-family: "Geist Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 11px; letter-spacing: .08em;}
+      .l {font-family: Geist, "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 13px; fill: #3B3934;}
+      .ia rect {fill: #1F6E57;}
+      .ia .t {fill: #FFFFFF;} .ia .s {fill: #DCEBE4;} .ia .n {fill: #A9D3C3;}
+      .code rect {fill: #FCFBF8; stroke: #BDB6A6; stroke-width: 1.5;}
+      .code .t {fill: #1C1B19;} .code .s {fill: #55524B;} .code .n {fill: #1F6E57;}
+      .in rect {fill: #EDE8DD; stroke: #A39D90; stroke-width: 1.5; stroke-dasharray: 5 4;}
+      .in .t {fill: #1C1B19;} .in .s {fill: #55524B;} .in .n {fill: #7A756B;}
+      .flow {stroke: #7A756B; stroke-width: 1.6; fill: none;}
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="960" height="430" rx="16" fill="#F4F1EA"/>
+
+  <!-- Legend -->
+  <g transform="translate(40 34)">
+    <rect x="0" y="-11" width="14" height="14" rx="3" fill="#1F6E57"/>
+    <text class="l" x="22" y="1">IA : Claude Sonnet 5</text>
+    <rect x="180" y="-11" width="14" height="14" rx="3" fill="#FCFBF8" stroke="#BDB6A6" stroke-width="1.5"/>
+    <text class="l" x="202" y="1">Code : règles et calcul, sans IA</text>
+    <rect x="440" y="-11" width="14" height="14" rx="3" fill="#EDE8DD" stroke="#A39D90" stroke-width="1.5" stroke-dasharray="3 2"/>
+    <text class="l" x="462" y="1">Entrée</text>
+  </g>
+
+  <!-- Row 1, left to right -->
+  <g class="in" transform="translate(40 70)">
+    <rect width="196" height="92" rx="10"/>
+    <text class="n" x="16" y="24">01 · ENTRÉE</text>
+    <text class="t" x="16" y="48">Inbox</text>
+    <text class="s" x="16" y="67">retours collés ou</text>
+    <text class="s" x="16" y="83">cas prêt à l'emploi</text>
+  </g>
+  <g class="code" transform="translate(272 70)">
+    <rect width="196" height="92" rx="10"/>
+    <text class="n" x="16" y="24">02 · CODE</text>
+    <text class="t" x="16" y="48">Tri par règles</text>
+    <text class="s" x="16" y="67">canal et urgence,</text>
+    <text class="s" x="16" y="83">instantané</text>
+  </g>
+  <g class="ia" transform="translate(504 70)">
+    <rect width="196" height="92" rx="10"/>
+    <text class="n" x="16" y="24">03 · IA</text>
+    <text class="t" x="16" y="48">Analyste</text>
+    <text class="s" x="16" y="67">thèmes, besoins,</text>
+    <text class="s" x="16" y="83">citations à l'appui</text>
+  </g>
+  <g class="code" transform="translate(736 70)">
+    <rect width="196" height="92" rx="10"/>
+    <text class="n" x="16" y="24">04 · CODE</text>
+    <text class="t" x="16" y="48">Vérification</text>
+    <text class="s" x="16" y="67">chaque citation cherchée</text>
+    <text class="s" x="16" y="83">mot pour mot</text>
+  </g>
+
+  <!-- Row 2, right to left -->
+  <g class="ia" transform="translate(736 232)">
+    <rect width="196" height="92" rx="10"/>
+    <text class="n" x="16" y="24">05 · IA</text>
+    <text class="t" x="16" y="48">Stratège</text>
+    <text class="s" x="16" y="67">Reach, Impact, Confidence,</text>
+    <text class="s" x="16" y="83">Effort, justifiés</text>
+  </g>
+  <g class="code" transform="translate(504 232)">
+    <rect width="196" height="92" rx="10"/>
+    <text class="n" x="16" y="24">06 · CODE</text>
+    <text class="t" x="16" y="48">Score et classement</text>
+    <text class="s" x="16" y="67">RICE, MoSCoW,</text>
+    <text class="s" x="16" y="83">ordre du backlog</text>
+  </g>
+  <g class="ia" transform="translate(272 232)">
+    <rect width="196" height="92" rx="10"/>
+    <text class="n" x="16" y="24">07 · IA</text>
+    <text class="t" x="16" y="48">Rédacteurs</text>
+    <text class="s" x="16" y="67">une story par besoin,</text>
+    <text class="s" x="16" y="83">en parallèle</text>
+  </g>
+  <g class="code" transform="translate(40 232)">
+    <rect width="196" height="92" rx="10"/>
+    <text class="n" x="16" y="24">08 · CODE</text>
+    <text class="t" x="16" y="48">Gherkin et exports</text>
+    <text class="s" x="16" y="67">Jira CSV, Markdown,</text>
+    <text class="s" x="16" y="83">.feature, JSON</text>
+  </g>
+
+  <!-- Flow -->
+  <path class="flow" d="M238 116 H268" marker-end="url(#arrow)"/>
+  <path class="flow" d="M470 116 H500" marker-end="url(#arrow)"/>
+  <path class="flow" d="M702 116 H732" marker-end="url(#arrow)"/>
+  <path class="flow" d="M834 164 V228" marker-end="url(#arrow)"/>
+  <path class="flow" d="M734 278 H704" marker-end="url(#arrow)"/>
+  <path class="flow" d="M502 278 H472" marker-end="url(#arrow)"/>
+  <path class="flow" d="M270 278 H240" marker-end="url(#arrow)"/>
+
+  <!-- The PO stays in the loop -->
+  <path d="M602 372 V328" stroke="#1F6E57" stroke-width="1.6" stroke-dasharray="5 4" fill="none" marker-end="url(#arrow-po)"/>
+  <circle cx="602" cy="392" r="22" fill="#14352C"/>
+  <text x="602" y="397" text-anchor="middle" font-family="Geist, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13" font-weight="600" fill="#F2EEE4">PO</text>
+  <text class="l" x="636" y="388">Le PO corrige une estimation :</text>
+  <text class="l" x="636" y="406">tout se recalcule, sans appel à l'IA.</text>
+</svg>

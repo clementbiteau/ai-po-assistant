@@ -1,0 +1,12 @@
+.env
+.venv/
+.data/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.streamlit/secrets.toml
+.DS_Store
+
+# Personal working notes, kept out of the repository
+tasks.md
