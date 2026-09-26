@@ -602,9 +602,6 @@ class ClaudeGateway:
     VALIDATION_RETRIES = 1
     #: Minimum delay between two live updates of a streamed response (seconds).
     STREAM_INTERVAL_S = 0.25
-    #: Beta enabling ``fallbacks="default"``: a request declined by a safety
-    #: classifier is re-run server-side on the model Anthropic recommends.
-    FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
     def __init__(
         self, settings: Settings, tracker: UsageTracker | None = None, budget_usd: float | None = None
@@ -759,8 +756,8 @@ class ClaudeGateway:
             )
         started = time.perf_counter()
         try:
-            endpoint, params = self._request(model, system, messages, output_config)
-            response = endpoint.create(**params) if on_stream is None else self._stream(endpoint, params, on_stream)
+            params = self._params(model, system, messages, output_config)
+            response = self._client.messages.create(**params) if on_stream is None else self._stream(params, on_stream)
         except anthropic.AuthenticationError as exc:
             raise AgentAuthError(
                 "Clé API Anthropic invalide ou révoquée. Vérifiez ANTHROPIC_API_KEY.",
@@ -822,10 +819,10 @@ class ClaudeGateway:
         self.tracker.record(agent, model, response.usage, elapsed)
         return response
 
-    def _request(
+    def _params(
         self, model: str, system: str, messages: list[anthropic.types.MessageParam], output_config: dict
-    ) -> tuple[Any, dict[str, Any]]:
-        """Endpoint and parameters for ``model``, adapted to what the model supports."""
+    ) -> dict[str, Any]:
+        """Request parameters for ``model``, adapted to what the model supports."""
         spec = MODELS.get(model)
         params: dict[str, Any] = {
             "model": model,
@@ -845,14 +842,9 @@ class ClaudeGateway:
             params["output_config"] = config
             if budget:
                 params["thinking"] = {"type": "enabled", "budget_tokens": budget}
-        if spec is not None and spec.refusal_fallback:
-            params |= {"betas": [self.FALLBACK_BETA], "fallbacks": "default"}
-            return self._client.beta.messages, params
-        return self._client.messages, params
+        return params
 
-    def _stream(
-        self, endpoint: Any, params: dict[str, Any], on_stream: Callable[[str, str], None]
-    ) -> anthropic.types.Message:
+    def _stream(self, params: dict[str, Any], on_stream: Callable[[str, str], None]) -> anthropic.types.Message:
         """Same request as ``messages.create``, streamed so progress can be shown live.
 
         The live display is best effort: a failing callback is logged and
@@ -868,7 +860,7 @@ class ClaudeGateway:
                 logger.exception("Live progress callback failed; muting it for this request.")
                 on_stream = lambda _thinking, _text: None  # noqa: E731
 
-        with endpoint.stream(**params) as stream:
+        with self._client.messages.stream(**params) as stream:
             for event in stream:
                 if event.type == "thinking":
                     thinking = event.snapshot

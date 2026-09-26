@@ -227,17 +227,15 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
   |---|---|---|---|
   | Référence | Sonnet 5 · Sonnet 5 (élevé) · Sonnet 5 | 0,16 € (mesuré) | Le meilleur équilibre qualité, coût et latence pour juger du texte |
   | Rédaction sur Haiku | Sonnet 5 · Sonnet 5 (élevé) · Haiku 4.5 | ~0,12 € | La rédaction est la tâche la plus cadrée et produit la moitié des tokens |
-  | Priorisation sur Opus | Sonnet 5 · Opus 5 (élevé) · Sonnet 5 | ~0,24 € | Le classement conditionne tout le backlog : le meilleur modèle là où l'erreur coûte le plus |
   | Plancher de coût | Haiku 4.5 partout | ~0,08 € | Mesurer ce que la qualité perd au prix minimal |
 
   Les coûts estimés appliquent les prix de chaque modèle au volume de texte du run de référence. Un autre modèle écrit plus ou moins : seul un run réel donne le vrai chiffre, d'où D19.
 - **Pourquoi** : on n'affecte pas un modèle « au feeling ». Chaque configuration porte une hypothèse (où le jugement compte, où le volume coûte), et l'onglet Runs la vérifie.
 - **Adaptations par modèle** :
   - **Haiku 4.5** n'a ni niveau d'effort ni réflexion adaptative : l'effort est traduit en budget de réflexion (aucun en « faible », 2 048 tokens en « moyen », 4 096 en « élevé »).
-  - **Opus 5** active le **repli automatique côté serveur** (`fallbacks: "default"`) : si un filtre de sécurité refuse une requête, l'API la relance sur le modèle recommandé au lieu d'échouer.
   - Chaque agent est facturé au prix de son propre modèle, dans les quotas comme dans les estimations.
 - **Écartés** :
-  - **Fable 5.1** (10 $ / 50 $ par million de tokens) : environ 0,80 € par run, au-dessus du plafond des membres, pour une marge dont cette tâche n'a pas besoin.
+  - **Opus 5 et Fable 5.1** : surdimensionnés. Lire, regrouper et noter des retours clients avec une grille explicite ne demande pas le modèle le plus puissant. Ils coûteraient 1,5 à 5 fois le run de référence (environ 0,24 € et 0,80 €), sans gain mesuré. Le bon réflexe est l'inverse : partir de Sonnet et vérifier ce que l'on peut confier à Haiku.
   - **D'autres fournisseurs** (modèles open source, etc.) : hors consigne, et l'app s'appuie sur des fonctions de l'API Claude (JSON garanti par schéma, réflexion résumée, effort). L'appel au modèle étant isolé dans `agents.py`, c'est une évolution possible, à mesurer avec D19.
 
 ### D19. Le suivi des runs (Admin › Runs)

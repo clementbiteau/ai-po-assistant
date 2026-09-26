@@ -45,8 +45,6 @@ class ModelSpec:
         adaptive_thinking: ``True`` for models driven by adaptive thinking and
             an ``effort`` level. ``False`` (Haiku 4.5): no effort parameter,
             thinking is enabled with a token budget derived from the effort.
-        refusal_fallback: Opt into the server-side fallback when the model's
-            safety classifiers decline a request (recommended on Opus 5).
         pitch: One-line positioning shown to the admin.
     """
 
@@ -55,15 +53,14 @@ class ModelSpec:
     input_usd: float
     output_usd: float
     adaptive_thinking: bool = True
-    refusal_fallback: bool = False
     pitch: str = ""
 
 
 #: Models the admin can pick, cheapest first. Prices are the Claude API list
 #: prices used for the in-app estimate; the source of truth is
-#: https://www.anthropic.com/pricing. Fable 5.1 is deliberately left out: at
-#: $10 / $50 a run would cost ~0.80 €, above the members' per-run cap, for
-#: headroom this task does not need.
+#: https://www.anthropic.com/pricing. Opus and Fable are deliberately left out:
+#: judging and structuring customer feedback does not need them, and they would
+#: cost 1.5x to 5x the reference run for no measured gain (see HOWHY, D18).
 MODELS: dict[str, ModelSpec] = {
     spec.id: spec
     for spec in (
@@ -74,10 +71,6 @@ MODELS: dict[str, ModelSpec] = {
         ModelSpec(
             "claude-sonnet-5", "Sonnet 5", 2.00, 10.00,
             pitch="Référence : le meilleur équilibre qualité, coût et latence pour juger du texte.",
-        ),
-        ModelSpec(
-            "claude-opus-5", "Opus 5", 5.00, 25.00, refusal_fallback=True,
-            pitch="Le plus rigoureux, 2,5 fois le prix de Sonnet. Repli automatique si un filtre refuse.",
         ),
     )
 }  # fmt: skip
@@ -106,7 +99,7 @@ def _cfg(analyst: tuple[str, Effort], strategist: tuple[str, Effort], writer: tu
     return {agent: {"model": model, "effort": effort} for agent, (model, effort) in pairs.items()}
 
 
-SONNET, HAIKU, OPUS = "claude-sonnet-5", "claude-haiku-4-5", "claude-opus-5"
+SONNET, HAIKU = "claude-sonnet-5", "claude-haiku-4-5"
 
 #: Configurations worth comparing, each with the argument that justifies it.
 PRESETS: dict[str, Preset] = {
@@ -121,12 +114,6 @@ PRESETS: dict[str, Preset] = {
         "La rédaction est la tâche la plus cadrée (schéma strict, une feature à la fois) et la plus bavarde : "
         "la moitié des tokens de sortie. On garde Sonnet là où il faut du jugement.",
         _cfg((SONNET, "medium"), (SONNET, "high"), (HAIKU, "medium")),
-    ),
-    "strategist_opus": Preset(
-        "Priorisation sur Opus",
-        "Le classement RICE conditionne tout le backlog : on met le modèle le plus rigoureux là où une erreur "
-        "coûte le plus, et Sonnet ailleurs.",
-        _cfg((SONNET, "medium"), (OPUS, "high"), (SONNET, "medium")),
     ),
     "all_haiku": Preset(
         "Plancher de coût (Haiku)",

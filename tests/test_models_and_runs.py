@@ -25,17 +25,14 @@ def call(gateway: ClaudeGateway, model: str, effort: str = "medium") -> None:
 
 
 def test_each_model_gets_the_request_it_supports() -> None:
-    std, beta = (
-        FakeMessages([fake_message(VALID.model_dump_json())] * 3),
-        FakeMessages([fake_message(VALID.model_dump_json())]),
-    )
+    std = FakeMessages([fake_message(VALID.model_dump_json())] * 3)
     gateway = ClaudeGateway(SETTINGS)
-    gateway._client = SimpleNamespace(messages=std, beta=SimpleNamespace(messages=beta))  # type: ignore[assignment]
+    gateway._client = SimpleNamespace(messages=std)  # type: ignore[assignment]
 
     call(gateway, "claude-sonnet-5", "high")
     sonnet = std.calls[-1]
     assert sonnet["thinking"] == {"type": "adaptive", "display": "summarized"}
-    assert sonnet["output_config"]["effort"] == "high" and "fallbacks" not in sonnet
+    assert sonnet["output_config"]["effort"] == "high"
 
     call(gateway, "claude-haiku-4-5", "medium")  # no effort parameter: a thinking budget instead
     haiku = std.calls[-1]
@@ -43,11 +40,6 @@ def test_each_model_gets_the_request_it_supports() -> None:
     assert haiku["thinking"] == {"type": "enabled", "budget_tokens": 2048}
     call(gateway, "claude-haiku-4-5", "low")
     assert "thinking" not in std.calls[-1]
-
-    call(gateway, "claude-opus-5", "high")  # beta endpoint, server-side fallback on a safety decline
-    opus = beta.calls[-1]
-    assert opus["fallbacks"] == "default" and opus["betas"] == [ClaudeGateway.FALLBACK_BETA]
-    assert opus["output_config"]["effort"] == "high"
 
 
 def test_each_agent_runs_and_is_costed_on_its_own_model() -> None:
@@ -85,16 +77,17 @@ def test_presets_are_valid_and_priced() -> None:
         for c in preset.config.values():
             assert c["model"] in MODELS and c["effort"] in EFFORTS
         costs[key] = base.with_agent_config(preset.config).estimated_run_usd()
-    assert costs["all_haiku"] < costs["writer_haiku"] < costs["reference"] < costs["strategist_opus"]
+    assert costs["all_haiku"] < costs["writer_haiku"] < costs["reference"]
+    assert not any("opus" in m or "fable" in m for m in MODELS)  # judged overkill for this task
 
 
 def test_agent_config_ignores_unknown_values() -> None:
     base = Settings(anthropic_api_key="x")
     changed = base.with_agent_config(
-        {"writer": {"model": "gpt-4", "effort": "turbo"}, "analyst": {"model": "claude-opus-5"}}
+        {"writer": {"model": "gpt-4", "effort": "turbo"}, "analyst": {"model": "claude-haiku-4-5"}}
     )
     assert changed.model_for("writer") == base.model_for("writer") and changed.efforts.writer == base.efforts.writer
-    assert changed.model_for("analyst") == "claude-opus-5"
+    assert changed.model_for("analyst") == "claude-haiku-4-5"
 
 
 # ── Storage ──────────────────────────────────────────────────────────────

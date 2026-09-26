@@ -110,7 +110,7 @@ def test_admin_picks_models_and_sees_runs_with_their_configuration(tmp_path) -> 
     assert not app.exception
     picker = app.selectbox(key="adm_preset")
     assert picker.value == "reference"
-    picker.select("strategist_opus").run()
+    picker.select("writer_haiku").run()
     assert not app.exception
     assert any("Coût estimé" in c.value for c in app.sidebar.caption)
     assert "Runs" in tab_labels(app)

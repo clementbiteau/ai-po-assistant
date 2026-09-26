@@ -20,8 +20,7 @@ _Aucune tâche en cours._
 Écartés : `max_tokens` (plafond de sécurité, sans effet sur la vitesse) et `STORY_WORKERS` (les 3 stories tournent déjà en parallèle).
 
 ### Priorité 1 bis · Comparer les runs devant le CTO
-- [ ] **Exécuter la migration** `supabase/migrations/20260927000000_run_details.sql` dans Supabase › SQL Editor (Clément), puis la requête qui complète les deux runs du 26/09.
-- [ ] **Préparer la démonstration** : lancer « Notifications & churn » avec 3 ou 4 configurations (Référence, Rédaction sur Haiku, Priorisation sur Opus, éventuellement Plancher de coût), puis les comparer deux à deux dans *Admin › Runs*. Budget : environ 0,60 à 1 €.
+- [ ] **Préparer la démonstration** : lancer « Notifications & churn » avec les 3 configurations (Référence, Rédaction sur Haiku, Plancher de coût), puis les comparer deux à deux dans *Admin › Runs*. Budget : environ 0,40 €.
 - [ ] **Vérifier Haiku 4.5 en réel** : format JSON strict et réflexion avec budget, au premier run.
 
 ### Priorité 2 · Démo
@@ -45,8 +44,10 @@ _Aucune tâche en cours._
 ## Terminé
 
 ### 2026-09-26
+- [x] Migration `run_details` exécutée dans Supabase (Clément).
+- [x] Opus retiré du catalogue et des configurations, jugé surdimensionné (Clément). Justification dans `HOWHY.md` (D18).
 - [x] **Admin › Runs** : chaque analyse enregistre sa configuration, son cas, son classement et son résultat (table `run_details`, RLS testée). Liste des runs avec la latence par étape, le coût et le top 3 ; comparaison de deux runs (durée, coût, étapes, classement et verdict) ; réouverture d'un résultat passé.
-- [x] **Choix du modèle Claude par agent (admin)** : 4 configurations argumentées (Référence, Rédaction sur Haiku, Priorisation sur Opus, Plancher de coût) ou réglage à la main, avec le coût estimé. Haiku : effort traduit en budget de réflexion. Opus : repli automatique en cas de refus. Coût calculé au prix de chaque modèle. Décisions D18 et D19 dans `HOWHY.md`.
+- [x] **Choix du modèle Claude par agent (admin)** : 3 configurations argumentées (Référence, Rédaction sur Haiku, Plancher de coût) ou réglage à la main, avec le coût estimé. Haiku : effort traduit en budget de réflexion. Opus et Fable écartés (surdimensionnés). Coût calculé au prix de chaque modèle. Décisions D18 et D19 dans `HOWHY.md`.
 - [x] Stratège remis en effort élevé dans les secrets Streamlit (Clément).
 - [x] Test de l'effort du stratège : en `medium`, le run passe de 110,5 s à 100,2 s, dont seulement 6,3 s gagnées sur le stratège (49,9 → 43,6 s), soit l'ordre des variations d'un run à l'autre. Décision : garder `high`. Conclusion dans `HOWHY.md` (D8).
 - [x] Streamlit Cloud passé en Python 3.12, aligné sur la CI.
