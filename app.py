@@ -9,6 +9,10 @@ Run with:  streamlit run app.py
 
 from __future__ import annotations
 
+import reload_guard
+
+reload_guard.refresh()  # after a deploy, reload project modules changed under the running server
+
 import time
 from dataclasses import replace
 from pathlib import Path
@@ -55,6 +59,7 @@ from ui.style import (
     MOSCOW_ORDER,
     SERIES,
     STATUS,
+    addition_tabs_css,
     chip,
     dollars,
     esc,
@@ -65,6 +70,8 @@ from ui.style import (
     shorten,
 )
 from ui.theme import theme_toggle
+
+reload_guard.remember()
 
 # ══════════════════════════════════════════════════════════════════════════
 # Page setup & design tokens
@@ -103,6 +110,8 @@ AGENTS_META: list[tuple[str, str, str, str]] = [
     ("writer", "UserStoryWriter", "Rédiger", "User stories et critères Gherkin, prêts pour Jira."),
 ]
 TABS = ["Inbox", "Analyse", "Priorisation", "User stories", "Export", "Connecteurs"]
+#: First tab added beyond the brief: it and the ones after it (Admin) are shown pale.
+FIRST_ADDITION_TAB = "Connecteurs"
 ADMIN_TAB = "Admin"
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -375,7 +384,7 @@ def render_sidebar(base_settings: Settings, profile: Profile) -> tuple[Settings,
 
 def _model_picker(settings: Settings) -> Settings:
     """Admin only: a named configuration (or a model and effort per agent) for the next runs."""
-    st.markdown("##### Modèles Claude · admin")
+    render_html('<h5 class="addition" style="margin:0">Modèles Claude · réglage admin</h5>')
     options = [*PRESETS, "custom"]
     choice = st.selectbox(
         "Configuration",
@@ -1225,7 +1234,7 @@ def empty_state(message: str) -> None:
 def main() -> None:
     """Application entry point: auth gate, then the PO workspace (+ admin console)."""
     session.load_secrets_into_env()
-    render_html(CSS)
+    render_html(CSS + addition_tabs_css(TABS.index(FIRST_ADDITION_TAB) + 1))
     base_settings = get_settings()
 
     profile = session.current_profile()

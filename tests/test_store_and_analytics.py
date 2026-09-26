@@ -1,8 +1,8 @@
-"""SQLite repository, local auth, synthetic data and DuckDB analytics."""
+"""SQLite repository, local auth, quotas and DuckDB analytics."""
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 import pytest
@@ -11,10 +11,31 @@ import analytics as sql
 from auth import AuthError, LocalAuthService, build_auth_service
 from config import Settings
 from governance import Quota
-from store import AgentRecord, RunRecord, SQLiteRepository, hash_password, verify_password
-from synthetic import generate_runs
+from store import AgentRecord, Profile, RunRecord, SQLiteRepository, hash_password, verify_password
 
 SINCE = datetime(2000, 1, 1, tzinfo=timezone.utc)
+_AGENTS = ("FeedbackAnalyst", "PrioritizationStrategist", "UserStoryWriter")
+
+
+def usage(profiles: list[Profile], days: int, *, synthetic: bool = False) -> list[RunRecord]:
+    """A few real-looking runs per user and day, today included: every status and kind the admin shows."""
+    now = datetime.now(timezone.utc)
+    runs = []
+    for day in range(days):
+        when = now - timedelta(days=day)
+        for p in profiles:
+            agents = tuple(AgentRecord(a, 1, 5000, 3000, 0.05, 30.0) for a in _AGENTS)
+            common = {"user_id": p.id, "model": "claude-sonnet-5", "created_at": when, "is_synthetic": synthetic}
+            runs += [
+                RunRecord(kind="pipeline", status="success", input_chars=5000 + 100 * day, features_count=5,
+                          stories_count=3, input_tokens=15000, output_tokens=9000, cost_usd=0.19, cost_eur=0.16,
+                          duration_s=110.0, agents=agents, **common),
+                RunRecord(kind="story", status="success", stories_count=1, input_tokens=2800, output_tokens=2400,
+                          cost_usd=0.03, cost_eur=0.026, duration_s=25.0, **common),
+                RunRecord(kind="pipeline", status="blocked", **common),
+                RunRecord(kind="pipeline", status="error", error="timeout", **common),
+            ]  # fmt: skip
+    return runs
 
 
 @pytest.fixture
@@ -58,10 +79,9 @@ def test_record_and_read_back(repo: SQLiteRepository) -> None:
 
 def test_synthetic_data_never_counts_towards_quotas(repo: SQLiteRepository) -> None:
     uid = repo.ensure_user("a@test.dev", "pw")
-    repo.insert_runs(generate_runs(repo.list_profiles(), today=date.today(), days=10))
+    repo.insert_runs(usage(repo.list_profiles(), days=10, synthetic=True))  # legacy generated rows
     assert repo.user_costs_since(uid, SINCE) == []
-    assert repo.purge_synthetic() > 0
-    assert repo.fetch_usage(SINCE)[0].empty
+    assert repo.total_real_cost_usd() == 0
 
 
 def test_update_profile(repo: SQLiteRepository) -> None:
@@ -75,7 +95,7 @@ def test_every_admin_query_runs(repo: SQLiteRepository) -> None:
     repo.ensure_user("admin@test.dev", "pw", role="admin")
     repo.ensure_user("a@test.dev", "pw")
     profiles = repo.list_profiles()
-    repo.insert_runs(generate_runs(profiles, today=date.today(), days=40))
+    repo.insert_runs(usage(profiles, days=40))
     runs, agents = repo.fetch_usage(datetime.now(timezone.utc) - timedelta(days=90))
     profiles_df = pd.DataFrame(
         [{"id": p.id, "email": p.email, "role": p.role, "monthly_eur_limit": p.quota.monthly_eur} for p in profiles]
@@ -113,13 +133,3 @@ def test_agent_journal_roundtrip(repo: SQLiteRepository) -> None:
     assert list(calls["agent"]) == ["FeedbackAnalyst", "PrioritizationStrategist"]
     assert calls.loc[0, "thinking"] == "Je segmente…" and calls.loc[1, "status"] == "retry"
     assert repo.fetch_calls([]).empty
-
-
-def test_synthetic_runs_come_with_a_journal(repo: SQLiteRepository) -> None:
-    repo.ensure_user("a@test.dev", "pw")
-    runs = generate_runs(repo.list_profiles(), today=date.today(), days=5)
-    repo.insert_runs(runs)
-    pipeline = next(r for r in runs if r.kind == "pipeline" and r.status == "success")
-    calls = repo.fetch_calls([pipeline.id])
-    assert list(calls["agent"])[:2] == ["FeedbackAnalyst", "PrioritizationStrategist"]
-    assert (calls["agent"] == "UserStoryWriter").sum() == pipeline.stories_count

@@ -285,7 +285,6 @@ class Repository(Protocol):
     def update_profile(self, user_id: str, role: str, quota: Quota) -> None: ...
     def record_run(self, run: RunRecord) -> None: ...
     def insert_runs(self, runs: Sequence[RunRecord]) -> int: ...
-    def purge_synthetic(self) -> int: ...
     def user_costs_since(self, user_id: str, since: datetime) -> list[tuple[datetime, float]]:
         """Real (non-synthetic) spend of one user — the basis of quota checks."""
         ...
@@ -369,7 +368,7 @@ class SupabaseRepository:
         self.insert_runs([run])
 
     def insert_runs(self, runs: Sequence[RunRecord]) -> int:
-        """Batch insert (used for real runs and for the synthetic data set)."""
+        """Batch insert of runs with their agent rows, journal and details."""
         from postgrest.types import ReturnMethod  # supabase dependency, imported lazily
 
         run_rows = [r.row() for r in runs]
@@ -413,12 +412,6 @@ class SupabaseRepository:
         with self._errors("lecture du résultat"):
             data = self.client.table("run_details").select("result").eq("run_id", run_id).limit(1).execute().data
         return (data[0].get("result") if data else None) or None
-
-    def purge_synthetic(self) -> int:
-        """Delete synthetic runs (admin only — enforced by RLS)."""
-        with self._errors("purge des données de démo"):
-            data = self.client.table("runs").delete().eq("is_synthetic", True).execute().data
-        return len(data or [])
 
     def user_costs_since(self, user_id: str, since: datetime) -> list[tuple[datetime, float]]:
         """``(created_at, cost_eur)`` of a user's *real* runs since ``since`` (quota basis)."""
@@ -658,11 +651,6 @@ class SQLiteRepository:
         with self._conn() as con:
             row = con.execute("select result from run_details where run_id = ?", (run_id,)).fetchone()
         return json.loads(row["result"]) if row and row["result"] else None
-
-    def purge_synthetic(self) -> int:
-        """Delete synthetic runs."""
-        with self._conn() as con:
-            return con.execute("delete from runs where is_synthetic = 1").rowcount
 
     def user_costs_since(self, user_id: str, since: datetime) -> list[tuple[datetime, float]]:
         """``(created_at, cost_eur)`` of a user's *real* runs since ``since`` (quota basis)."""

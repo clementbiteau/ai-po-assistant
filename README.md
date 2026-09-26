@@ -58,7 +58,7 @@ flowchart LR
 | [`store.py`](store.py) | Persistance de l'usage : `SupabaseRepository` (RLS) ou `SQLiteRepository` (dev) |
 | [`auth.py`](auth.py) | Authentification Supabase (email + mot de passe) ou locale, fermée par défaut |
 | [`analytics.py`](analytics.py) | Requêtes SQL (DuckDB) de la console admin, affichées telles quelles dans l'UI |
-| [`synthetic.py`](synthetic.py) | Historique d'usage synthétique et réaliste pour les démos |
+| [`reload_guard.py`](reload_guard.py) | Recharge les modules modifiés par un déploiement sans redémarrer le serveur |
 | [`ui/`](ui/) | Écrans : `login`, `admin`, `theme` (bascule clair/sombre), `session`, `style` |
 | [`supabase/`](supabase/) | Migration SQL (tables, RLS, trigger) + tests des policies |
 | [`config.py`](config.py) · [`exporters.py`](exporters.py) · [`samples.py`](samples.py) | Configuration, exports Jira / Markdown / Gherkin / JSON, feedbacks de démo |
@@ -116,7 +116,8 @@ Tokens, latence et coût estimé par agent sont affichés dans l'onglet Export.
 - **Usage & coûts** : dépense en €, tokens, runs bloqués, répartition par agent et par utilisateur. Chaque graphique affiche **sa requête SQL** (DuckDB, dialecte PostgreSQL).
 - **Prévisions ML** : une régression OLS `coût ≈ β0 + β1·kcar + β2·stories` (R², MAE, prédit vs réel, simulateur) et une projection de la facture de fin de mois (tendance linéaire, bande de prédiction à 80 %).
 - **Quotas** : un tableau éditable par utilisateur (€/requête, €/jour, €/semaine, €/mois, vide = illimité).
-- **Données de démo** : 60 jours d'usage synthétique (flag `is_synthetic`, exclu des quotas, purgeable en un clic).
+- **Runs** : chaque analyse avec sa configuration, sa latence par étape, son coût et son classement ; comparaison de deux runs et réouverture d'un résultat.
+- La console n'affiche que l'usage réel.
 
 **12. Journal des agents et vérification des verbatims.**
 - **Journal des agents** (onglet Admin › Agents) : chaque lancement est visualisé comme un processus (01 Analyste, 02 Stratège, 03 Rédacteurs en parallèle), avec une chronologie et un journal par requête : agent, horodatage, utilisateur, durée, tentative, tokens, **réflexion résumée** renvoyée par Claude et extrait de la sortie.

@@ -41,6 +41,9 @@ _Aucune tâche en cours._
 ## Terminé
 
 ### 2026-09-26
+- [x] **Données synthétiques retirées** de la console admin (générateur, bouton « Données de démo », interrupteur d'inclusion) : l'admin n'affiche que l'usage réel, et d'éventuelles anciennes lignes synthétiques restent ignorées partout.
+- [x] **Onglets ajoutés en pâle** (Connecteurs, Admin) avec la légende « En pâle : ajouts au-delà de la consigne », ainsi que le réglage des modèles réservé à l'admin. Les cinq raisons de ces ajouts sont dans `HOWHY.md` (7.3).
+- [x] **Fin des erreurs après déploiement** (`ImportError` qui exigeait « Reboot app ») : `reload_guard.py` recharge les modules modifiés sans redémarrer. Reproduit puis corrigé sur une copie locale, et couvert par un test.
 - [x] **Déroulé de démo** pour l'entretien, en page privée : https://claude.ai/artifact/TxaWoGuHFrooBaLK7hhEV6 (12 min minutées, écrans, phrases clés, chiffres, questions probables du CTO, plans B, limites à assumer).
 - [x] **Onglet Connecteurs** : 7 connecteurs en 3 phases (Zendesk, Jira en entrée et en sortie, Outlook / Gmail ; Slack / Teams, NPS, stores ; CRM), avec ce qu'ils apportent, l'autorisation, la fréquence et le canal d'arrivée. Aucune connexion active. Chaque source arrive sur un canal que le tri par règles connaît déjà (testé). Décision D20 dans `HOWHY.md`, glossaire complété (Connecteur, OAuth, Webhook).
 - [x] **Démo = vrai run** : l'export du run « Référence » (Sonnet partout, 110 s, 0,16 €, 14/14 verbatims) remplace le résultat rédigé à la main. Les chiffres du rejeu viennent du résultat. Les tests utilisent un résultat de référence figé (`tests/fixtures/reference_result.json`).

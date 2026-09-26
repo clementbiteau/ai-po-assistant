@@ -20,7 +20,6 @@ import analytics as sql
 from config import Settings
 from governance import CostEstimator, Quota, consumption_from_runs, forecast_spend
 from store import Profile, StoreError
-from synthetic import generate_runs
 from ui import session
 from ui.runs import render_runs
 from ui.style import (
@@ -98,16 +97,9 @@ def render_admin(settings: Settings, me: Profile) -> None:
         "<p>Consommation Claude en euros, prévisions de coûts et quotas par utilisateur.</p></div>"
     )
 
-    c1, c2, c3 = st.columns([1.6, 1.4, 1.2], vertical_alignment="center")
-    days = c1.segmented_control(
+    days = st.segmented_control(
         "Période", [30, 60, 90], default=60, required=True, format_func=lambda d: f"{d} jours", key="adm_days"
     )
-    include_synthetic = c2.toggle(
-        "Inclure les données synthétiques", value=True, key="adm_synth",
-        help="Jeu de démonstration généré (flag is_synthetic). Il ne compte jamais dans les quotas.",
-    )  # fmt: skip
-    with c3.popover("Données de démo", width="stretch"):
-        _demo_data_controls(settings)
 
     try:
         runs, agents, profiles = _load(int(days))
@@ -115,16 +107,14 @@ def render_admin(settings: Settings, me: Profile) -> None:
         st.error(exc.user_message)
         return
 
-    if not include_synthetic:
-        runs = runs[~runs["is_synthetic"]]
-        agents = agents[agents["run_id"].isin(runs["id"])]
+    # Real usage only. Rows flagged `is_synthetic` (from a data generator since
+    # removed) are ignored everywhere, like they always were for quotas.
+    runs = runs[~runs["is_synthetic"]]
+    agents = agents[agents["run_id"].isin(runs["id"])]
     profiles_df = _profiles_frame(profiles)
 
     if runs.empty:
-        st.info(
-            "Aucun usage enregistré sur la période. Lancez quelques analyses, ou générez un jeu de démo "
-            "via **Données de démo**.",
-        )
+        st.info("Aucun usage enregistré sur la période. Lancez une analyse depuis l'Inbox : elle apparaîtra ici.")
 
     usage_tab, runs_tab, agents_tab, ml_tab, quota_tab = st.tabs(
         ["Usage et coûts", "Runs", "Agents", "Prévisions", "Quotas"]
@@ -139,41 +129,6 @@ def render_admin(settings: Settings, me: Profile) -> None:
         _ml_section(settings, runs, agents, profiles_df, profiles)
     with quota_tab:
         _quota_section(settings, me, profiles, runs)
-
-
-def _demo_data_controls(settings: Settings) -> None:
-    st.caption(
-        "Génère 60 jours d'usage réaliste (saisonnalité, croissance, gros/petits utilisateurs) pour tous "
-        "les profils. Ces lignes sont marquées `is_synthetic` et n'impactent **jamais** les quotas."
-    )
-    if st.button("Générer 60 jours", width="stretch"):
-        repo = session.repository()
-        try:
-            with st.spinner("Génération…"):
-                today = datetime.now(ZoneInfo(settings.timezone)).date()
-                runs = generate_runs(
-                    repo.list_profiles(), today=today, model=settings.model, usd_to_eur=settings.usd_to_eur,
-                    tz=settings.timezone, seed=int(time.time()) % 10_000,
-                )  # fmt: skip
-                count = repo.insert_runs(runs)
-        except StoreError as exc:
-            st.error(exc.user_message)
-            return
-        _invalidate()
-        st.toast(f"{count} runs synthétiques ajoutés")
-        st.rerun()
-
-    st.divider()
-    confirm = st.checkbox("Je confirme la suppression des données synthétiques", key="adm_confirm_purge")
-    if st.button("Purger les données synthétiques", width="stretch", disabled=not confirm):
-        try:
-            deleted = session.repository().purge_synthetic()
-        except StoreError as exc:
-            st.error(exc.user_message)
-            return
-        _invalidate()
-        st.toast(f"{deleted} runs synthétiques supprimés")
-        st.rerun()
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -333,11 +288,10 @@ _AGENT_ORDER = ["FeedbackAnalyst", "PrioritizationStrategist", "UserStoryWriter"
 
 def _run_label(row: pd.Series, tz: str) -> str:
     when = row["created_at"].tz_convert(tz).strftime("%d/%m %H:%M")
-    synthetic = " · synthétique" if row["is_synthetic"] else ""
     kind = "pipeline complet" if row["kind"] == "pipeline" else "story à la demande"
     return (
         f"{when} · {row['email']} · {kind} · {_STATUS_FR.get(row['status'], row['status'])} · "
-        f"{euros(float(row['cost_eur']), digits=3)}{synthetic}"
+        f"{euros(float(row['cost_eur']), digits=3)}"
     )
 
 

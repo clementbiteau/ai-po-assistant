@@ -163,6 +163,8 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
   Les couleurs des graphiques ont été choisies pour rester distinctes pour les daltoniens et contrastées sur les deux fonds. Les accents qui dépendent du thème sont des variables CSS basculées par l'interrupteur Clair / Sombre.
 - **Pourquoi** : c'est le moyen le plus rapide de livrer une application de données interactive en Python.
 - **Compromis** : Streamlit réexécute le script à chaque interaction. D'où les caches par session (quotas, données admin) et l'état stocké dans `st.session_state`.
+- **Déploiements sans redémarrage** : un serveur Streamlit garde les modules déjà importés. Après une mise à jour, `app.py` pouvait donc être neuf et `agents.py` encore ancien, ce qui provoquait une `ImportError` jusqu'au redémarrage. `reload_guard.py` détecte les fichiers modifiés depuis leur import (date du fichier, ou cache de bytecode au premier passage) et recharge le code du projet. Un test simule le cas.
+- **Ajouts visibles** : les onglets qui dépassent la consigne (Connecteurs, Admin) sont affichés en pâle, avec une légende en bout de barre, tout comme le réglage des modèles réservé à l'admin. On distingue ainsi d'un coup d'œil le sujet de ses extensions (voir 7.3).
 
 ### D11. Authentification Supabase et sécurité dans la base
 - **Décision** :
@@ -202,7 +204,7 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 
 ### D16. Les tests
 - **Décision** :
-  - 72 tests hors ligne, sur un faux client Claude : aucune clé, aucun coût, moins de 15 secondes.
+  - 74 tests hors ligne, sur un faux client Claude : aucune clé, aucun coût, moins de 30 secondes (dont deux rejeux de la démo, avec leurs pauses).
   - Tests d'interface avec `AppTest` : connexion, droits, lancement.
   - Tests SQL des règles de sécurité sur PostgreSQL.
   - Lint avec `ruff`.
@@ -345,6 +347,15 @@ Une relecture critique : est-ce que le POC répond à ce qui est demandé, où s
 
 ### 7.3 Ce qui dépasse la consigne, et pourquoi
 
+Dans l'app, ces ajouts sont signalés en pâle (onglets Connecteurs et Admin, réglage des modèles). Ils répondent à cinq raisons :
+
+1. **La gouvernance des coûts**, pour la transparence : chaque run est chiffré, avec des quotas par utilisateur et un plafond pendant le run.
+2. **La gouvernance des modèles et des agents**, comme en production : latence, coût et qualité de chaque itération, visibles et comparables (Admin › Runs et Agents).
+3. **Le réglage manuel par l'admin** : changer un levier (modèle, effort) et tester, avec un humain dans la boucle.
+4. **La trajectoire V1, V2, V3** : les connecteurs, présentés comme des étapes de mise en production.
+5. **Un actif technique réutilisable** : code testé et documenté, logique séparée de l'interface, réutilisable en interne ou pour un autre client aux besoins proches.
+
+
 | Ajout | Pourquoi il est là | Place dans la présentation |
 |---|---|---|
 | Tri de l'Inbox par règles | Répond directement au « PO submergé » : il voit tout de suite ce qui est urgent | Au cœur |
@@ -357,7 +368,11 @@ Une relecture critique : est-ce que le POC répond à ce qui est demandé, où s
 | Choix du modèle par agent et comparaison des runs | Défendre chaque choix de modèle par la mesure : latence, coût et classement | Devant un profil technique (CTO) |
 | Console admin (SQL, prévision) et journal des agents | Piloter les coûts et comprendre ce que fait chaque agent | Seulement si le jury pose la question |
 
-### 7.4 Verdict
+### 7.4 Ce qui reste à faire
+
+Rien de ce que demande la consigne connue ne manque. Les suites naturelles sont listées en limites connues (section 6) : mémoire du backlog existant, évaluation continue de la qualité, connecteurs actifs.
+
+### 7.5 Verdict
 
 - **Le cœur de la consigne est entièrement couvert** : les trois modules fonctionnent de bout en bout, sur Claude et Streamlit.
 - **Les ajouts ne concurrencent pas le sujet.** Soit ils servent directement le PO (tri, preuves, exports), soit ils rendent possible une démo ouverte et sûre (connexion, quotas, admin).

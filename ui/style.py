@@ -178,6 +178,28 @@ def shorten(text: str, limit: int) -> str:
     return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
 
 
+def addition_tabs_css(first_addition: int) -> str:
+    """Pale style for the main tabs from position ``first_addition`` (1-based) onwards.
+
+    The tabs the brief asks for keep full contrast; the ones added beyond it
+    (connectors, admin console) read as secondary, with a legend at the end of
+    the bar. Scoped to the main tab bar (``key="nav"``): nested tab bars are untouched.
+    """
+    tab = f'.st-key-nav > div > [role="tablist"] > [role="tab"]:nth-child(n+{first_addition})'
+    return (
+        "<style>"
+        f"{tab} {{opacity: .5; font-style: italic;}}"
+        f"{tab}:hover, {tab}:focus-visible {{opacity: .85;}}"
+        f'{tab}[aria-selected="true"] {{opacity: .8;}}'
+        # ::after already draws the bar's underline; ::before is free and `order` moves it to the end.
+        '.st-key-nav > div > [role="tablist"]::before {content: "En pâle : ajouts au-delà de la consigne";'
+        " order: 99; margin-left: auto; align-self: center; padding-left: 16px; white-space: nowrap;"
+        " font-size: .72rem; font-style: italic; opacity: .55;}"
+        ".addition {opacity: .6; font-style: italic;}"
+        "</style>"
+    )
+
+
 def render_html(markup: str) -> None:
     """Render trusted markup (built with :func:`esc` for dynamic parts)."""
     st.markdown(markup, unsafe_allow_html=True)

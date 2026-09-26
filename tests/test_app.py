@@ -61,8 +61,7 @@ def test_admin_console_and_demo_run() -> None:
     app = login("admin@local.dev")
     assert not app.exception
     assert "Admin" in tab_labels(app)
-    next(b for b in app.button if b.label == "Générer 60 jours").click().run()
-    assert not app.exception
+    assert not [t for t in app.toggle if "synthétiques" in t.label]  # real usage only
     assert any(m.label == "Dépense du mois" for m in app.metric)
     next(b for b in app.button if b.key == "load_notifications").click().run()
     next(b for b in app.button if b.label == "Lancer l'analyse").click().run()  # offline demo replay
