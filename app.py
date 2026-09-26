@@ -563,19 +563,23 @@ def run_demo(text: str) -> None:
             slot.empty()
             st.write(done)
 
+        analysis, stories = result.analysis, len(result.stories)
+        top = min(result.scored_features, key=lambda s: s.rank)
         replay(
             "analyst",
-            "**01 · FeedbackAnalyst** — segmentation de 10 sources sur 6 canaux…",
-            "**01 · FeedbackAnalyst** — terminé : 5 thèmes, 5 features candidates, 4 autres signaux",
+            f"**01 · FeedbackAnalyst** — segmentation de {analysis.sources_count} sources "
+            f"sur {len(analysis.channels)} canaux…",
+            f"**01 · FeedbackAnalyst** — terminé : {len(analysis.themes)} thèmes, "
+            f"{len(analysis.feature_requests)} features candidates, {len(analysis.other_signals)} autres signaux",
         )
         replay(
             "strategist",
             "**02 · PrioritizationStrategist** — estimation Reach, Impact, Confidence, Effort…",
-            "**02 · PrioritizationStrategist** — terminé : n°1, maîtrise et regroupement des notifications",
+            f"**02 · PrioritizationStrategist** — terminé : n°1 : {top.feature.title} (RICE {top.rice_score:,.0f})",
         )
         for line, pause in [
-            ("**03 · UserStoryWriter** — rédaction de 3 user stories en parallèle…", 0.8),
-            ("**03 · UserStoryWriter** — terminé : 3 user stories prêtes pour Jira", 0.2),
+            (f"**03 · UserStoryWriter** — rédaction de {stories} user stories en parallèle…", 0.8),
+            (f"**03 · UserStoryWriter** — terminé : {stories} user stories prêtes pour Jira", 0.2),
         ]:
             st.write(line)
             time.sleep(pause)

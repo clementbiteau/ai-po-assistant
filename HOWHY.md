@@ -194,9 +194,10 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 - **Compromis** : adapté à des volumes de POC. À grande échelle, on pousserait ces agrégations dans des vues PostgreSQL.
 
 ### D15. Le mode démo
-- **Décision** : un résultat pré-calculé pour le cas « Notifications & churn », rejoué sans appel à l'IA.
-- **Pourquoi** : une démo live ne doit pas dépendre du réseau.
-- **Limite importante** : ce résultat a été **rédigé à la main** comme référence. Pour le remplacer par un vrai run, lancez l'analyse en direct sur ce cas, téléchargez « JSON typé » dans l'onglet Export, et enregistrez-le sous `data/demo_result.json`.
+- **Décision** : le mode démo rejoue **un vrai run Claude enregistré** sur le cas « Notifications & churn » : Sonnet 5 partout, le 26/09/2026, 110 s, 0,16 €, 14 verbatims sur 14 exacts. La progression en direct (D17) est rejouée avec la vraie réflexion résumée du stratège, et les chiffres affichés (sources, thèmes, n°1) viennent du résultat.
+- **Pourquoi** : une démo live ne doit pas dépendre du réseau, et ce qu'elle montre doit être ce que l'IA produit réellement.
+- **Pour le mettre à jour** : lancer le cas en direct, télécharger « JSON typé » dans l'onglet Export, et l'enregistrer sous `data/demo_result.json`.
+- **Les tests ne s'appuient pas sur ce fichier**, mais sur un résultat de référence figé (`tests/fixtures/reference_result.json`). Changer la démo ne casse donc jamais les tests.
 
 ### D16. Les tests
 - **Décision** :
@@ -230,6 +231,25 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
   | Plancher de coût | Haiku 4.5 partout | ~0,08 € | Mesurer ce que la qualité perd au prix minimal |
 
   Les coûts estimés appliquent les prix de chaque modèle au volume de texte du run de référence. Un autre modèle écrit plus ou moins : seul un run réel donne le vrai chiffre, d'où D19.
+
+- **Mesures du 26/09/2026** (cas « Notifications & churn », un run par configuration) :
+
+  | Configuration (analyste · stratège · rédacteur) | Durée | Coût | Tokens écrits | Ce qui se dégrade |
+  |---|---|---|---|---|
+  | **Sonnet · Sonnet (élevé) · Sonnet** (deux runs) | **110 s** | **0,16 €** | 15 000 | Référence : 14/14 verbatims exacts, 5 besoins, stories de 5 scénarios |
+  | Sonnet · Sonnet (moyen) · Sonnet | 100 s | 0,152 € | 14 000 | Rien de visible, gain faible (voir D8) |
+  | Sonnet · Sonnet · Haiku | 124 s | 0,132 € | 17 500 | Une story à 7 scénarios (règle : 3 à 6) |
+  | Haiku · Sonnet · Haiku | 163 s | 0,130 € | 21 600 | Slack/Teams fondu dans les notifications ; un verbatim retouché ; une story à 8 scénarios |
+  | Haiku · Haiku · Haiku (élevé) | 237 s | 0,129 € | 27 100 | Idem, plus une erreur de fait dans la synthèse (le deal Ventura perdu attribué aux notifications au lieu de la vue de charge) |
+
+- **Ce que ces mesures montrent** :
+  - **Haiku n'est pas plus rapide ici, il est 1,5 à 2,4 fois plus lent par agent.** Il écrit beaucoup plus : réflexion à budget fixe et réponses plus longues.
+  - **Il n'est donc pas deux fois moins cher, seulement 20 % moins cher par run.** Le prix par token est divisé par deux, mais il écrit 15 % à 80 % de tokens en plus. Le bon indicateur est le coût par tâche, pas le prix par token.
+  - **Il perd en qualité sur l'analyse** : besoins moins découpés (un backlog moins exploitable), un verbatim retouché (repéré par la vérification D7), une erreur de fait dans la synthèse. Sonnet : tous les verbatims exacts (10 sur 10, puis 14 sur 14).
+  - **Et sur la rédaction** : les stories de Haiku prennent 43 à 64 s contre 20 à 29 s ; 2 sur 9 dépassent la règle des 3 à 6 scénarios ; les points sont irréguliers (le SSO à 8 ou 13, une vue d'un sprint à 3 points). Celles de Sonnet respectent la règle (5 scénarios), avec des données concrètes, des résultats mesurables et une découpe en tranches.
+  - **Ce qui tient dans toutes les configurations** : le même top 3 (notifications, SSO, vue de charge) et le SSO toujours marqué non négociable. C'est l'effet de D3 : le code calcule le score et applique la règle, donc le classement résiste au choix du modèle.
+  - **Les scores RICE varient autant d'un run Sonnet à l'autre qu'entre Sonnet et Haiku** (le Reach du SSO passe de 15 % à 5 % entre deux runs Sonnet). Les écarts fins de score ne départagent donc pas les modèles ; le découpage, l'exactitude et le respect des règles, si.
+- **Décision** : **Sonnet 5 partout reste la configuration par défaut.** Les configurations Haiku restent dans la console admin, comme expérience documentée. Limite : un run par configuration ; les écarts de durée, de découpage et d'exactitude sont nets, mais les écarts fins de score RICE sont dans le bruit.
 - **Pourquoi** : on n'affecte pas un modèle « au feeling ». Chaque configuration porte une hypothèse (où le jugement compte, où le volume coûte), et l'onglet Runs la vérifie.
 - **Adaptations par modèle** :
   - **Haiku 4.5** n'a ni niveau d'effort ni réflexion adaptative : l'effort est traduit en budget de réflexion (aucun en « faible », 2 048 tokens en « moyen », 4 096 en « élevé »).
@@ -272,7 +292,7 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 
 - **Estimations** : le Reach et l'Effort sont les estimations les plus fragiles. Le Reach est déduit des mentions, et l'Effort est estimé sans connaître le code du produit : l'équipe technique doit le valider.
 - **Seuils MoSCoW** : relatifs au lot analysé, donc un choix de conception.
-- **Mode démo** : son résultat est rédigé à la main (voir D15).
+- **Variabilité des estimations** : deux runs du même modèle sur le même cas donnent des scores RICE différents (le Reach du SSO varie de 5 % à 15 %). Le classement tient grâce aux règles (contrainte non négociable, MoSCoW relatif), mais les chiffres fins ne sont pas stables : ils s'arbitrent en revue, ce que permet la correction des estimations par le PO.
 - **Tri de l'Inbox** : par règles, donc grossier (voir D6).
 - **Pas de connecteurs** : dans le POC, les retours sont collés à la main. En production, ils arriveraient par API : Zendesk, messagerie, outil NPS, Slack, stores, CRM.
 - **Pas de mémoire** : l'outil ne sait pas ce qui est déjà livré ou en cours, donc il peut re-prioriser l'existant.
@@ -301,7 +321,6 @@ Une relecture critique : est-ce que le POC répond à ce qui est demandé, où s
 
 - **Le modèle.** Claude 3.5 Sonnet a été retiré de l'API en octobre 2025 : il ne peut plus être appelé. Sonnet 5 est son successeur dans la même gamme (voir D8).
 - **MoSCoW en plus de RICE.** La consigne demande RICE. MoSCoW est ajouté parce que RICE seul classe mal les obligations (le SSO du cas de démo). Ses seuils, relatifs au meilleur score, sont un choix de conception (voir D4).
-- **Le résultat de démo.** Il est rédigé à la main pour l'instant. Il sera remplacé par un vrai run avant la présentation (voir D15).
 
 ### 7.3 Ce qui dépasse la consigne, et pourquoi
 

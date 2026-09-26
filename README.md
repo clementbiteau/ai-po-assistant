@@ -20,7 +20,7 @@ cp .env.example .env    # puis : AUTH_MODE=local et LOCAL_DEV_PASSWORD=<votre ch
 streamlit run app.py
 ```
 
-En mode `local`, deux comptes sont créés dans une base SQLite : `admin@local.dev` (admin) et `demo@local.dev` (membre avec quotas). Sans clé Anthropic, le **mode démo hors-ligne** rejoue un run pré-calculé ; c'est un filet de sécurité pour les démos live quand le réseau lâche.
+En mode `local`, deux comptes sont créés dans une base SQLite : `admin@local.dev` (admin) et `demo@local.dev` (membre avec quotas). Sans clé Anthropic, le **mode démo hors-ligne** rejoue un vrai run Claude enregistré (Sonnet 5, 26/09/2026) ; c'est un filet de sécurité pour les démos live quand le réseau lâche.
 
 Trois jeux de feedbacks « mot pour mot » sont préchargés : *Notifications & churn*, *Onboarding et migration*, *Mobile terrain et performance*. À la première connexion, un **onboarding en 3 étapes** (découvrir, choisir un cas, lancer) démarre la démo. Chaque onglet affiche ensuite l'étape suivante du parcours.
 

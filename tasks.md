@@ -19,20 +19,17 @@ _Aucune tâche en cours._
 
 Écartés : `max_tokens` (plafond de sécurité, sans effet sur la vitesse) et `STORY_WORKERS` (les 3 stories tournent déjà en parallèle).
 
-### Priorité 1 bis · Comparer les runs devant le CTO
-- [ ] **Préparer la démonstration** : lancer « Notifications & churn » avec les 3 configurations (Référence, Rédaction sur Haiku, Plancher de coût), puis les comparer deux à deux dans *Admin › Runs*. Budget : environ 0,40 €.
-- [ ] **Vérifier Haiku 4.5 en réel** : format JSON strict et réflexion avec budget, au premier run.
+### Priorité 1 bis · Comparer les runs devant le CTO : terminée (verdict dans `HOWHY.md`, D18)
 
 ### Priorité 2 · Démo
-- [ ] **Remplacer le résultat de démo rédigé à la main par un vrai run** : lancer en direct le cas « Notifications & churn », télécharger *Export › JSON typé*, l'enregistrer sous `data/demo_result.json`, puis commit.
 - [ ] **Vérifier en ligne**, après redéploiement : accueil vide, onboarding avec démo rapide présélectionnée, tri instantané replié, bandeau d'accueil fermable, palette vert et beige dans les deux thèmes.
 
 ### Priorité 3 · Améliorations proposées
 - [ ] **Prénom affiché** : ajouter un champ « nom affiché » au profil (Supabase `profiles.display_name`, éditable dans *Admin › Quotas*), pour afficher « Clément » avec l'accent au lieu du prénom déduit de l'email.
 - [ ] **Jeu d'évaluation** : une dizaine de dumps annotés (demandes attendues, bugs, verbatims) pour mesurer la qualité à chaque changement de prompt.
-- [ ] **Résister à un rafraîchissement de page** : aujourd'hui, F5 déconnecte l'utilisateur et fait disparaître l'analyse affichée. Les dépenses, elles, restent en base. Piste : garder la session et recharger le dernier résultat.
+- [ ] **Résister à un rafraîchissement de page** : aujourd'hui, F5 déconnecte l'utilisateur et fait disparaître l'analyse affichée. Les dépenses, elles, restent en base. Un run enregistré peut déjà être rouvert depuis *Admin › Runs* ; reste à garder la session et à recharger le dernier résultat automatiquement.
 - [ ] **Bouton « Actualiser » dans Admin** : les chiffres de la console sont mis en cache 2 minutes par session.
-- [ ] Optimisations secondaires, à ne faire que si la mesure le justifie : modèle plus léger (Haiku 4.5) pour le rédacteur, entrée allégée pour le stratège, prompt caching (gain probablement faible).
+- [ ] Optimisations secondaires, à ne faire que si la mesure le justifie : entrée allégée pour le stratège, prompt caching (gain probablement faible). Haiku a été mesuré le 26/09 et écarté (D18).
 - [ ] **Modèles d'autres fournisseurs** (open source via une API compatible OpenAI, Mistral…) : hors consigne, qui impose Claude. À présenter comme feuille de route, puisque l'appel au modèle est isolé dans `agents.py`. Points à traiter : format JSON strict, réflexion résumée et effort, qui ne sont pas disponibles partout.
 - [ ] Connecteurs d'entrée (Zendesk, messagerie, outil NPS, Slack). Hors POC, à présenter comme roadmap.
 
@@ -44,6 +41,10 @@ _Aucune tâche en cours._
 ## Terminé
 
 ### 2026-09-26
+- [x] **Démo = vrai run** : l'export du run « Référence » (Sonnet partout, 110 s, 0,16 €, 14/14 verbatims) remplace le résultat rédigé à la main. Les chiffres du rejeu viennent du résultat. Les tests utilisent un résultat de référence figé (`tests/fixtures/reference_result.json`).
+- [x] Comparaison des stories : Sonnet 20 à 29 s, 5 scénarios, découpe claire ; Haiku 43 à 64 s, 2 stories sur 9 hors règle, points irréguliers. Verdict final dans `HOWHY.md` (D18) : Sonnet 5 partout.
+- [x] Comparaison des modèles sur 5 runs : Haiku est 1,5 à 2,4 fois plus lent par agent, seulement 20 % moins cher par run (il écrit plus), et moins bon sur l'analyse (découpage, un verbatim retouché, une erreur de fait). Le top 3 et le SSO obligatoire tiennent partout. Décision : Sonnet 5 partout par défaut. Détail dans `HOWHY.md` (D18).
+- [x] Haiku 4.5 vérifié en réel : format JSON strict et réflexion à budget fonctionnent, aucune correction nécessaire.
 - [x] Migration `run_details` exécutée dans Supabase (Clément).
 - [x] Opus retiré du catalogue et des configurations, jugé surdimensionné (Clément). Justification dans `HOWHY.md` (D18).
 - [x] **Admin › Runs** : chaque analyse enregistre sa configuration, son cas, son classement et son résultat (table `run_details`, RLS testée). Liste des runs avec la latence par étape, le coût et le top 3 ; comparaison de deux runs (durée, coût, étapes, classement et verdict) ; réouverture d'un résultat passé.

@@ -98,7 +98,7 @@ def test_admin_picks_models_and_sees_runs_with_their_configuration(tmp_path) -> 
     from config import PRESETS
     from store import RunDetails, RunRecord, SQLiteRepository
 
-    demo = PipelineResult.model_validate_json(Path("data/demo_result.json").read_text(encoding="utf-8"))
+    demo = PipelineResult.model_validate_json(Path("tests/fixtures/reference_result.json").read_text(encoding="utf-8"))
     repo = SQLiteRepository(os.environ["LOCAL_DB_PATH"])
     admin = repo.ensure_user("admin@local.dev", PASSWORD, role="admin")
     for preset in ("reference", "writer_haiku"):

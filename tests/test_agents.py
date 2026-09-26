@@ -39,7 +39,7 @@ from config import Settings
 from exporters import to_feature_files, to_jira_csv, to_markdown
 
 DEMO = PipelineResult.model_validate_json(
-    (Path(__file__).parent.parent / "data" / "demo_result.json").read_text(encoding="utf-8")
+    (Path(__file__).parent / "fixtures" / "reference_result.json").read_text(encoding="utf-8")
 )
 SETTINGS = Settings(anthropic_api_key="sk-ant-test", max_retries=0)
 

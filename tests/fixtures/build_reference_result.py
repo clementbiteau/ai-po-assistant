@@ -1,15 +1,15 @@
-"""Builds data/demo_result.json from typed models (schema-valid by construction).
+"""Builds tests/fixtures/reference_result.json from typed models (schema-valid by construction).
 
-This is a hand-written *reference* result for the "Notifications & churn"
-sample, used by the offline demo mode. To replace it with a real Claude run:
-run the pipeline live on that sample, download "JSON typé" from the Export
-tab and save it as data/demo_result.json (the app flags it as a demo).
+A hand-written, frozen result for the "Notifications & churn" sample, used by
+the offline test suite: tests assert on its exact content (ids, scores,
+mandatory SSO), so it must not change when the demo does. The offline demo
+mode replays a real Claude run instead (data/demo_result.json).
 """
 
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from agents import (  # noqa: E402
@@ -475,7 +475,7 @@ for feature in analysis.feature_requests:
     for quote in feature.evidence_quotes:
         assert quote_in_source(quote, result.source_text), quote
 
-out = ROOT / "data" / "demo_result.json"
+out = ROOT / "tests" / "fixtures" / "reference_result.json"
 out.parent.mkdir(exist_ok=True)
 out.write_text(result.model_dump_json(indent=2), encoding="utf-8")
 for s in scored:

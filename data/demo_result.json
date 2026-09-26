@@ -7,652 +7,802 @@
     "language": "fr"
   },
   "analysis": {
-    "executive_summary": "La surcharge de notifications est le premier irritant : elle fait manquer des échéances et menace explicitement le renouvellement d'un compte Mid-Market de 180 utilisateurs. Deux comptes à fort enjeu posent des conditions fermes (SSO Azure AD pour 450 sièges, vue de charge ayant fait perdre un deal de 300 sièges). Deux bugs récents (notifications en double, crash mobile sur PDF) aggravent la perception.",
+    "executive_summary": "Les clients Mid-Market, dont plusieurs comptes stratégiques proches du renouvellement, alertent sur une surcharge de notifications qui masque les alertes critiques et fait perdre du temps quotidien. Deux comptes Enterprise/Mid-Market conditionnent leur renouvellement à des besoins précis : SSO/déprovisioning automatique pour la sécurité, et une vue de charge de travail par personne, ce dernier point ayant déjà coûté un deal de 300 sièges. Un bug de duplication de notifications post-MAJ et des frictions UX/mobile s'ajoutent au risque de churn.",
     "sources_count": 10,
     "channels": [
       "Email",
       "Zendesk",
       "NPS",
-      "Slack interne",
+      "Slack",
       "App Store",
       "Note d'appel Sales"
     ],
     "themes": [
       {
-        "name": "Surcharge de notifications",
-        "description": "Trop d'alertes, sans hiérarchie ni contrôle, dans un canal (l'email) que les équipes ne lisent plus.",
+        "name": "Gestion des notifications",
+        "description": "Les utilisateurs sont submergés par le volume et le manque de contrôle sur les notifications Orbit, ce qui leur fait manquer des informations importantes.",
         "sentiment": "critical",
-        "mention_count": 5
+        "mention_count": 6
       },
       {
-        "name": "Pilotage de la capacité",
-        "description": "Les managers veulent voir la charge de chaque personne pour arbitrer.",
+        "name": "Visibilité de la charge de travail",
+        "description": "Les managers et directions manquent d'une vue consolidée de la charge de travail par personne pour arbitrer les ressources.",
         "sentiment": "negative",
         "mention_count": 2
       },
       {
-        "name": "Sécurité et conformité",
-        "description": "Gestion manuelle des accès incompatible avec les exigences des DSI Enterprise.",
+        "name": "Sécurité et gouvernance des accès",
+        "description": "Les clients Enterprise exigent des mécanismes d'authentification et de gestion des accès conformes aux exigences de sécurité IT.",
         "sentiment": "critical",
         "mention_count": 1
       },
       {
-        "name": "Reporting",
-        "description": "Le partage de l'avancement avec la direction est manuel et l'export est introuvable.",
+        "name": "Reporting et exports",
+        "description": "Les utilisateurs souhaitent automatiser la production de rapports et peinent à trouver les fonctions d'export existantes.",
         "sentiment": "neutral",
         "mention_count": 2
       },
       {
-        "name": "Qualité mobile",
-        "description": "Crash à l'ouverture des pièces jointes PDF sur mobile.",
+        "name": "Qualité et ergonomie mobile",
+        "description": "Des bugs et manques ergonomiques sur l'application mobile et l'interface web nuisent à l'expérience utilisateur.",
         "sentiment": "negative",
-        "mention_count": 1
+        "mention_count": 2
       }
     ],
     "feature_requests": [
       {
         "id": "F1",
-        "title": "Maîtrise et regroupement des notifications",
-        "problem_statement": "Les équipes reçoivent 60 à 80 notifications par jour, toutes au même niveau : les alertes critiques (retards, échéances) sont noyées et plus personne ne lit les notifications.",
-        "desired_outcome": "Chaque utilisateur reçoit un récapitulatif quotidien et choisit par projet et par type d'évènement ce qui mérite une alerte immédiate.",
+        "title": "Résumé quotidien et filtrage des notifications",
+        "problem_statement": "Les utilisateurs reçoivent un flux ininterrompu de notifications par email, sans possibilité de choisir quoi recevoir, ce qui noie les alertes importantes et fait perdre du temps chaque jour.",
+        "desired_outcome": "Un utilisateur peut recevoir un récapitulatif quotidien et choisir précisément les types d'événements et projets pour lesquels il est notifié, afin de ne plus manquer les alertes critiques.",
         "user_segments": [
           "Head of Operations",
-          "Chefs de projet Mid-Market",
-          "Utilisateurs mobiles"
+          "Chef de projet",
+          "Customer Success Manager (retour clients)"
         ],
-        "theme": "Surcharge de notifications",
+        "theme": "Gestion des notifications",
         "mention_count": 4,
         "evidence_quotes": [
-          "la semaine dernière nous avons raté une échéance client parce que l'alerte de retard était noyée au milieu de 40 mails",
+          "Ce qu'il nous faudrait, c'est simple : un récapitulatif quotidien au lieu d'un mail par action, et la possibilité de choisir QUOI on reçoit (par projet, par type d'évènement). Aujourd'hui c'est tout ou rien.",
           "Mettez un résumé quotidien svp, et laissez-nous couper les notifs d'un projet quand on n'est plus dessus.",
-          "impossible de mettre les notifications en sourdine le week-end"
+          "Et impossible de mettre les notifications en sourdine le week-end, mon téléphone vibre le dimanche pour des commentaires sans importance."
         ],
         "sources": [
-          "Email · Head of Ops, Logitrans (180 utilisateurs)",
-          "NPS 4/10 · Kraft & Lemoine",
-          "App Store ★★",
-          "Slack CSM (3 comptes Mid-Market)"
+          "Email · Head of Operations, Logitrans",
+          "NPS · Chef de projet, Kraft & Lemoine",
+          "App Store · ★★☆☆☆"
         ]
       },
       {
         "id": "F2",
-        "title": "Alertes dans Slack et Microsoft Teams",
-        "problem_statement": "L'email n'est plus le canal où les équipes travaillent : les alertes Orbit y sont ignorées alors que les échanges quotidiens se font dans Slack ou Teams.",
-        "desired_outcome": "Recevoir les alertes importantes dans l'outil de messagerie de l'équipe, là où elles sont lues.",
+        "title": "Notifications Orbit dans Slack/Teams",
+        "problem_statement": "Les équipes utilisent Slack/Teams comme outils principaux et considèrent l'email comme un canal où les notifications sont ignorées, ce qui réduit la réactivité aux alertes Orbit.",
+        "desired_outcome": "Les alertes Orbit peuvent être envoyées directement dans Slack ou Teams plutôt que par email, augmentant leur visibilité et leur taux de lecture.",
         "user_segments": [
-          "Comptes Mid-Market",
-          "Chefs de projet"
+          "Customer Success Manager (retours clients)",
+          "Comptes Mid-Market"
         ],
-        "theme": "Surcharge de notifications",
+        "theme": "Gestion des notifications",
         "mention_count": 3,
         "evidence_quotes": [
-          "m'ont demandé de recevoir les alertes Orbit directement dans Slack / Teams plutôt que par email",
-          "l'email c'est là où les notifs vont mourir"
+          "3 comptes Mid-Market (Logitrans, Kraft & Lemoine, Hexa Conseil) m'ont demandé de recevoir les alertes Orbit directement dans Slack / Teams plutôt que par email.",
+          "Hexa dit que \"l'email c'est là où les notifs vont mourir\"."
         ],
         "sources": [
-          "Slack CSM · Logitrans, Kraft & Lemoine, Hexa Conseil"
+          "Slack #cs-feedback · Customer Success Manager"
         ]
       },
       {
         "id": "F3",
-        "title": "Vue de charge de travail par personne",
-        "problem_statement": "Les managers et PMO ne voient pas qui est surchargé : ils reconstruisent la capacité de l'équipe dans un Excel parallèle, et l'absence de cette vue fait perdre des deals.",
-        "desired_outcome": "Visualiser la charge de chaque personne semaine par semaine pour arbitrer affectations et recrutements.",
+        "title": "Vue de la charge de travail par personne",
+        "problem_statement": "Les managers et directions n'ont pas de vue consolidée de la charge de travail de chaque collaborateur dans Orbit, et doivent recourir à des outils externes (Excel) ou perdent des deals faute de cette fonctionnalité.",
+        "desired_outcome": "Un manager peut visualiser directement dans Orbit la charge de travail de chaque personne, semaine par semaine, pour identifier les surcharges et arbitrer les ressources sans outil externe.",
         "user_segments": [
           "Directrice PMO",
-          "DAF / Direction",
-          "Managers d'équipe"
+          "DAF (prospect)"
         ],
-        "theme": "Pilotage de la capacité",
+        "theme": "Visibilité de la charge de travail",
         "mention_count": 2,
         "evidence_quotes": [
-          "Il manque juste une vue de la charge de travail par personne : aujourd'hui je fais ça dans un Excel à côté",
-          "le concurrent propose une vue \"capacité équipe\" qui montre la charge de chaque personne semaine par semaine"
+          "Il manque juste une vue de la charge de travail par personne : aujourd'hui je fais ça dans un Excel à côté pour savoir qui est surchargé.",
+          "le concurrent propose une vue \"capacité équipe\" qui montre la charge de chaque personne semaine par semaine. Le DAF voulait arbitrer les recrutements avec."
         ],
         "sources": [
-          "NPS 9/10 · Groupe Aldane",
-          "Note d'appel Sales · deal perdu Ventura Group (300 sièges)"
+          "NPS · Directrice PMO, Groupe Aldane",
+          "Note d'appel Sales · Deal perdu, Ventura Group"
         ]
       },
       {
         "id": "F4",
-        "title": "SSO Azure AD et déprovisionnement automatique",
-        "problem_statement": "Les comptes sont gérés manuellement : un ancien prestataire a gardé l'accès trois semaines, ce qui constitue un écart d'audit et bloque le renouvellement.",
-        "desired_outcome": "Authentification SAML via Azure AD et suppression automatique des accès des personnes qui quittent l'entreprise.",
+        "title": "SSO Azure AD et déprovisioning automatique",
+        "problem_statement": "Les comptes utilisateurs Orbit sont gérés manuellement, ce qui expose l'entreprise à des risques de sécurité (accès non révoqués) et bloque la validation de la revue de sécurité IT nécessaire au renouvellement.",
+        "desired_outcome": "L'entreprise peut activer le SSO via Azure AD (SAML) et automatiser le déprovisionnement des comptes des collaborateurs sortants, satisfaisant ainsi les exigences d'audit de sécurité.",
         "user_segments": [
-          "DSI / IT Managers",
-          "Comptes Enterprise"
+          "IT Manager"
         ],
-        "theme": "Sécurité et conformité",
+        "theme": "Sécurité et gouvernance des accès",
         "mention_count": 1,
         "evidence_quotes": [
-          "without SSO through Azure AD (SAML) and automatic deprovisioning of leavers, they will not sign the renewal for our 450 seats",
-          "a former contractor still had access for three weeks — that is a finding for our auditors"
+          "without SSO through Azure AD (SAML) and automatic deprovisioning of leavers, they will not sign the renewal for our 450 seats.",
+          "last month a former contractor still had access for three weeks — that is a finding for our auditors."
         ],
         "sources": [
-          "Email · IT Manager, Nordvik Energy (450 sièges)"
+          "Email · IT Manager, Nordvik Energy"
         ]
       },
       {
         "id": "F5",
-        "title": "Rapport d'avancement PDF programmé",
-        "problem_statement": "Pour informer leur direction, les responsables font des captures d'écran du tableau de bord chaque semaine.",
-        "desired_outcome": "Programmer l'envoi automatique d'un rapport PDF à une liste de destinataires.",
+        "title": "Rapport d'avancement PDF automatique",
+        "problem_statement": "Les utilisateurs doivent produire manuellement des captures d'écran du tableau de bord pour informer leur direction de l'avancement des projets, faute d'automatisation du reporting.",
+        "desired_outcome": "Un utilisateur peut programmer l'envoi automatique d'un rapport d'avancement en PDF à intervalle régulier (ex. chaque lundi) sans action manuelle.",
         "user_segments": [
-          "Responsables de cabinet / PME"
+          "Responsable de cabinet"
         ],
-        "theme": "Reporting",
+        "theme": "Reporting et exports",
         "mention_count": 1,
         "evidence_quotes": [
-          "est-il possible de programmer l'envoi automatique d'un rapport d'avancement en PDF à notre direction chaque lundi ?"
+          "est-il possible de programmer l'envoi automatique d'un rapport d'avancement en PDF à notre direction chaque lundi ? Pour l'instant je fais des captures d'écran du tableau de bord."
         ],
         "sources": [
-          "Zendesk #48240 · Cabinet Rousseau & Associés (18 utilisateurs)"
+          "Zendesk #48240 · Cabinet Rousseau & Associés"
         ]
       }
     ],
     "other_signals": [
       {
         "type": "bug",
-        "summary": "Chaque notification email est envoyée en double depuis la mise à jour 4.2.",
-        "quote": "Depuis la mise à jour 4.2 de jeudi, chaque notification arrive deux fois dans ma boîte."
+        "summary": "Depuis la mise à jour 4.2, les notifications email arrivent en double pour tous les utilisateurs d'un compte.",
+        "quote": "Depuis la mise à jour 4.2 de jeudi, chaque notification arrive deux fois dans ma boîte. Idem pour mes collègues."
       },
       {
         "type": "bug",
-        "summary": "L'application mobile plante à l'ouverture d'une pièce jointe PDF.",
+        "summary": "L'application mobile plante systématiquement à l'ouverture d'une pièce jointe PDF dans une tâche.",
         "quote": "L'appli mobile plante systématiquement quand j'ouvre une pièce jointe PDF dans une tâche."
       },
       {
         "type": "ux_friction",
-        "summary": "L'export Excel du reporting est caché dans un sous-menu.",
-        "quote": "J'ai cherché 20 minutes l'export Excel du reporting."
+        "summary": "La fonction d'export Excel du reporting est très difficile à trouver dans l'interface.",
+        "quote": "J'ai cherché 20 minutes l'export Excel du reporting. Votre support m'a dit qu'il est dans \"...\" > \"Plus d'options\" > \"Exporter\". Sérieusement, personne ne peut trouver ça."
       },
       {
         "type": "praise",
-        "summary": "Le Gantt est apprécié et adopté rapidement.",
+        "summary": "Le module Gantt est très apprécié et a été rapidement adopté par l'équipe.",
         "quote": "Super outil, le Gantt est top et l'équipe l'a adopté en 2 semaines."
       }
     ]
   },
-  "portfolio_insight": "Quick win à fort levier : F1 (digest et filtres de notifications) traite la cause n°1 de churn Mid-Market pour un effort moyen — à lancer immédiatement, après la correction du bug d'envoi en double. F4 (SSO) est un Must contractuel malgré un score RICE plus modeste : à planifier avant la revue de Q3. F3 et F2 sont des paris de croissance à cadrer en discovery ; F5 peut attendre.",
+  "portfolio_insight": "F4 (SSO Azure AD) doit être traité en priorité absolue malgré sa faible reach car il s'agit d'une contrainte contractuelle bloquant un renouvellement de 450 sièges. F1 (résumé et filtrage des notifications) est le quick win le plus rentable : large reach, impact élevé et effort modéré, à lancer juste après F4. F2 (Slack/Teams) et F3 (charge de travail) sont des paris stratégiques alignés sur la réduction du churn Mid-Market, à séquencer ensuite selon la disponibilité d'une équipe dédiée à l'intégration tierce, tandis que F5 reste une amélioration mineure à traiter en filler de sprint.",
   "scored_features": [
     {
       "feature": {
         "id": "F1",
-        "title": "Maîtrise et regroupement des notifications",
-        "problem_statement": "Les équipes reçoivent 60 à 80 notifications par jour, toutes au même niveau : les alertes critiques (retards, échéances) sont noyées et plus personne ne lit les notifications.",
-        "desired_outcome": "Chaque utilisateur reçoit un récapitulatif quotidien et choisit par projet et par type d'évènement ce qui mérite une alerte immédiate.",
+        "title": "Résumé quotidien et filtrage des notifications",
+        "problem_statement": "Les utilisateurs reçoivent un flux ininterrompu de notifications par email, sans possibilité de choisir quoi recevoir, ce qui noie les alertes importantes et fait perdre du temps chaque jour.",
+        "desired_outcome": "Un utilisateur peut recevoir un récapitulatif quotidien et choisir précisément les types d'événements et projets pour lesquels il est notifié, afin de ne plus manquer les alertes critiques.",
         "user_segments": [
           "Head of Operations",
-          "Chefs de projet Mid-Market",
-          "Utilisateurs mobiles"
+          "Chef de projet",
+          "Customer Success Manager (retour clients)"
         ],
-        "theme": "Surcharge de notifications",
+        "theme": "Gestion des notifications",
         "mention_count": 4,
         "evidence_quotes": [
-          "la semaine dernière nous avons raté une échéance client parce que l'alerte de retard était noyée au milieu de 40 mails",
+          "Ce qu'il nous faudrait, c'est simple : un récapitulatif quotidien au lieu d'un mail par action, et la possibilité de choisir QUOI on reçoit (par projet, par type d'évènement). Aujourd'hui c'est tout ou rien.",
           "Mettez un résumé quotidien svp, et laissez-nous couper les notifs d'un projet quand on n'est plus dessus.",
-          "impossible de mettre les notifications en sourdine le week-end"
+          "Et impossible de mettre les notifications en sourdine le week-end, mon téléphone vibre le dimanche pour des commentaires sans importance."
         ],
         "sources": [
-          "Email · Head of Ops, Logitrans (180 utilisateurs)",
-          "NPS 4/10 · Kraft & Lemoine",
-          "App Store ★★",
-          "Slack CSM (3 comptes Mid-Market)"
+          "Email · Head of Operations, Logitrans",
+          "NPS · Chef de projet, Kraft & Lemoine",
+          "App Store · ★★☆☆☆"
         ]
       },
       "assessment": {
         "feature_id": "F1",
-        "reach_percent": 45,
-        "reach_rationale": "Tous les utilisateurs actifs reçoivent des notifications ; la douleur est concentrée sur les comptes Mid-Market multi-projets, soit environ 45 % de la base. 4 sources sur 10 convergent.",
-        "impact": 5,
-        "impact_rationale": "Niveau 5 (Massive) : le renouvellement de Logitrans (180 utilisateurs) est explicitement menacé et une échéance client a été manquée — directement lié à l'objectif de réduction du churn Mid-Market.",
-        "confidence": 100,
-        "confidence_rationale": "100 % : quatre sources indépendantes (email, NPS, App Store, CSM) décrivent le même problème, avec un impact business chiffré (180 licences, échéance manquée).",
+        "reach_percent": 60,
+        "reach_rationale": "Le thème 'Gestion des notifications' est critique avec 6 mentions et touche des segments transverses (Head of Operations, chefs de projet, CSM) qui utilisent Orbit quotidiennement ; on estime qu'une majorité des utilisateurs actifs reçoit des notifications chaque semaine.",
+        "impact": 4,
+        "impact_rationale": "Niveau 4 (Élevé) : le résumé quotidien et le filtrage font gagner du temps chaque jour et évitent de manquer des alertes critiques, un irritant répété dans 3 sources différentes.",
+        "confidence": 80,
+        "confidence_rationale": "Trois sources indépendantes convergent (email, NPS, App Store) mais l'impact reste qualitatif, sans chiffrage business direct, d'où un niveau 80.",
         "effort": 3,
-        "effort_rationale": "Niveau 3 (M) : préférences par projet et par type d'évènement + job de digest quotidien sur le service de notifications existant ; une équipe, environ un sprint.",
+        "effort_rationale": "Niveau 3 (M) : nécessite une nouvelle logique de préférences par projet/type d'événement et un digest quotidien, soit environ un sprint pour une équipe.",
         "is_mandatory": false,
         "mandatory_reason": ""
       },
-      "reach_users": 5400,
-      "rice_score": 9000.0,
+      "reach_users": 7200,
+      "rice_score": 7680.0,
       "moscow": "Must",
       "rank": 1
     },
     {
       "feature": {
         "id": "F3",
-        "title": "Vue de charge de travail par personne",
-        "problem_statement": "Les managers et PMO ne voient pas qui est surchargé : ils reconstruisent la capacité de l'équipe dans un Excel parallèle, et l'absence de cette vue fait perdre des deals.",
-        "desired_outcome": "Visualiser la charge de chaque personne semaine par semaine pour arbitrer affectations et recrutements.",
+        "title": "Vue de la charge de travail par personne",
+        "problem_statement": "Les managers et directions n'ont pas de vue consolidée de la charge de travail de chaque collaborateur dans Orbit, et doivent recourir à des outils externes (Excel) ou perdent des deals faute de cette fonctionnalité.",
+        "desired_outcome": "Un manager peut visualiser directement dans Orbit la charge de travail de chaque personne, semaine par semaine, pour identifier les surcharges et arbitrer les ressources sans outil externe.",
         "user_segments": [
           "Directrice PMO",
-          "DAF / Direction",
-          "Managers d'équipe"
+          "DAF (prospect)"
         ],
-        "theme": "Pilotage de la capacité",
+        "theme": "Visibilité de la charge de travail",
         "mention_count": 2,
         "evidence_quotes": [
-          "Il manque juste une vue de la charge de travail par personne : aujourd'hui je fais ça dans un Excel à côté",
-          "le concurrent propose une vue \"capacité équipe\" qui montre la charge de chaque personne semaine par semaine"
+          "Il manque juste une vue de la charge de travail par personne : aujourd'hui je fais ça dans un Excel à côté pour savoir qui est surchargé.",
+          "le concurrent propose une vue \"capacité équipe\" qui montre la charge de chaque personne semaine par semaine. Le DAF voulait arbitrer les recrutements avec."
         ],
         "sources": [
-          "NPS 9/10 · Groupe Aldane",
-          "Note d'appel Sales · deal perdu Ventura Group (300 sièges)"
+          "NPS · Directrice PMO, Groupe Aldane",
+          "Note d'appel Sales · Deal perdu, Ventura Group"
         ]
       },
       "assessment": {
         "feature_id": "F3",
-        "reach_percent": 20,
-        "reach_rationale": "Concerne les managers, PMO et directions qui pilotent des équipes : environ 20 % des utilisateurs actifs.",
-        "impact": 4,
-        "impact_rationale": "Niveau 4 (High) : supprime un Excel parallèle et débloque l'arbitrage des recrutements ; un deal de 300 sièges a été perdu sur ce point.",
+        "reach_percent": 15,
+        "reach_rationale": "Le besoin concerne principalement les managers et PMO (segment restreint) mentionné dans 2 sources sur 10, soit une portion limitée mais stratégique de la base active.",
+        "impact": 5,
+        "impact_rationale": "Niveau 5 (Massif) : une opportunité commerciale a été explicitement perdue (Ventura Group) faute de cette vue, ce qui correspond à un risque business avéré et non hypothétique.",
         "confidence": 80,
-        "confidence_rationale": "80 % : deux sources convergentes dont une perte de deal chiffrée, mais le besoin précis (granularité, capacité vs. charge) reste à valider.",
-        "effort": 4,
-        "effort_rationale": "Niveau 4 (L) : nouvelle agrégation de données (capacité, absences, charge planifiée) et nouvelle vue transverse ; 1 à 2 mois.",
+        "confidence_rationale": "Deux sources convergent (NPS et note d'appel commercial) avec un cas concret de deal perdu, apportant un ancrage factuel fort malgré l'absence de données chiffrées supplémentaires.",
+        "effort": 3,
+        "effort_rationale": "Niveau 3 (M) : nouvelle vue agrégeant des données déjà existantes (affectations, charge), réalisable en un sprint sans nouvelle architecture.",
         "is_mandatory": false,
         "mandatory_reason": ""
       },
-      "reach_users": 2400,
-      "rice_score": 1920.0,
-      "moscow": "Could",
+      "reach_users": 1800,
+      "rice_score": 2400.0,
+      "moscow": "Should",
       "rank": 2
     },
     {
       "feature": {
         "id": "F2",
-        "title": "Alertes dans Slack et Microsoft Teams",
-        "problem_statement": "L'email n'est plus le canal où les équipes travaillent : les alertes Orbit y sont ignorées alors que les échanges quotidiens se font dans Slack ou Teams.",
-        "desired_outcome": "Recevoir les alertes importantes dans l'outil de messagerie de l'équipe, là où elles sont lues.",
+        "title": "Notifications Orbit dans Slack/Teams",
+        "problem_statement": "Les équipes utilisent Slack/Teams comme outils principaux et considèrent l'email comme un canal où les notifications sont ignorées, ce qui réduit la réactivité aux alertes Orbit.",
+        "desired_outcome": "Les alertes Orbit peuvent être envoyées directement dans Slack ou Teams plutôt que par email, augmentant leur visibilité et leur taux de lecture.",
         "user_segments": [
-          "Comptes Mid-Market",
-          "Chefs de projet"
+          "Customer Success Manager (retours clients)",
+          "Comptes Mid-Market"
         ],
-        "theme": "Surcharge de notifications",
+        "theme": "Gestion des notifications",
         "mention_count": 3,
         "evidence_quotes": [
-          "m'ont demandé de recevoir les alertes Orbit directement dans Slack / Teams plutôt que par email",
-          "l'email c'est là où les notifs vont mourir"
+          "3 comptes Mid-Market (Logitrans, Kraft & Lemoine, Hexa Conseil) m'ont demandé de recevoir les alertes Orbit directement dans Slack / Teams plutôt que par email.",
+          "Hexa dit que \"l'email c'est là où les notifs vont mourir\"."
         ],
         "sources": [
-          "Slack CSM · Logitrans, Kraft & Lemoine, Hexa Conseil"
+          "Slack #cs-feedback · Customer Success Manager"
         ]
       },
       "assessment": {
         "feature_id": "F2",
         "reach_percent": 25,
-        "reach_rationale": "Les équipes équipées de Slack ou Teams, majoritaires en Mid-Market : environ 25 % des utilisateurs actifs.",
-        "impact": 3,
-        "impact_rationale": "Niveau 3 (Medium) : les alertes deviennent visibles là où les équipes travaillent, mais le digest (F1) traite déjà l'essentiel de la surcharge.",
-        "confidence": 80,
-        "confidence_rationale": "80 % : demande récurrente en QBR sur 3 comptes, relayée par un seul canal (CSM), sans impact chiffré.",
+        "reach_rationale": "Trois comptes Mid-Market nommément cités (Logitrans, Kraft & Lemoine, Hexa Conseil) demandent cette intégration ; le segment concerné (utilisateurs Slack/Teams) reste une portion significative mais minoritaire de la base active.",
+        "impact": 5,
+        "impact_rationale": "Niveau 5 (Massif) : la demande émane directement de comptes Mid-Market, cœur de cible du churn, avec une citation explicite ('l'email c'est là où les notifs vont mourir') indiquant un risque de désengagement.",
+        "confidence": 50,
+        "confidence_rationale": "Une seule source (canal Slack #cs-feedback) rapporte le besoin, même si elle agrège plusieurs comptes ; absence de validation croisée par une autre source, d'où confiance 50.",
         "effort": 4,
-        "effort_rationale": "Niveau 4 (L) : deux intégrations tierces (Slack, Teams) avec OAuth, gestion des canaux et maintenance des API.",
+        "effort_rationale": "Niveau 4 (L) : intégration tierce (API Slack/Teams, gestion des webhooks et de l'authentification), estimée à 1-2 mois pour une équipe.",
         "is_mandatory": false,
         "mandatory_reason": ""
       },
       "reach_users": 3000,
-      "rice_score": 1800.0,
+      "rice_score": 1875.0,
       "moscow": "Could",
       "rank": 3
     },
     {
       "feature": {
         "id": "F4",
-        "title": "SSO Azure AD et déprovisionnement automatique",
-        "problem_statement": "Les comptes sont gérés manuellement : un ancien prestataire a gardé l'accès trois semaines, ce qui constitue un écart d'audit et bloque le renouvellement.",
-        "desired_outcome": "Authentification SAML via Azure AD et suppression automatique des accès des personnes qui quittent l'entreprise.",
+        "title": "SSO Azure AD et déprovisioning automatique",
+        "problem_statement": "Les comptes utilisateurs Orbit sont gérés manuellement, ce qui expose l'entreprise à des risques de sécurité (accès non révoqués) et bloque la validation de la revue de sécurité IT nécessaire au renouvellement.",
+        "desired_outcome": "L'entreprise peut activer le SSO via Azure AD (SAML) et automatiser le déprovisionnement des comptes des collaborateurs sortants, satisfaisant ainsi les exigences d'audit de sécurité.",
         "user_segments": [
-          "DSI / IT Managers",
-          "Comptes Enterprise"
+          "IT Manager"
         ],
-        "theme": "Sécurité et conformité",
+        "theme": "Sécurité et gouvernance des accès",
         "mention_count": 1,
         "evidence_quotes": [
-          "without SSO through Azure AD (SAML) and automatic deprovisioning of leavers, they will not sign the renewal for our 450 seats",
-          "a former contractor still had access for three weeks — that is a finding for our auditors"
+          "without SSO through Azure AD (SAML) and automatic deprovisioning of leavers, they will not sign the renewal for our 450 seats.",
+          "last month a former contractor still had access for three weeks — that is a finding for our auditors."
         ],
         "sources": [
-          "Email · IT Manager, Nordvik Energy (450 sièges)"
+          "Email · IT Manager, Nordvik Energy"
         ]
       },
       "assessment": {
         "feature_id": "F4",
-        "reach_percent": 10,
-        "reach_rationale": "Les comptes Enterprise avec une DSI exigeante représentent environ 10 % des utilisateurs actifs.",
+        "reach_percent": 5,
+        "reach_rationale": "Le besoin est documenté par un seul client Enterprise (Nordvik Energy, 450 sièges), soit une fraction restreinte des 12 000 utilisateurs actifs, même si l'enjeu de sécurité est transverse.",
         "impact": 5,
-        "impact_rationale": "Niveau 5 (Massive) : condition explicite de renouvellement de 450 sièges ; sans SSO, le compte est perdu.",
+        "impact_rationale": "Niveau 5 (Massif) : le renouvellement de 450 sièges est explicitement conditionné à cette fonctionnalité, avec un point d'audit de sécurité déjà relevé (ancien prestataire toujours actif 3 semaines).",
         "confidence": 80,
-        "confidence_rationale": "80 % : une source unique mais très précise et chiffrée ; standard du marché Enterprise.",
+        "confidence_rationale": "Une seule source mais fortement quantifiée (450 sièges, échéance de renouvellement, constat d'audit précis), justifiant un niveau de confiance élevé malgré l'absence de convergence multi-sources.",
         "effort": 4,
-        "effort_rationale": "Niveau 4 (L) : intégration SAML, provisionnement SCIM et tests de sécurité ; 1 à 2 mois.",
+        "effort_rationale": "Niveau 4 (L) : intégration SSO SAML avec Azure AD et automatisation du déprovisionnement impliquent des changements cross-cutting sur la gestion des comptes et la sécurité, estimés à 1-2 mois.",
         "is_mandatory": true,
-        "mandatory_reason": "Exigence de sécurité contractuelle : la revue IT de Q3 conditionne le renouvellement de 450 sièges, et l'accès résiduel d'un ex-prestataire est un écart d'audit."
+        "mandatory_reason": "Exigence contractuelle et de sécurité IT non négociable : sans SSO et déprovisionnement automatique, le client ne signera pas le renouvellement et un point d'audit de sécurité reste ouvert."
       },
-      "reach_users": 1200,
-      "rice_score": 1200.0,
+      "reach_users": 600,
+      "rice_score": 600.0,
       "moscow": "Must",
       "rank": 4
     },
     {
       "feature": {
         "id": "F5",
-        "title": "Rapport d'avancement PDF programmé",
-        "problem_statement": "Pour informer leur direction, les responsables font des captures d'écran du tableau de bord chaque semaine.",
-        "desired_outcome": "Programmer l'envoi automatique d'un rapport PDF à une liste de destinataires.",
+        "title": "Rapport d'avancement PDF automatique",
+        "problem_statement": "Les utilisateurs doivent produire manuellement des captures d'écran du tableau de bord pour informer leur direction de l'avancement des projets, faute d'automatisation du reporting.",
+        "desired_outcome": "Un utilisateur peut programmer l'envoi automatique d'un rapport d'avancement en PDF à intervalle régulier (ex. chaque lundi) sans action manuelle.",
         "user_segments": [
-          "Responsables de cabinet / PME"
+          "Responsable de cabinet"
         ],
-        "theme": "Reporting",
+        "theme": "Reporting et exports",
         "mention_count": 1,
         "evidence_quotes": [
-          "est-il possible de programmer l'envoi automatique d'un rapport d'avancement en PDF à notre direction chaque lundi ?"
+          "est-il possible de programmer l'envoi automatique d'un rapport d'avancement en PDF à notre direction chaque lundi ? Pour l'instant je fais des captures d'écran du tableau de bord."
         ],
         "sources": [
-          "Zendesk #48240 · Cabinet Rousseau & Associés (18 utilisateurs)"
+          "Zendesk #48240 · Cabinet Rousseau & Associés"
         ]
       },
       "assessment": {
         "feature_id": "F5",
-        "reach_percent": 12,
-        "reach_rationale": "Responsables qui rendent compte à une direction : environ 12 % des utilisateurs.",
+        "reach_percent": 5,
+        "reach_rationale": "Un seul ticket Zendesk émanant d'un cabinet isolé mentionne ce besoin, sans autre corroboration, ce qui limite la portée à un segment très restreint.",
         "impact": 2,
-        "impact_rationale": "Niveau 2 (Low) : gain de temps hebdomadaire réel, mais la capture d'écran reste un contournement acceptable.",
+        "impact_rationale": "Niveau 2 (Faible) : un contournement existe déjà (captures d'écran manuelles), ce qui en fait un confort plutôt qu'un blocage opérationnel.",
         "confidence": 50,
-        "confidence_rationale": "50 % : une seule demande, ticket de priorité basse.",
+        "confidence_rationale": "Niveau 50 : une seule source, besoin exprimé de façon isolée sans contexte business chiffré ni convergence d'autres retours.",
         "effort": 2,
-        "effort_rationale": "Niveau 2 (S) : génération PDF et planification sur un tableau de bord existant.",
+        "effort_rationale": "Niveau 2 (S) : automatisation de l'export PDF existant avec une planification récurrente, contenue sur les entités déjà en place, réalisable en 1-2 semaines.",
         "is_mandatory": false,
         "mandatory_reason": ""
       },
-      "reach_users": 1440,
-      "rice_score": 720.0,
+      "reach_users": 600,
+      "rice_score": 300.0,
       "moscow": "Won't",
       "rank": 5
     }
   ],
   "stories": {
-    "F1": {
-      "feature_id": "F1",
-      "jira_summary": "Recevoir un digest quotidien et filtrer ses notifications par projet",
-      "persona": "chef de projet d'un compte Mid-Market",
-      "goal": "recevoir un récapitulatif quotidien de mes notifications et choisir, par projet, les évènements qui déclenchent une alerte immédiate",
-      "benefit": "je ne rate plus aucune alerte critique sans passer une heure par jour à trier mes notifications",
-      "context": "Quatre sources sur dix décrivent la même surcharge (60 à 80 notifications par jour). Logitrans a manqué une échéance client et conditionne son renouvellement de mars (180 utilisateurs) à ce sujet. Cette story livre la première tranche : préférences par projet + digest quotidien. Les alertes « retard » et « échéance » restent immédiates par défaut.",
+    "F3": {
+      "feature_id": "F3",
+      "jira_summary": "Afficher la charge de travail hebdomadaire par collaborateur",
+      "persona": "Directrice PMO",
+      "goal": "visualiser directement dans Orbit la charge de travail de chaque collaborateur de mon équipe, semaine par semaine",
+      "benefit": "identifier rapidement les surcharges et arbitrer les ressources sans avoir à maintenir un fichier Excel externe",
+      "context": "Une directrice PMO cliente (Groupe Aldane) maintient aujourd'hui un fichier Excel parallèle pour suivre la charge de ses équipes, faute de vue native dans Orbit. Un deal a été perdu chez Ventura Group car le concurrent propose une vue « capacité équipe » permettant d'arbitrer les recrutements, fonctionnalité absente d'Orbit. Cette vue est jugée clé pour réduire le churn Mid-Market ce trimestre.",
       "acceptance_criteria": [
         {
-          "title": "Recevoir le digest quotidien à l'heure choisie",
+          "title": "Consultation de la charge hebdomadaire de l'équipe",
           "given": [
-            "Camille a activé le digest quotidien à 08:00 dans ses préférences",
-            "12 commentaires et 3 changements de statut ont eu lieu sur ses projets depuis la veille 08:00"
+            "je suis connectée en tant que 'Directrice PMO' sur le compte 'Groupe Aldane'",
+            "mon équipe compte 8 collaborateurs avec des affectations actives sur les 4 prochaines semaines"
           ],
           "when": [
-            "il est 08:00 dans le fuseau horaire de Camille"
+            "j'ouvre l'écran 'Charge de travail par personne' depuis le menu Planification"
           ],
           "then": [
-            "Camille reçoit un seul email intitulé « Votre récap Orbit du jour »",
-            "l'email regroupe les 15 évènements par projet",
-            "aucun email individuel n'a été envoyé pour ces 15 évènements"
+            "je vois un tableau avec une ligne par collaborateur et une colonne par semaine (S1 à S4)",
+            "chaque cellule affiche le nombre d'heures affectées et le pourcentage de charge par rapport à la capacité hebdomadaire du collaborateur (ex : '38h / 106%')",
+            "l'affichage se charge en moins de 2 secondes pour les 8 collaborateurs"
           ]
         },
         {
-          "title": "Les alertes critiques restent immédiates",
+          "title": "Mise en évidence visuelle des surcharges",
           "given": [
-            "Camille a activé le digest quotidien",
-            "la tâche « Livraison lot 3 » du projet Logitrans a une échéance aujourd'hui à 17:00"
+            "le collaborateur 'Karim Benali' a 42h affectées en semaine 3 pour une capacité de 35h"
           ],
           "when": [
-            "la tâche passe en retard à 17:01"
+            "j'affiche la vue 'Charge de travail par personne' pour la semaine 3"
           ],
           "then": [
-            "Camille reçoit une notification immédiate « Tâche en retard » en moins de 2 minutes",
-            "l'évènement apparaît aussi dans le digest du lendemain"
+            "la cellule correspondant à 'Karim Benali' en semaine 3 est colorée en rouge",
+            "le pourcentage affiché est '120%'",
+            "un badge 'Surcharge' apparaît au survol de la cellule"
           ]
         },
         {
-          "title": "Couper les notifications d'un projet",
+          "title": "Collaborateur sans affectation sur la période",
           "given": [
-            "Camille suit les projets « Refonte site » et « Migration ERP »"
+            "le collaborateur 'Sophie Marchal' n'a aucune tâche affectée entre le 3 et le 9 juin"
           ],
           "when": [
-            "Camille choisit « Aucune notification » pour le projet « Refonte site »"
+            "j'affiche la vue pour la semaine du 3 juin"
           ],
           "then": [
-            "Camille ne reçoit plus aucune notification ni ligne de digest pour « Refonte site »",
-            "les notifications de « Migration ERP » sont inchangées",
-            "un bandeau confirme « Notifications coupées pour Refonte site »"
+            "la cellule correspondant à 'Sophie Marchal' affiche '0h / 0%'",
+            "la cellule est colorée en gris avec la mention 'Disponible'"
           ]
         },
         {
-          "title": "Digest vide",
+          "title": "Accès refusé pour un profil non manager",
           "given": [
-            "Camille a activé le digest quotidien",
-            "aucun évènement n'a eu lieu sur ses projets depuis la veille 08:00"
+            "je suis connectée en tant que 'Contributeur' sans droit de gestion d'équipe"
           ],
           "when": [
-            "il est 08:00 dans le fuseau horaire de Camille"
+            "je tente d'accéder à l'URL de la vue 'Charge de travail par personne'"
           ],
           "then": [
-            "aucun email de digest n'est envoyé"
+            "l'accès est refusé avec un message 'Vous n'avez pas les droits pour consulter cette vue'",
+            "je suis redirigée vers mon tableau de bord personnel",
+            "aucune donnée de charge d'autres collaborateurs n'est chargée côté client"
+          ]
+        },
+        {
+          "title": "Filtrage par équipe pour un grand périmètre",
+          "given": [
+            "je gère 3 équipes distinctes totalisant 45 collaborateurs"
+          ],
+          "when": [
+            "je sélectionne l'équipe 'Équipe Support Nord' dans le filtre en haut de la vue"
+          ],
+          "then": [
+            "seuls les collaborateurs de 'Équipe Support Nord' (12 personnes) s'affichent dans le tableau",
+            "le nombre total de collaborateurs affichés correspond exactement à l'effectif de l'équipe sélectionnée"
+          ]
+        }
+      ],
+      "story_points": 5,
+      "labels": [
+        "charge-de-travail",
+        "visibilite-equipe",
+        "retention-mid-market",
+        "planification"
+      ],
+      "out_of_scope": [
+        "Export de la vue au format Excel ou PDF",
+        "Arbitrage automatique ou suggestions de réaffectation des ressources",
+        "Vue agrégée multi-équipes avec comparaison inter-managers",
+        "Historique de charge sur des périodes passées au-delà de 4 semaines"
+      ],
+      "dependencies": [
+        "Modèle de données des affectations et capacités hebdomadaires par collaborateur déjà disponible dans Orbit",
+        "Système de permissions/rôles (manager vs contributeur) existant"
+      ],
+      "open_questions": [
+        "La capacité hebdomadaire de référence est-elle configurable par collaborateur ou fixe (ex : 35h) ?",
+        "Faut-il inclure les absences (congés, arrêts) dans le calcul de la charge disponible ?",
+        "Le DAF doit-il avoir accès à cette vue au niveau de toute l'organisation, au-delà de son équipe directe ?"
+      ],
+      "split_suggestion": "Slice 2 : ajout de l'export CSV/Excel de la vue pour partage hors Orbit. Slice 3 : vue agrégée multi-équipes avec alertes automatiques de surcharge par email pour les directions (DAF, PMO)."
+    },
+    "F4": {
+      "feature_id": "F4",
+      "jira_summary": "Activer la connexion SSO SAML via Azure AD pour Orbit",
+      "persona": "IT Manager d'une entreprise Mid-Market cliente d'Orbit",
+      "goal": "configurer l'authentification unique (SSO) de l'espace de travail Orbit via Azure AD (SAML 2.0)",
+      "benefit": "sécuriser les accès des collaborateurs et satisfaire les exigences de l'audit de sécurité IT conditionnant le renouvellement du contrat de 450 sièges",
+      "context": "Nordvik Energy, client Mid-Market de 450 sièges, conditionne le renouvellement de son contrat à la mise en place du SSO Azure AD et refuse de signer sans cette garantie de sécurité. La gestion manuelle actuelle des comptes expose l'entreprise à des risques d'audit (accès non révoqués). Cette story couvre la première brique indispensable : permettre à l'IT Manager de configurer et activer le SSO SAML, préalable technique au déprovisionnement automatique qui sera traité dans une story ultérieure.",
+      "acceptance_criteria": [
+        {
+          "title": "Configuration réussie du SSO Azure AD par l'IT Manager",
+          "given": [
+            "l'IT Manager est connecté à la console d'administration Orbit avec le rôle 'Administrateur'",
+            "l'entreprise dispose d'une application d'entreprise Azure AD configurée avec les métadonnées SAML de Orbit"
+          ],
+          "when": [
+            "l'IT Manager saisit l'URL des métadonnées Azure AD, le certificat X.509 et l'Entity ID dans le formulaire de configuration SSO puis clique sur 'Activer le SSO'"
+          ],
+          "then": [
+            "Orbit valide la configuration en moins de 5 secondes et affiche le statut 'SSO actif'",
+            "un log d'audit horodaté enregistre l'activation avec l'identifiant de l'IT Manager",
+            "tous les nouveaux utilisateurs du domaine 'nordvik-energy.com' sont redirigés vers Azure AD lors de leur prochaine connexion"
+          ]
+        },
+        {
+          "title": "Connexion réussie d'un utilisateur via SSO",
+          "given": [
+            "le SSO Azure AD est actif pour le compte Nordvik Energy",
+            "Julie Marchand, chef de projet, possède un compte Azure AD actif avec l'email julie.marchand@nordvik-energy.com"
+          ],
+          "when": [
+            "Julie Marchand clique sur 'Se connecter avec Azure AD' depuis la page de login Orbit et s'authentifie via son compte Microsoft"
+          ],
+          "then": [
+            "Julie Marchand est redirigée vers son tableau de bord Orbit en moins de 3 secondes sans ressaisir d'identifiants Orbit",
+            "un compte Orbit est automatiquement créé ou associé si aucun compte n'existait déjà, avec le rôle par défaut 'Membre'"
+          ]
+        },
+        {
+          "title": "Échec de connexion pour un utilisateur non provisionné et non autorisé",
+          "given": [
+            "le SSO Azure AD est actif pour le compte Nordvik Energy",
+            "l'option 'Provisionnement automatique à la première connexion' est désactivée dans les paramètres SSO"
+          ],
+          "when": [
+            "un collaborateur externe non enregistré dans Orbit tente de se connecter via Azure AD"
+          ],
+          "then": [
+            "Orbit affiche le message 'Accès refusé : compte non autorisé, contactez votre administrateur'",
+            "aucun compte Orbit n'est créé",
+            "une tentative est journalisée dans le log d'audit avec l'email et l'horodatage"
+          ]
+        },
+        {
+          "title": "Configuration SAML invalide rejetée avec message d'erreur explicite",
+          "given": [
+            "l'IT Manager est sur le formulaire de configuration SSO"
+          ],
+          "when": [
+            "l'IT Manager soumet un certificat X.509 expiré ou une URL de métadonnées invalide"
+          ],
+          "then": [
+            "Orbit rejette la configuration et affiche le message 'Certificat invalide ou expiré, veuillez vérifier vos métadonnées Azure AD'",
+            "le statut SSO reste 'Inactif'",
+            "aucune modification n'est appliquée à la configuration existante"
+          ]
+        },
+        {
+          "title": "Bascule de secours vers l'authentification classique en cas de panne Azure AD",
+          "given": [
+            "le SSO Azure AD est actif",
+            "le service Azure AD de l'entreprise est indisponible (timeout supérieur à 10 secondes)"
+          ],
+          "when": [
+            "un administrateur Orbit ayant conservé un mot de passe local tente de se connecter via l'option 'Connexion de secours'"
+          ],
+          "then": [
+            "Orbit authentifie l'administrateur via son mot de passe local en moins de 3 secondes",
+            "un événement d'audit 'Connexion de secours utilisée' est enregistré avec l'identifiant de l'administrateur"
+          ]
+        }
+      ],
+      "story_points": 8,
+      "labels": [
+        "sso",
+        "sécurité",
+        "azure-ad",
+        "mid-market"
+      ],
+      "out_of_scope": [
+        "Déprovisionnement automatique des comptes sortants (traité dans une story dédiée)",
+        "Synchronisation des groupes et rôles Azure AD vers les rôles Orbit",
+        "Support d'autres fournisseurs d'identité (Okta, Google Workspace)",
+        "Interface de mapping avancé des attributs SAML personnalisés"
+      ],
+      "dependencies": [
+        "Disponibilité de l'API d'administration Orbit pour la gestion des configurations SSO",
+        "Accès test à un tenant Azure AD de Nordvik Energy ou d'un environnement de démonstration équivalent",
+        "Bibliothèque ou service SAML 2.0 validé par l'équipe sécurité"
+      ],
+      "open_questions": [
+        "Le provisionnement automatique à la première connexion (JIT provisioning) doit-il être activé par défaut ou configurable ?",
+        "Quel rôle Orbit par défaut attribuer aux utilisateurs provisionnés automatiquement via SSO ?",
+        "Faut-il conserver l'authentification par mot de passe classique pour tous les utilisateurs ou uniquement pour les administrateurs en cas de panne ?"
+      ],
+      "split_suggestion": "Slice 2 : Déprovisionnement automatique des comptes sortants via synchronisation SCIM ou webhook Azure AD (détection de désactivation/suppression et révocation immédiate des accès Orbit, avec log d'audit dédié). Slice 3 : Mapping des groupes Azure AD vers les rôles et permissions Orbit pour automatiser la gestion des droits à l'échelle de l'organisation."
+    },
+    "F1": {
+      "feature_id": "F1",
+      "jira_summary": "Ajouter préférences de notifications et résumé quotidien par email",
+      "persona": "Chef de projet gérant plusieurs projets simultanés",
+      "goal": "choisir précisément les types d'événements et les projets pour lesquels je reçois des notifications, et recevoir un résumé quotidien unique au lieu d'un email par action",
+      "benefit": "ne plus être noyé sous les emails et ne plus manquer les alertes critiques, ce qui réduit mon irritation et le risque de désabonnement de mon compte",
+      "context": "Trois retours clients distincts (Logitrans, Kraft & Lemoine, App Store) signalent le même problème : un flux d'emails 'tout ou rien' qui noie les alertes importantes. Ce point est priorisé Must-have avec un RICE élevé (7680) car il touche directement à la rétention des comptes Mid-Market, cible stratégique du trimestre. La solution attendue combine un filtrage fin par projet/type d'événement et un envoi groupé quotidien.",
+      "acceptance_criteria": [
+        {
+          "title": "Configuration des préférences de notification par projet et par type d'événement",
+          "given": [
+            "Léa est chef de projet et membre des projets 'Refonte CRM' et 'Migration ERP'",
+            "Léa accède à la page 'Préférences de notifications' depuis son profil"
+          ],
+          "when": [
+            "Léa décoche le type d'événement 'Commentaire ajouté' pour le projet 'Migration ERP' et clique sur 'Enregistrer'"
+          ],
+          "then": [
+            "Le système confirme l'enregistrement avec un message 'Préférences mises à jour' affiché en moins de 2 secondes",
+            "Aucun email individuel n'est plus envoyé à Léa pour les commentaires sur le projet 'Migration ERP'",
+            "Les autres types d'événements (échéance, mention, changement de statut) restent notifiés normalement sur ce projet"
+          ]
+        },
+        {
+          "title": "Réception du résumé quotidien avec les événements filtrés",
+          "given": [
+            "Léa a activé le résumé quotidien à 8h00 (heure de Paris)",
+            "Le 14 mars, 5 événements se sont produits sur ses projets suivis : 2 changements de statut, 2 commentaires sur 'Refonte CRM' et 1 commentaire sur 'Migration ERP'",
+            "Léa a désactivé les notifications de type 'Commentaire' pour 'Migration ERP'"
+          ],
+          "when": [
+            "Le système déclenche l'envoi automatique du résumé quotidien le 15 mars à 8h00"
+          ],
+          "then": [
+            "Léa reçoit un unique email récapitulatif contenant les 4 événements autorisés (2 changements de statut et 2 commentaires sur 'Refonte CRM')",
+            "L'événement 'Commentaire sur Migration ERP' n'apparaît pas dans le résumé",
+            "L'email indique la date couverte '14 mars 2024' et regroupe les événements par projet"
+          ]
+        },
+        {
+          "title": "Aucun événement dans la période : pas d'email envoyé",
+          "given": [
+            "Léa a activé le résumé quotidien à 8h00",
+            "Aucun événement correspondant à ses préférences ne s'est produit entre le 15 et le 16 mars"
+          ],
+          "when": [
+            "Le système déclenche le job d'envoi du résumé quotidien le 16 mars à 8h00"
+          ],
+          "then": [
+            "Aucun email de résumé n'est envoyé à Léa pour cette journée",
+            "Le système consigne dans les logs internes 'digest skipped: no events' pour l'utilisateur Léa"
+          ]
+        },
+        {
+          "title": "Un invité sans droit d'administration ne peut pas modifier les préférences d'un projet auquel il n'a qu'un accès en lecture",
+          "given": [
+            "Marc est invité en lecture seule sur le projet 'Refonte CRM'",
+            "Marc accède à la page 'Préférences de notifications'"
+          ],
+          "when": [
+            "Marc tente de modifier les types d'événements notifiés pour le projet 'Refonte CRM'"
+          ],
+          "then": [
+            "Le système affiche un message 'Vous n'avez pas les droits pour modifier les notifications de ce projet'",
+            "Les cases de préférences pour ce projet restent grisées et non modifiables",
+            "Aucune modification n'est enregistrée en base de données"
+          ]
+        },
+        {
+          "title": "Une mention directe reste toujours notifiée même si le type d'événement est désactivé",
+          "given": [
+            "Léa a désactivé le type d'événement 'Commentaire ajouté' pour le projet 'Migration ERP'",
+            "Un collègue mentionne explicitement Léa via '@Léa' dans un commentaire sur ce projet"
+          ],
+          "when": [
+            "Le commentaire mentionnant Léa est publié"
+          ],
+          "then": [
+            "L'événement de mention directe est inclus dans le prochain résumé quotidien de Léa malgré la désactivation des commentaires",
+            "Le résumé indique clairement '@mention directe' à côté de cet événement"
           ]
         }
       ],
       "story_points": 8,
       "labels": [
         "notifications",
-        "churn-risk",
-        "mid-market"
+        "retention-mid-market",
+        "digest-email",
+        "preferences"
       ],
       "out_of_scope": [
-        "Canaux Slack / Teams (voir F2)",
-        "Mode « ne pas déranger » le week-end sur mobile",
-        "Correction du bug des notifications en double (ticket #48213, à traiter séparément)"
+        "Mise en sourdine complète le week-end ou plages horaires personnalisées (quiet hours)",
+        "Notifications push mobiles",
+        "Choix de la fréquence du résumé (hebdomadaire, temps réel)",
+        "Personnalisation du format ou du design de l'email de résumé"
       ],
       "dependencies": [
-        "Service de notifications : ajout d'une file d'attente pour le regroupement",
-        "Correction préalable du bug d'envoi en double (#48213)"
+        "Service d'envoi d'emails transactionnels existant (ex: SendGrid) capable de gérer des jobs planifiés",
+        "Modèle de permissions par projet déjà en place pour distinguer membres et invités en lecture seule"
       ],
       "open_questions": [
-        "L'heure du digest est-elle choisie par l'utilisateur ou fixée par l'administrateur du compte ?",
-        "Quels types d'évènements sont « critiques » par défaut (retard, échéance, mention) ?"
+        "L'heure d'envoi du résumé quotidien est-elle configurable par l'utilisateur ou fixée globalement à 8h00 ?",
+        "Faut-il proposer un préréglage 'Tout désactiver sauf mentions' pour les nouveaux utilisateurs ?",
+        "Le résumé doit-il inclure un lien direct vers chaque événement dans l'application ?"
       ],
-      "split_suggestion": "Tranche 2 : plages de silence (soirs et week-ends) sur mobile. Tranche 3 : préférences par type d'évènement définies par l'administrateur pour tout le compte."
-    },
-    "F4": {
-      "feature_id": "F4",
-      "jira_summary": "Se connecter via SSO Azure AD (SAML) avec déprovisionnement automatique",
-      "persona": "IT Manager d'un compte Enterprise",
-      "goal": "connecter Orbit à notre Azure AD pour que l'authentification et la suppression des accès soient gérées par notre annuaire",
-      "benefit": "aucun ancien collaborateur ne garde accès à nos projets et nous passons notre revue de sécurité de Q3",
-      "context": "Nordvik Energy (450 sièges) conditionne son renouvellement à la revue de sécurité de Q3 : SSO Azure AD et déprovisionnement automatique sont exigés. Un ex-prestataire a conservé un accès trois semaines, ce qui constitue un écart d'audit. Classée Must car exigence contractuelle de sécurité.",
-      "acceptance_criteria": [
-        {
-          "title": "Connexion par SSO",
-          "given": [
-            "l'administrateur de Nordvik Energy a configuré le SSO SAML avec les métadonnées Azure AD",
-            "Ingrid a un compte Azure AD actif rattaché au domaine nordvik-energy.no"
-          ],
-          "when": [
-            "Ingrid saisit ingrid@nordvik-energy.no sur la page de connexion Orbit"
-          ],
-          "then": [
-            "Ingrid est redirigée vers la page de connexion Microsoft",
-            "après authentification, Ingrid arrive sur son tableau de bord Orbit sans saisir de mot de passe Orbit"
-          ]
-        },
-        {
-          "title": "Déprovisionnement automatique d'un départ",
-          "given": [
-            "le provisionnement SCIM est activé pour Nordvik Energy",
-            "Erik est un utilisateur Orbit actif"
-          ],
-          "when": [
-            "l'administrateur désactive le compte d'Erik dans Azure AD"
-          ],
-          "then": [
-            "le compte Orbit d'Erik est désactivé en moins de 40 minutes",
-            "les sessions ouvertes d'Erik sont révoquées",
-            "l'évènement apparaît dans le journal d'audit avec la date, l'heure et la source « SCIM »"
-          ]
-        },
-        {
-          "title": "SSO obligatoire pour le domaine",
-          "given": [
-            "l'option « SSO obligatoire » est activée pour le domaine nordvik-energy.no"
-          ],
-          "when": [
-            "un utilisateur de ce domaine tente de se connecter avec un mot de passe Orbit"
-          ],
-          "then": [
-            "la connexion par mot de passe est refusée",
-            "le message « Votre organisation exige une connexion via Microsoft » s'affiche avec un bouton de connexion SSO"
-          ]
-        },
-        {
-          "title": "Métadonnées SAML invalides",
-          "given": [
-            "l'administrateur est sur l'écran de configuration SSO"
-          ],
-          "when": [
-            "il importe un fichier de métadonnées dont le certificat a expiré"
-          ],
-          "then": [
-            "la configuration n'est pas enregistrée",
-            "le message « Certificat expiré le 12/05/2025 » s'affiche",
-            "le SSO existant, s'il y en a un, reste actif"
-          ]
-        }
-      ],
-      "story_points": 13,
-      "labels": [
-        "security",
-        "enterprise",
-        "sso"
-      ],
-      "out_of_scope": [
-        "Fournisseurs d'identité autres qu'Azure AD (Okta, Google Workspace)",
-        "Gestion fine des groupes et rôles via SCIM"
-      ],
-      "dependencies": [
-        "Revue de sécurité interne (pentest) avant mise en production",
-        "Documentation d'administration pour les DSI clientes"
-      ],
-      "open_questions": [
-        "Le SSO est-il réservé à l'offre Enterprise ou disponible en option payante ?",
-        "Quel délai de déprovisionnement la DSI de Nordvik accepte-t-elle ?"
-      ],
-      "split_suggestion": "La story dépasse 8 points : livrer d'abord la connexion SAML (5 pts), puis le déprovisionnement SCIM (8 pts), avant l'échéance de la revue de Q3."
-    },
-    "F3": {
-      "feature_id": "F3",
-      "jira_summary": "Visualiser la charge de travail hebdomadaire de chaque membre",
-      "persona": "directrice PMO",
-      "goal": "voir la charge planifiée de chaque membre de mon équipe semaine par semaine, comparée à sa capacité",
-      "benefit": "j'identifie les surcharges et j'arbitre les affectations sans maintenir un Excel parallèle",
-      "context": "Besoin exprimé par une directrice PMO (NPS 9) et raison principale de la perte du deal Ventura Group (300 sièges). Première tranche en lecture seule, basée sur les estimations en heures déjà saisies sur les tâches.",
-      "acceptance_criteria": [
-        {
-          "title": "Afficher la charge par personne",
-          "given": [
-            "Hélène est administratrice PMO de l'espace Groupe Aldane",
-            "Marc a 3 tâches estimées à 12 h, 16 h et 10 h sur la semaine 42",
-            "la capacité de Marc est de 35 h par semaine"
-          ],
-          "when": [
-            "Hélène ouvre la vue « Charge équipe » sur la semaine 42"
-          ],
-          "then": [
-            "la ligne de Marc affiche 38 h / 35 h",
-            "la cellule de Marc est signalée en surcharge (109 %)"
-          ]
-        },
-        {
-          "title": "Détail d'une surcharge",
-          "given": [
-            "Hélène consulte la vue « Charge équipe »",
-            "Marc est en surcharge sur la semaine 42"
-          ],
-          "when": [
-            "Hélène clique sur la cellule de Marc en semaine 42"
-          ],
-          "then": [
-            "la liste des 3 tâches de Marc s'affiche avec projet, estimation et échéance"
-          ]
-        },
-        {
-          "title": "Tâches non estimées",
-          "given": [
-            "Julie a 2 tâches sans estimation sur la semaine 42"
-          ],
-          "when": [
-            "Hélène ouvre la vue « Charge équipe »"
-          ],
-          "then": [
-            "la ligne de Julie affiche « 2 tâches non estimées »",
-            "ces tâches ne sont pas comptées dans son pourcentage de charge"
-          ]
-        },
-        {
-          "title": "Accès réservé aux rôles de pilotage",
-          "given": [
-            "Paul a le rôle « Membre »"
-          ],
-          "when": [
-            "Paul tente d'ouvrir la vue « Charge équipe »"
-          ],
-          "then": [
-            "l'accès est refusé avec le message « Vue réservée aux managers et administrateurs »"
-          ]
-        }
-      ],
-      "story_points": 8,
-      "labels": [
-        "capacity-planning",
-        "reporting",
-        "sales-blocker"
-      ],
-      "out_of_scope": [
-        "Réaffectation de tâches par glisser-déposer",
-        "Prise en compte automatique des congés"
-      ],
-      "dependencies": [
-        "Champ « capacité hebdomadaire » sur le profil utilisateur"
-      ],
-      "open_questions": [
-        "La capacité par défaut est-elle de 35 h ou définie par l'administrateur ?",
-        "Faut-il agréger par équipe en plus de la vue par personne ?"
-      ],
-      "split_suggestion": "Tranche 2 : intégration des absences et congés. Tranche 3 : réaffectation par glisser-déposer depuis la vue."
+      "split_suggestion": "Slice suivante : ajout de la mise en sourdine par plages horaires et week-end (quiet hours) mentionnée par le Head of Operations, puis extension aux notifications push mobiles et à la personnalisation de la fréquence du résumé (temps réel, hebdomadaire)."
     }
   },
   "usage": {
     "per_agent": {
       "FeedbackAnalyst": {
+        "model": "claude-sonnet-5",
         "calls": 1,
-        "input_tokens": 4120,
-        "output_tokens": 5310,
-        "seconds": 21.4
+        "input_tokens": 4843,
+        "output_tokens": 3112,
+        "seconds": 28.2310805560046
       },
       "PrioritizationStrategist": {
+        "model": "claude-sonnet-5",
         "calls": 1,
-        "input_tokens": 4480,
-        "output_tokens": 6120,
-        "seconds": 26.8
+        "input_tokens": 4955,
+        "output_tokens": 4973,
+        "seconds": 53.02265881800122
       },
       "UserStoryWriter": {
+        "model": "claude-sonnet-5",
         "calls": 3,
-        "input_tokens": 6630,
-        "output_tokens": 12450,
-        "seconds": 58.2
+        "input_tokens": 8665,
+        "output_tokens": 6935,
+        "seconds": 74.76320522300375
       }
     },
-    "wall_clock_s": 71.9,
-    "estimated_cost_usd": 0.26926,
-    "calls": []
+    "wall_clock_s": 110.24320040900056,
+    "estimated_cost_usd": 0.187126,
+    "calls": [
+      {
+        "seq": 1,
+        "agent": "FeedbackAnalyst",
+        "model": "claude-sonnet-5",
+        "started_at": "2026-09-26T12:36:18.582+00:00",
+        "duration_s": 28.231,
+        "attempt": 1,
+        "status": "success",
+        "stop_reason": "end_turn",
+        "input_tokens": 4843,
+        "output_tokens": 3112,
+        "thinking": "",
+        "output_excerpt": "{\"executive_summary\":\"Les clients Mid-Market, dont plusieurs comptes stratégiques proches du renouvellement, alertent sur une surcharge de notifications qui masque les alertes critiques et fait perdre du temps quotidien. Deux comptes Enterprise/Mid-Market conditionnent leur renouvellement à des besoins précis : SSO/déprovisioning automatique pour la sécurité, et une vue de charge de travail par personne, ce dernier point ayant déjà coûté un deal de 300 sièges. Un bug de duplication de notifications post-MAJ et des frictions UX/mobile s'ajoutent au risque de churn.\",\"sources_count\":10,\"channels\":[\"Email\",\"Zendesk\",\"NPS\",\"Slack\",\"App Store\",\"Note d'appel Sales\"],\"themes\":[{\"name\":\"Gestion des notifications\",\"description\":\"Les utilisateurs sont submergés par le volume et le manque de contrôle sur les notifications Orbit, ce qui leur fait manquer des informations importantes.\",\"sentiment\":\"critical\",\"mention_count\":6},{\"name\":\"Visibilité de la charge de travail\",\"description\":\"Les managers et directions manquent d'une vue consolidée de la charge de travail par personne pour arbitrer les ressources.\",\"sentiment\":\"negative\",\"mention_count\":2},{\"name\":\"Sécurité et gouvernance des accès\",\"description\":\"Les clients Enterprise exigent des mécanismes d'authentification et de gestion des accès conformes aux exigences de sécurité IT.\",\"sentiment\":\"critical\",\"mention_count\":1},{\"name\":\"Reporting et exports\",\"description\":\"Les utilisateurs souhaitent automatiser la production de rapports et peinent à trouver les fonctions d'export existantes.\",\"sentiment\":\"neutral\",\"mention_count\":2},{\"name\":\"Qualité et ergonomie mobile\",\"description\":\"Des bugs et manques ergonomiques sur l'application mobile et l'interface web nuisent à l'expérience utilisateur.\",\"sentiment\":\"negative\",\"mention_count\":2}],\"feature_requests\":[{\"id\":\"F1\",\"title\":\"Résumé quotidien et filtrage des notifications\",\"problem_statement\":\"Les utilisateurs reçoivent un flux ininterrompu de notifications par email, sans poss",
+        "error": null
+      },
+      {
+        "seq": 2,
+        "agent": "PrioritizationStrategist",
+        "model": "claude-sonnet-5",
+        "started_at": "2026-09-26T12:36:46.816+00:00",
+        "duration_s": 53.023,
+        "attempt": 1,
+        "status": "success",
+        "stop_reason": "end_turn",
+        "input_tokens": 4955,
+        "output_tokens": 4973,
+        "thinking": "I'm evaluating the first feature, daily digest and notification filtering, looking at how critical it is, how many sources mention it (email, NPS feedback, App Store review), and which user segments it touches—Head of Operations, project managers, CSMs—suggesting it affects a broad, active portion of users.\n\nI'll estimate reach around 60% given the notification issue is generic and daily-frequency, likely touching most active users across the quarter. For impact, I'm leaning toward rating it 4 (High) since it causes missed critical alerts and workflow friction across multiple segments, even if it's not an explicit churn driver. For confidence, I'm noting the three distinct sources supporting this feature.\n\nEffort-wise, building a daily summary email plus granular per-project, per-event notification preferences requires new settings UI and backend logic - a new preferences entity, so I'd size this as moderate, roughly 2-3 weeks, giving effort a rating of 3.\n\nNow looking at the Slack/Teams notification integration feature, I see it's tied to three named Mid-Market accounts and directly connects to the Mid-Market churn goal, which makes it notable despite coming from a single source. I'm estimating its reach as smaller, maybe 20-25% of active users, since it's specific to those relying on Slack/Teams as their primary tool.\n\nFor impact, I'm rating it a 5 since it's directly linked to churn risk for a strategic segment, with an explicit quote showing dissatisfaction with email notifications getting lost. On confidence, I'm weighing whether the single-source nature (one Slack feedback channel, though covering three named accounts) should count as 50 or higher, and I'm settling on 50 since it's still one aggregated source rather than independent verification. For effort, I'm now considering what it takes to integrate Slack/Teams APIs - webhook setup, OAuth, and event mapping - which spans multiple systems.\n\nGiven the third-party integration complexity, I'm setting effort to 4 (large, 1-2 months). This feature isn't mandatory since it's not tied to legal or security requirements, even though it affects churn.\n\nMoving to the next feature - workload visibility per person - I see it mentioned twice, from a PMO director in an NPS survey and a DAF prospect in a lost deal note. This affects mainly managers, so I'm estimating reach around 15%. For impact, I'm leaning toward a 4 since it unlocks a key resource-arbitration workflow and one mention ties it to a lost deal, though I'm weighing whether it meets the threshold for a 5 given the explicit deal-loss connection.\n\nThe Ventura Group deal was explicitly lost because the competitor offered this capacity-planning view, letting the DAF arbitrate hiring decisions - that's a clear, already-realized business loss, so I'm bumping impact to 5. For confidence, I have two converging sources (NPS plus the lost deal note) with one explicitly quantified through a lost deal, which puts me at 80. For effort, this requires building a new weekly per-person capacity view with fresh data aggregation across tasks and assignments - a moderate-complexity dashboard, so I'll rate it 3. This isn't mandatory either.\n\nNow looking at SSO with Azure AD and automatic deprovisioning, I have just one source - an IT manager's email - but I'm considering whether this warrants special treatment given its compliance angle.\n\nSince the SSO requirement is tied directly to the renewal of 450 seats for Nordvik Energy, with an explicit contractual/security threat of non-renewal and an audit finding referenced, this is clearly a mandatory security/compliance constraint. Reach is narrow since it only affects one account (roughly 3.75% of the 12,000 MAU base), though broader enterprise demand for SSO likely exists beyond this case - regardless, mandatory status overrides the reach calculation for prioritization. Impact is a 5 since it removes a direct blocker to renewal with explicit churn risk. Confidence lands at 80 since it's a single source but strongly quantified (450 seats explicitly on the line). Effort is a 4, given this requires substantial engineering work - SAML/Azure AD integration plus automatic deprovisioning is security-sensitive and non-trivial.\n\nFor the automatic PDF progress report request (F5), I'm seeing this from a single Zendesk ticket in a niche \"Responsable de cabinet\" segment, so reach is low around 5%. Impact is a 2 since it's a nice-to-have with a workaround already available via screenshots, and confidence sits at 50 given it's a single, somewhat vague source. Effort is moderate at 2, since scheduled PDF generation could likely reuse existing export functionality with a contained frontend/backend change - not mandatory.\n\nNow I'm moving to write the rationales in French, keeping them concise per the rubric, and finalizing the reach/impact/confidence/effort numbers for each feature: F1 at 60/4/80/3, F2 at 25/5/50/4, and starting to work out F3's reach value.\n\nNow I'm finalizing the remaining scores for F3 and F4, noting that F4 is mandatory due to churn and renewal risk. I'm thinking through the portfolio insight next - contrasting quick wins versus bigger bets and how to sequence them: F4 (SSO) has to come first regardless of RICE score because of contractual/renewal urgency, F1 is a good early quick win given its broad reach and moderate effort, F2 is the bigger strategic bet tied to churn reduction despite higher effort, and F3 falls somewhere in between. I'm drafting the insight text emphasizing SSO as non-negotiable, F1 as the quick win, and F2 as the bigger bet, before assembling everything into the final single-line JSON output.\n\n",
+        "output_excerpt": "{\"assessments\":[{\"feature_id\":\"F1\",\"reach_percent\":60,\"reach_rationale\":\"Le thème 'Gestion des notifications' est critique avec 6 mentions et touche des segments transverses (Head of Operations, chefs de projet, CSM) qui utilisent Orbit quotidiennement ; on estime qu'une majorité des utilisateurs actifs reçoit des notifications chaque semaine.\",\"impact\":4,\"impact_rationale\":\"Niveau 4 (Élevé) : le résumé quotidien et le filtrage font gagner du temps chaque jour et évitent de manquer des alertes critiques, un irritant répété dans 3 sources différentes.\",\"confidence\":80,\"confidence_rationale\":\"Trois sources indépendantes convergent (email, NPS, App Store) mais l'impact reste qualitatif, sans chiffrage business direct, d'où un niveau 80.\",\"effort\":3,\"effort_rationale\":\"Niveau 3 (M) : nécessite une nouvelle logique de préférences par projet/type d'événement et un digest quotidien, soit environ un sprint pour une équipe.\",\"is_mandatory\":false,\"mandatory_reason\":\"\"},{\"feature_id\":\"F2\",\"reach_percent\":25,\"reach_rationale\":\"Trois comptes Mid-Market nommément cités (Logitrans, Kraft & Lemoine, Hexa Conseil) demandent cette intégration ; le segment concerné (utilisateurs Slack/Teams) reste une portion significative mais minoritaire de la base active.\",\"impact\":5,\"impact_rationale\":\"Niveau 5 (Massif) : la demande émane directement de comptes Mid-Market, cœur de cible du churn, avec une citation explicite ('l'email c'est là où les notifs vont mourir') indiquant un risque de désengagement.\",\"confidence\":50,\"confidence_rationale\":\"Une seule source (canal Slack #cs-feedback) rapporte le besoin, même si elle agrège plusieurs comptes ; absence de validation croisée par une autre source, d'où confiance 50.\",\"effort\":4,\"effort_rationale\":\"Niveau 4 (L) : intégration tierce (API Slack/Teams, gestion des webhooks et de l'authentification), estimée à 1-2 mois pour une équipe.\",\"is_mandatory\":false,\"mandatory_reason\":\"\"},{\"feature_id\":\"F3\",\"reach_percent\":15,\"reach_rationale\":\"Le besoin con",
+        "error": null
+      },
+      {
+        "seq": 3,
+        "agent": "UserStoryWriter",
+        "model": "claude-sonnet-5",
+        "started_at": "2026-09-26T12:37:39.846+00:00",
+        "duration_s": 20.32,
+        "attempt": 1,
+        "status": "success",
+        "stop_reason": "end_turn",
+        "input_tokens": 2864,
+        "output_tokens": 1881,
+        "thinking": "Je vais définir la story pour une vue de charge de travail hebdomadaire par personne, destinée à un manager. J'estime l'effort à 5 points et je prévois des critères d'acceptation couvrant le cas nominal, l'absence d'affectations, l'accès refusé pour un non-manager, et la mise en évidence des surcharges. Je rédige le tout en français.\n\n",
+        "output_excerpt": "{\"feature_id\":\"F3\",\"jira_summary\":\"Afficher la charge de travail hebdomadaire par collaborateur\",\"persona\":\"Directrice PMO\",\"goal\":\"visualiser directement dans Orbit la charge de travail de chaque collaborateur de mon équipe, semaine par semaine\",\"benefit\":\"identifier rapidement les surcharges et arbitrer les ressources sans avoir à maintenir un fichier Excel externe\",\"context\":\"Une directrice PMO cliente (Groupe Aldane) maintient aujourd'hui un fichier Excel parallèle pour suivre la charge de ses équipes, faute de vue native dans Orbit. Un deal a été perdu chez Ventura Group car le concurrent propose une vue « capacité équipe » permettant d'arbitrer les recrutements, fonctionnalité absente d'Orbit. Cette vue est jugée clé pour réduire le churn Mid-Market ce trimestre.\",\"acceptance_criteria\":[{\"title\":\"Consultation de la charge hebdomadaire de l'équipe\",\"given\":[\"je suis connectée en tant que 'Directrice PMO' sur le compte 'Groupe Aldane'\",\"mon équipe compte 8 collaborateurs avec des affectations actives sur les 4 prochaines semaines\"],\"when\":[\"j'ouvre l'écran 'Charge de travail par personne' depuis le menu Planification\"],\"then\":[\"je vois un tableau avec une ligne par collaborateur et une colonne par semaine (S1 à S4)\",\"chaque cellule affiche le nombre d'heures affectées et le pourcentage de charge par rapport à la capacité hebdomadaire du collaborateur (ex : '38h / 106%')\",\"l'affichage se charge en moins de 2 secondes pour les 8 collaborateurs\"]},{\"title\":\"Mise en évidence visuelle des surcharges\",\"given\":[\"le collaborateur 'Karim Benali' a 42h affectées en semaine 3 pour une capacité de 35h\"],\"when\":[\"j'affiche la vue 'Charge de travail par personne' pour la semaine 3\"],\"then\":[\"la cellule correspondant à 'Karim Benali' en semaine 3 est colorée en rouge\",\"le pourcentage affiché est '120%'\",\"un badge 'Surcharge' apparaît au survol de la cellule\"]},{\"title\":\"Collaborateur sans affectation sur la période\",\"given\":[\"le collaborateur 'Sophie Marchal' n'a aucune tâche ",
+        "error": null
+      },
+      {
+        "seq": 4,
+        "agent": "UserStoryWriter",
+        "model": "claude-sonnet-5",
+        "started_at": "2026-09-26T12:37:39.844+00:00",
+        "duration_s": 25.463,
+        "attempt": 1,
+        "status": "success",
+        "stop_reason": "end_turn",
+        "input_tokens": 2836,
+        "output_tokens": 2417,
+        "thinking": "Given the effort is large, combining full SSO SAML Azure AD setup with auto-deprovisioning likely exceeds a single sprint slice, so I'm thinking the MVP should be SSO SAML login configuration first, with deprovisioning sync split into a follow-up story—though the original problem statement stresses deprovisioning as important too.\n\n",
+        "output_excerpt": "{\"feature_id\":\"F4\",\"jira_summary\":\"Activer la connexion SSO SAML via Azure AD pour Orbit\",\"persona\":\"IT Manager d'une entreprise Mid-Market cliente d'Orbit\",\"goal\":\"configurer l'authentification unique (SSO) de l'espace de travail Orbit via Azure AD (SAML 2.0)\",\"benefit\":\"sécuriser les accès des collaborateurs et satisfaire les exigences de l'audit de sécurité IT conditionnant le renouvellement du contrat de 450 sièges\",\"context\":\"Nordvik Energy, client Mid-Market de 450 sièges, conditionne le renouvellement de son contrat à la mise en place du SSO Azure AD et refuse de signer sans cette garantie de sécurité. La gestion manuelle actuelle des comptes expose l'entreprise à des risques d'audit (accès non révoqués). Cette story couvre la première brique indispensable : permettre à l'IT Manager de configurer et activer le SSO SAML, préalable technique au déprovisionnement automatique qui sera traité dans une story ultérieure.\",\"acceptance_criteria\":[{\"title\":\"Configuration réussie du SSO Azure AD par l'IT Manager\",\"given\":[\"l'IT Manager est connecté à la console d'administration Orbit avec le rôle 'Administrateur'\",\"l'entreprise dispose d'une application d'entreprise Azure AD configurée avec les métadonnées SAML de Orbit\"],\"when\":[\"l'IT Manager saisit l'URL des métadonnées Azure AD, le certificat X.509 et l'Entity ID dans le formulaire de configuration SSO puis clique sur 'Activer le SSO'\"],\"then\":[\"Orbit valide la configuration en moins de 5 secondes et affiche le statut 'SSO actif'\",\"un log d'audit horodaté enregistre l'activation avec l'identifiant de l'IT Manager\",\"tous les nouveaux utilisateurs du domaine 'nordvik-energy.com' sont redirigés vers Azure AD lors de leur prochaine connexion\"]},{\"title\":\"Connexion réussie d'un utilisateur via SSO\",\"given\":[\"le SSO Azure AD est actif pour le compte Nordvik Energy\",\"Julie Marchand, chef de projet, possède un compte Azure AD actif avec l'email julie.marchand@nordvik-energy.com\"],\"when\":[\"Julie Marchand clique sur 'Se connec",
+        "error": null
+      },
+      {
+        "seq": 5,
+        "agent": "UserStoryWriter",
+        "model": "claude-sonnet-5",
+        "started_at": "2026-09-26T12:37:39.841+00:00",
+        "duration_s": 28.979,
+        "attempt": 1,
+        "status": "success",
+        "stop_reason": "end_turn",
+        "input_tokens": 2965,
+        "output_tokens": 2637,
+        "thinking": "I'm thinking the MVP should focus on a tight slice: notification preferences by project/type plus a daily digest email. Given the effort estimate feels like an 8-point story, I'll split it—make the core MVP the daily digest with basic content, and push the granular per-project/type filtering into a separate follow-up story.\n\nI'll draft the story as \"Recevoir un résumé quotidien des notifications avec choix des types et projets,\" scoping in project/type selection and digest email, but scoping out weekend mute/quiet hours and mobile push for a later slice. Then I'm sketching four acceptance criteria: successful digest delivery at 8h with filtered events, handling the edge case of no events in the period, restricting preference changes for users without project permissions, and considering whether critical mentions should always appear regardless of disabled types.\n\n",
+        "output_excerpt": "{\"feature_id\":\"F1\",\"jira_summary\":\"Ajouter préférences de notifications et résumé quotidien par email\",\"persona\":\"Chef de projet gérant plusieurs projets simultanés\",\"goal\":\"choisir précisément les types d'événements et les projets pour lesquels je reçois des notifications, et recevoir un résumé quotidien unique au lieu d'un email par action\",\"benefit\":\"ne plus être noyé sous les emails et ne plus manquer les alertes critiques, ce qui réduit mon irritation et le risque de désabonnement de mon compte\",\"context\":\"Trois retours clients distincts (Logitrans, Kraft & Lemoine, App Store) signalent le même problème : un flux d'emails 'tout ou rien' qui noie les alertes importantes. Ce point est priorisé Must-have avec un RICE élevé (7680) car il touche directement à la rétention des comptes Mid-Market, cible stratégique du trimestre. La solution attendue combine un filtrage fin par projet/type d'événement et un envoi groupé quotidien.\",\"acceptance_criteria\":[{\"title\":\"Configuration des préférences de notification par projet et par type d'événement\",\"given\":[\"Léa est chef de projet et membre des projets 'Refonte CRM' et 'Migration ERP'\",\"Léa accède à la page 'Préférences de notifications' depuis son profil\"],\"when\":[\"Léa décoche le type d'événement 'Commentaire ajouté' pour le projet 'Migration ERP' et clique sur 'Enregistrer'\"],\"then\":[\"Le système confirme l'enregistrement avec un message 'Préférences mises à jour' affiché en moins de 2 secondes\",\"Aucun email individuel n'est plus envoyé à Léa pour les commentaires sur le projet 'Migration ERP'\",\"Les autres types d'événements (échéance, mention, changement de statut) restent notifiés normalement sur ce projet\"]},{\"title\":\"Réception du résumé quotidien avec les événements filtrés\",\"given\":[\"Léa a activé le résumé quotidien à 8h00 (heure de Paris)\",\"Le 14 mars, 5 événements se sont produits sur ses projets suivis : 2 changements de statut, 2 commentaires sur 'Refonte CRM' et 1 commentaire sur 'Migration ERP'\",\"Léa a désactiv",
+        "error": null
+      }
+    ]
   },
   "model": "claude-sonnet-5",
-  "generated_at": "2026-09-25T09:00:00+00:00",
-  "is_demo": true,
+  "config": {
+    "analyst": {
+      "model": "claude-sonnet-5",
+      "effort": "medium"
+    },
+    "strategist": {
+      "model": "claude-sonnet-5",
+      "effort": "high"
+    },
+    "writer": {
+      "model": "claude-sonnet-5",
+      "effort": "medium"
+    }
+  },
+  "generated_at": "2026-09-26T12:38:08+00:00",
+  "is_demo": false,
   "source_text": "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[EMAIL] De : Sophie Marchand <s.marchand@logitrans.fr>\nObjet : Trop de notifications = on rate l'essentiel (URGENT)\nDate : lundi 8 septembre, 08:12\n\nBonjour,\n\nJe me permets de vous écrire directement car la situation devient intenable. Mes 180 collaborateurs reçoivent en moyenne 60 à 80 notifications Orbit par jour. Résultat : plus personne ne les lit, et la semaine dernière nous avons raté une échéance client parce que l'alerte de retard était noyée au milieu de 40 mails \"X a commenté une tâche\".\n\nCe qu'il nous faudrait, c'est simple : un récapitulatif quotidien au lieu d'un mail par action, et la possibilité de choisir QUOI on reçoit (par projet, par type d'évènement). Aujourd'hui c'est tout ou rien.\n\nJe vous le dis franchement : notre renouvellement est en mars, et en l'état je ne suis pas certaine de le défendre en comité de direction.\n\nSophie Marchand\nHead of Operations — Logitrans\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[ZENDESK #48213] Priorité : Normale — Statut : Ouvert\nSujet : notifs email en double depuis la MAJ\nClient : Atelier Bévin (32 utilisateurs)\n\nDepuis la mise à jour 4.2 de jeudi, chaque notification arrive deux fois dans ma boîte. Idem pour mes collègues. C'est vraiment pénible vu la quantité qu'on reçoit déjà...\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[NPS — Score 4/10] Utilisateur : chef de projet, compte Mid-Market (Kraft & Lemoine)\n\"Je passe la première heure de ma journée à trier les notifs Orbit. Mettez un résumé quotidien svp, et laissez-nous couper les notifs d'un projet quand on n'est plus dessus.\"\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[NPS — Score 9/10] Utilisateur : directrice PMO (Groupe Aldane)\n\"Super outil, le Gantt est top et l'équipe l'a adopté en 2 semaines. Il manque juste une vue de la charge de travail par personne : aujourd'hui je fais ça dans un Excel à côté pour savoir qui est surchargé.\"\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[EMAIL] From: Lars Eriksen <lars.eriksen@nordvik-energy.no>\nSubject: SSO requirement before security review\n\nHi team,\n\nOur IT security review is scheduled for Q3. Procurement has made it clear: without SSO through Azure AD (SAML) and automatic deprovisioning of leavers, they will not sign the renewal for our 450 seats. We currently manage Orbit accounts manually and last month a former contractor still had access for three weeks — that is a finding for our auditors.\n\nCan you share your roadmap on this?\n\nBest regards,\nLars Eriksen — IT Manager, Nordvik Energy\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[SLACK #cs-feedback] Julie (Customer Success Manager) — mardi 14:32\nPetit récap de ma semaine : 3 comptes Mid-Market (Logitrans, Kraft & Lemoine, Hexa Conseil) m'ont demandé de recevoir les alertes Orbit directement dans Slack / Teams plutôt que par email. Hexa dit que \"l'email c'est là où les notifs vont mourir\". Ça revient TRÈS souvent dans mes QBR.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[ZENDESK #48240] Priorité : Basse — Statut : En attente\nSujet : rapport hebdo automatique ?\nClient : Cabinet Rousseau & Associés (18 utilisateurs)\n\nBonjour, est-il possible de programmer l'envoi automatique d'un rapport d'avancement en PDF à notre direction chaque lundi ? Pour l'instant je fais des captures d'écran du tableau de bord. Merci !\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[APP STORE — ★★☆☆☆] \"Bien sur ordi, bof sur mobile\"\nL'appli mobile plante systématiquement quand j'ouvre une pièce jointe PDF dans une tâche. Et impossible de mettre les notifications en sourdine le week-end, mon téléphone vibre le dimanche pour des commentaires sans importance.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[ZENDESK #48302] Priorité : Basse — Statut : Résolu\nSujet : où est l'export Excel ???\nJ'ai cherché 20 minutes l'export Excel du reporting. Votre support m'a dit qu'il est dans \"...\" > \"Plus d'options\" > \"Exporter\". Sérieusement, personne ne peut trouver ça.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[NOTE D'APPEL — Sales] Karim B., Account Executive — deal perdu : Ventura Group (300 sièges)\nRaison principale de la perte : le concurrent propose une vue \"capacité équipe\" qui montre la charge de chaque personne semaine par semaine. Le DAF voulait arbitrer les recrutements avec. On était mieux placés sur le prix et le Gantt.\n"
 }
