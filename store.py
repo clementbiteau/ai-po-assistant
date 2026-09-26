@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import secrets
 import sqlite3
 import uuid
@@ -39,6 +40,7 @@ CALL_COLUMNS = [
     "run_id", "seq", "agent", "started_at", "duration_s", "attempt", "status", "stop_reason", "input_tokens",
     "output_tokens", "thinking", "output_excerpt", "error",
 ]  # fmt: skip
+DETAIL_COLUMNS = ["run_id", "case_label", "config", "ranking"]
 _NUMERIC = [
     "input_chars", "features_count", "stories_count", "input_tokens", "output_tokens", "cost_usd", "cost_eur",
     "duration_s", "calls", "seconds",
@@ -89,6 +91,24 @@ class CallRecord:
 
 
 @dataclass(frozen=True)
+class RunDetails:
+    """What a run was and what it produced: the basis of run comparisons.
+
+    Attributes:
+        case_label: Sample case used, or ``None`` for pasted feedback.
+        config: Model and effort per agent (``{"strategist": {"model", "effort"}}``).
+        ranking: Compact prioritisation (id, title, rank, RICE inputs and
+            score, MoSCoW), small enough to list many runs at once.
+        result: The full :class:`agents.PipelineResult` as JSON, to reopen the run.
+    """
+
+    case_label: str | None = None
+    config: dict[str, dict[str, str]] = field(default_factory=dict)
+    ranking: list[dict[str, Any]] = field(default_factory=list)
+    result: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
 class RunRecord:
     """One Claude-backed execution, as persisted."""
 
@@ -109,6 +129,7 @@ class RunRecord:
     created_at: datetime | None = None
     agents: tuple[AgentRecord, ...] = ()
     calls: tuple[CallRecord, ...] = ()
+    details: RunDetails | None = None
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
     def row(self) -> dict[str, Any]:
@@ -152,6 +173,21 @@ class RunRecord:
                 "error": (c.error or None) and c.error[:500],
             }
             for c in self.calls
+        ]
+
+    def detail_rows(self) -> list[dict[str, Any]]:
+        """Row for the ``run_details`` table (none when the run carries no details)."""
+        if self.details is None:
+            return []
+        d = self.details
+        return [
+            {
+                "run_id": self.id,
+                "case_label": d.case_label,
+                "config": d.config,
+                "ranking": d.ranking,
+                "result": d.result,
+            }
         ]
 
     def agent_rows(self) -> list[dict[str, Any]]:
@@ -210,6 +246,10 @@ def _typed_agents(rows: list[dict[str, Any]]) -> pd.DataFrame:
     return frame
 
 
+def _typed_details(rows: list[dict[str, Any]]) -> pd.DataFrame:
+    return pd.DataFrame(rows, columns=DETAIL_COLUMNS)
+
+
 def _quota_from(row: dict[str, Any]) -> Quota:
     def num(key: str) -> float | None:
         value = row.get(key)
@@ -257,6 +297,14 @@ class Repository(Protocol):
 
     def total_real_cost_usd(self) -> float:
         """All-time API spend of real runs (USD) — basis of the remaining-credit estimate."""
+        ...
+
+    def fetch_details(self, run_ids: Sequence[str]) -> pd.DataFrame:
+        """Case, configuration and compact ranking of the given runs (no full result)."""
+        ...
+
+    def fetch_result(self, run_id: str) -> dict[str, Any] | None:
+        """Full stored result of one run, or ``None`` if it has none."""
         ...
 
 
@@ -328,6 +376,7 @@ class SupabaseRepository:
         children = {
             "run_agents": [a for r in runs for a in r.agent_rows()],
             "agent_calls": [c for r in runs for c in r.call_rows()],
+            "run_details": [d for r in runs for d in r.detail_rows()],
         }
         with self._errors("enregistrement de l'usage"):
             # `minimal`: no read-back, so inserting never depends on SELECT rights.
@@ -347,6 +396,23 @@ class SupabaseRepository:
                 chunk = ids[i : i + 80]
                 rows.extend(self.client.table("agent_calls").select("*").in_("run_id", chunk).execute().data)
         return _typed_calls(rows)
+
+    def fetch_details(self, run_ids: Sequence[str]) -> pd.DataFrame:
+        """Case, configuration and ranking of the given runs (RLS: own runs, or all for admins)."""
+        rows: list[dict[str, Any]] = []
+        ids = list(run_ids)
+        with self._errors("lecture des détails des runs"):
+            for i in range(0, len(ids), 80):
+                chunk = ids[i : i + 80]
+                query = self.client.table("run_details").select(",".join(DETAIL_COLUMNS)).in_("run_id", chunk)
+                rows.extend(query.execute().data)
+        return _typed_details(rows)
+
+    def fetch_result(self, run_id: str) -> dict[str, Any] | None:
+        """Full stored result of one run."""
+        with self._errors("lecture du résultat"):
+            data = self.client.table("run_details").select("result").eq("run_id", run_id).limit(1).execute().data
+        return (data[0].get("result") if data else None) or None
 
     def purge_synthetic(self) -> int:
         """Delete synthetic runs (admin only — enforced by RLS)."""
@@ -427,6 +493,10 @@ create table if not exists agent_calls (
     started_at text not null, duration_s real, attempt integer, status text, stop_reason text,
     input_tokens integer, output_tokens integer, thinking text, output_excerpt text, error text,
     primary key (run_id, seq)
+);
+create table if not exists run_details (
+    run_id text primary key references runs(id) on delete cascade, case_label text,
+    config text not null default '{}', ranking text not null default '[]', result text
 );
 """
 
@@ -541,7 +611,15 @@ class SQLiteRepository:
                 con.execute(
                     f"insert into runs ({', '.join(row)}) values ({', '.join('?' * len(row))})", tuple(row.values())
                 )
-                for table, rows in (("run_agents", run.agent_rows()), ("agent_calls", run.call_rows())):
+                details = [
+                    {**d, **{k: None if d[k] is None else json.dumps(d[k]) for k in ("config", "ranking", "result")}}
+                    for d in run.detail_rows()
+                ]
+                for table, rows in (
+                    ("run_agents", run.agent_rows()),
+                    ("agent_calls", run.call_rows()),
+                    ("run_details", details),
+                ):
                     for child in rows:
                         con.execute(
                             f"insert into {table} ({', '.join(child)}) values ({', '.join('?' * len(child))})",
@@ -561,6 +639,25 @@ class SQLiteRepository:
                 query = f"select * from agent_calls where run_id in ({', '.join('?' * len(chunk))})"
                 rows.extend(dict(r) for r in con.execute(query, tuple(chunk)).fetchall())
         return _typed_calls(rows)
+
+    def fetch_details(self, run_ids: Sequence[str]) -> pd.DataFrame:
+        """Case, configuration and ranking of the given runs."""
+        ids = list(run_ids)
+        rows: list[dict[str, Any]] = []
+        with self._conn() as con:
+            for i in range(0, len(ids), 500):
+                chunk = ids[i : i + 500]
+                query = f"select {', '.join(DETAIL_COLUMNS)} from run_details where run_id in ({', '.join('?' * len(chunk))})"
+                for r in con.execute(query, tuple(chunk)).fetchall():
+                    row = dict(r)
+                    rows.append({**row, "config": json.loads(row["config"]), "ranking": json.loads(row["ranking"])})
+        return _typed_details(rows)
+
+    def fetch_result(self, run_id: str) -> dict[str, Any] | None:
+        """Full stored result of one run."""
+        with self._conn() as con:
+            row = con.execute("select result from run_details where run_id = ?", (run_id,)).fetchone()
+        return json.loads(row["result"]) if row and row["result"] else None
 
     def purge_synthetic(self) -> int:
         """Delete synthetic runs."""

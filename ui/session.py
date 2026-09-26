@@ -17,7 +17,7 @@ from agents import UsageReport
 from auth import AuthError, AuthService, build_auth_service
 from config import Settings, apply_secrets
 from governance import Consumption, CostEstimator, consumption_from_runs, period_starts
-from store import AgentRecord, CallRecord, Profile, Repository, RunRecord, StoreError
+from store import AgentRecord, CallRecord, Profile, Repository, RunDetails, RunRecord, StoreError
 
 _CONSUMPTION_TTL_S = 60
 
@@ -157,17 +157,23 @@ def record_usage(
     features_count: int = 0,
     stories_count: int = 0,
     error: str | None = None,
+    details: RunDetails | None = None,
 ) -> None:
-    """Persist one run for quotas and analytics. Never raises (logging must not break the UX)."""
+    """Persist one run for quotas and analytics. Never raises (logging must not break the UX).
+
+    ``details`` (configuration, case, ranking, full result) feeds the admin
+    "Runs" comparison; each agent is costed at its own model's price.
+    """
     profile = current_profile()
     if profile is None:
         return
-    pricing = settings.pricing or (0.0, 0.0)
     rate = settings.usd_to_eur
     agents: list[AgentRecord] = []
     input_tokens = output_tokens = 0
-    for name, u in (usage.per_agent if usage else {}).items():
-        cost_usd = (u.input_tokens * pricing[0] + u.output_tokens * pricing[1]) / 1e6
+    per_agent = usage.per_agent if usage else {}
+    for name, u in per_agent.items():
+        price = settings.price_of(u.model or settings.model) or (0.0, 0.0)
+        cost_usd = (u.input_tokens * price[0] + u.output_tokens * price[1]) / 1e6
         agents.append(AgentRecord(name, u.calls, u.input_tokens, u.output_tokens, cost_usd * rate, u.seconds))
         input_tokens += u.input_tokens
         output_tokens += u.output_tokens
@@ -189,11 +195,12 @@ def record_usage(
         )
         for c in (usage.calls if usage else [])
     )
+    models = sorted({u.model for u in per_agent.values() if u.model})
     run = RunRecord(
         user_id=profile.id,
         kind=kind,
         status=status,
-        model=settings.model,
+        model=" / ".join(models) or settings.model,
         input_chars=input_chars,
         features_count=features_count,
         stories_count=stories_count,
@@ -205,6 +212,7 @@ def record_usage(
         error=error,
         agents=tuple(agents),
         calls=calls,
+        details=details,
     )
     try:
         repository().record_run(run)

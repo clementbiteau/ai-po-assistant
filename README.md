@@ -131,7 +131,7 @@ Direction éditoriale et sobre : fond beige, un seul accent vert profond (`#1F6E
 
 **1. Supabase (≈ 5 min)**
 1. Créez un projet sur [supabase.com](https://supabase.com).
-2. *SQL Editor* : exécutez **dans l'ordre** les fichiers de [`supabase/migrations/`](supabase/migrations/) (`20260925000000_init.sql`, puis `20260926000000_agent_calls.sql`). Chaque fichier peut être relancé sans risque.
+2. *SQL Editor* : exécutez **dans l'ordre** les fichiers de [`supabase/migrations/`](supabase/migrations/) (`20260925000000_init.sql`, `20260926000000_agent_calls.sql`, puis `20260927000000_run_details.sql`). Chaque fichier peut être relancé sans risque.
 3. *Authentication › Sign In / Providers* : désactivez **Allow new users to sign up**.
 4. *Authentication › Users › Add user* : créez votre compte et ceux des relecteurs (cochez *Auto Confirm User*).
 5. Promouvez-vous admin (*SQL Editor*) :

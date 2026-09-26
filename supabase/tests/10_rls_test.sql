@@ -24,6 +24,8 @@ values ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-0000000
 insert into public.run_agents (run_id, agent, calls) values ('10000000-0000-0000-0000-000000000001', 'FeedbackAnalyst', 1);
 insert into public.agent_calls (run_id, seq, agent, started_at, status, thinking)
 values ('10000000-0000-0000-0000-000000000001', 1, 'FeedbackAnalyst', now(), 'success', 'summary');
+insert into public.run_details (run_id, case_label, config)
+values ('10000000-0000-0000-0000-000000000001', 'Notifications & churn', '{"strategist": {"model": "m", "effort": "high"}}');
 
 do $$ begin
     assert (select count(*) from public.profiles) = 1, 'member sees only own profile';
@@ -63,6 +65,16 @@ do $$ begin
     assert (select count(*) from public.runs) = 0, 'Bob must not see Alice runs';
     assert (select count(*) from public.run_agents) = 0, 'Bob must not see Alice agent rows';
     assert (select count(*) from public.agent_calls) = 0, 'Bob must not see Alice agent journal';
+    assert (select count(*) from public.run_details) = 0, 'Bob must not see Alice run details';
+end $$;
+do $$ begin
+    insert into public.run_details (run_id, config) values ('10000000-0000-0000-0000-000000000001', '{}');
+    raise exception 'FAIL: Bob attached details to a run that is not his';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+    update public.run_details set case_label = 'tampered';
+    delete from public.run_details;
 end $$;
 
 -- ── as admin ─────────────────────────────────────────────────────────────
@@ -72,6 +84,7 @@ do $$ begin
     assert (select count(*) from public.profiles) = 3, 'admin sees all profiles';
     assert (select count(*) from public.runs) = 1, 'admin sees all runs';
     assert (select count(*) from public.agent_calls) = 1, 'admin sees the agent journal';
+    assert (select case_label from public.run_details) = 'Notifications & churn', 'admin sees run details, untouched';
 end $$;
 update public.profiles set daily_eur_limit = 3.5 where email = 'alice@test.dev';
 insert into public.runs (user_id, kind, status, model, cost_eur, is_synthetic)

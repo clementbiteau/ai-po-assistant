@@ -22,6 +22,7 @@ from governance import CostEstimator, Quota, consumption_from_runs, forecast_spe
 from store import Profile, StoreError
 from synthetic import generate_runs
 from ui import session
+from ui.runs import render_runs
 from ui.style import (
     ACCENT,
     AGENT_COLORS,
@@ -125,9 +126,13 @@ def render_admin(settings: Settings, me: Profile) -> None:
             "via **Données de démo**.",
         )
 
-    usage_tab, agents_tab, ml_tab, quota_tab = st.tabs(["Usage et coûts", "Agents", "Prévisions", "Quotas"])
+    usage_tab, runs_tab, agents_tab, ml_tab, quota_tab = st.tabs(
+        ["Usage et coûts", "Runs", "Agents", "Prévisions", "Quotas"]
+    )
     with usage_tab:
         _usage_section(settings, runs, agents, profiles_df)
+    with runs_tab:
+        render_runs(settings, runs)
     with agents_tab:
         _agents_section(settings, runs)
     with ml_tab:

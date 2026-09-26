@@ -139,6 +139,11 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 - **Pourquoi** : le bon compromis qualité / coût / latence pour de la compréhension de texte et du jugement. L'effort se règle sans changer de modèle.
 - **Réflexion affichée** : l'API renvoie un **résumé** du raisonnement (`display: "summarized"`), jamais le raisonnement brut. C'est ce résumé qui apparaît dans le journal des agents.
 - **Écarté** : un modèle plus puissant (Opus) partout, plus cher et plus lent sans gain net sur cette tâche. On peut le changer via `ANTHROPIC_MODEL`.
+- **Mesure (26/09/2026)**, sur le cas « Notifications & churn » :
+  - un run dure 100 à 110 s : analyste ~29 s, stratège ~45 à 50 s, story la plus lente ~30 s, sans aucune correction ;
+  - passer le stratège en effort moyen n'a fait gagner que 6 s (13 %), l'ordre de grandeur des variations d'un run à l'autre ;
+  - l'effort élevé est donc conservé : le gain ne justifie pas de risquer la qualité des scores, qui conditionnent toute la suite.
+- **D'où vient la durée** : chaque agent écrit à environ 95 tokens par seconde, et produit 3 000 à 5 000 tokens. Réduire vraiment la latence demanderait des justifications plus courtes ou un modèle plus rapide, deux compromis sur la qualité. Le streaming (D17) rend l'attente lisible à la place.
 
 ### D9. Les user stories en parallèle
 - **Décision** : les stories sont rédigées simultanément (4 en parallèle au maximum).
@@ -195,7 +200,7 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
 
 ### D16. Les tests
 - **Décision** :
-  - 62 tests hors ligne, sur un faux client Claude : aucune clé, aucun coût, moins de 15 secondes.
+  - 72 tests hors ligne, sur un faux client Claude : aucune clé, aucun coût, moins de 15 secondes.
   - Tests d'interface avec `AppTest` : connexion, droits, lancement.
   - Tests SQL des règles de sécurité sur PostgreSQL.
   - Lint avec `ruff`.
@@ -214,6 +219,38 @@ Chaque décision suit le même format : **ce qui a été décidé**, **pourquoi*
   - Les rédacteurs de user stories ne sont pas streamés : ils tournent en parallèle dans d'autres threads, et Streamlit ne peut mettre à jour l'écran que depuis le thread principal. Chaque story terminée est signalée.
   - L'affichage est best effort : s'il échoue, il se coupe sans interrompre l'agent.
   - Chaque utilisateur ne voit que la réflexion portant sur les retours qu'il a lui-même collés. Le journal complet reste réservé aux admins.
+
+### D18. Le choix du modèle Claude, agent par agent
+- **Décision** : chaque agent a son modèle et son niveau d'effort. L'admin choisit une **configuration nommée**, chacune avec l'argument qui la justifie, ou règle chaque agent à la main. Les membres gardent la configuration par défaut.
+
+  | Configuration | Analyste · Stratège · Rédacteur | Coût estimé d'un run | Argument |
+  |---|---|---|---|
+  | Référence | Sonnet 5 · Sonnet 5 (élevé) · Sonnet 5 | 0,16 € (mesuré) | Le meilleur équilibre qualité, coût et latence pour juger du texte |
+  | Rédaction sur Haiku | Sonnet 5 · Sonnet 5 (élevé) · Haiku 4.5 | ~0,12 € | La rédaction est la tâche la plus cadrée et produit la moitié des tokens |
+  | Priorisation sur Opus | Sonnet 5 · Opus 5 (élevé) · Sonnet 5 | ~0,24 € | Le classement conditionne tout le backlog : le meilleur modèle là où l'erreur coûte le plus |
+  | Plancher de coût | Haiku 4.5 partout | ~0,08 € | Mesurer ce que la qualité perd au prix minimal |
+
+  Les coûts estimés appliquent les prix de chaque modèle au volume de texte du run de référence. Un autre modèle écrit plus ou moins : seul un run réel donne le vrai chiffre, d'où D19.
+- **Pourquoi** : on n'affecte pas un modèle « au feeling ». Chaque configuration porte une hypothèse (où le jugement compte, où le volume coûte), et l'onglet Runs la vérifie.
+- **Adaptations par modèle** :
+  - **Haiku 4.5** n'a ni niveau d'effort ni réflexion adaptative : l'effort est traduit en budget de réflexion (aucun en « faible », 2 048 tokens en « moyen », 4 096 en « élevé »).
+  - **Opus 5** active le **repli automatique côté serveur** (`fallbacks: "default"`) : si un filtre de sécurité refuse une requête, l'API la relance sur le modèle recommandé au lieu d'échouer.
+  - Chaque agent est facturé au prix de son propre modèle, dans les quotas comme dans les estimations.
+- **Écartés** :
+  - **Fable 5.1** (10 $ / 50 $ par million de tokens) : environ 0,80 € par run, au-dessus du plafond des membres, pour une marge dont cette tâche n'a pas besoin.
+  - **D'autres fournisseurs** (modèles open source, etc.) : hors consigne, et l'app s'appuie sur des fonctions de l'API Claude (JSON garanti par schéma, réflexion résumée, effort). L'appel au modèle étant isolé dans `agents.py`, c'est une évolution possible, à mesurer avec D19.
+
+### D19. Le suivi des runs (Admin › Runs)
+- **Décision** : chaque analyse enregistre, dans la table `run_details`, **sa configuration** (modèle et effort de chaque agent), **le cas** utilisé, **son classement** (rang, RICE, MoSCoW, estimations) et **son résultat complet**. L'onglet *Admin › Runs* liste les runs avec leur latence par étape, leur coût et leur top 3.
+- **Comparer deux runs** du même cas affiche :
+  - l'écart de durée et de coût ;
+  - la durée de chaque étape sur le chemin critique (analyste, stratège, story la plus lente) ;
+  - le classement côte à côte, avec un verdict en une phrase : même top 3, ordre différent, ou top 3 modifié.
+
+  Les features sont appariées par leur titre, car leurs identifiants peuvent changer d'un run à l'autre.
+- **Pourquoi** : c'est la preuve d'un choix de modèle. Exemple : passer le stratège en effort moyen a fait gagner 10 s et 1 centime (voir D8) ; l'onglet dit en plus si le classement a tenu.
+- **En plus** : un run enregistré peut être **rouvert** tel quel, ce qui évite de relancer l'IA pour montrer un résultat.
+- **Compromis** : le résultat complet contient les retours clients collés. Il suit donc les mêmes règles RLS que le journal : visible par son auteur et par les admins seulement.
 
 ---
 
@@ -278,6 +315,7 @@ Une relecture critique : est-ce que le POC répond à ce qui est demandé, où s
 | Progression en direct | Rend l'attente lisible pendant un run | En passant |
 | Authentification et RLS | L'app est en ligne, le dépôt est public, la clé API est payante : sans cela, impossible d'ouvrir l'app aux relecteurs | Une phrase |
 | Quotas et estimation du coût | Même raison : maîtriser la dépense réelle | Une phrase |
+| Choix du modèle par agent et comparaison des runs | Défendre chaque choix de modèle par la mesure : latence, coût et classement | Devant un profil technique (CTO) |
 | Console admin (SQL, prévision) et journal des agents | Piloter les coûts et comprendre ce que fait chaque agent | Seulement si le jury pose la question |
 
 ### 7.4 Verdict

@@ -43,7 +43,7 @@ import anthropic
 import jiter
 from pydantic import BaseModel, Field, ValidationError
 
-from config import ConfigurationError, Effort, Settings
+from config import MODELS, THINKING_BUDGETS, ConfigurationError, Effort, Settings
 
 logger = logging.getLogger(__name__)
 
@@ -296,6 +296,7 @@ class UserStory(BaseModel):
 class AgentUsage(BaseModel):
     """Token and latency accounting for one agent."""
 
+    model: str = ""
     calls: int = 0
     input_tokens: int = 0
     output_tokens: int = 0
@@ -312,6 +313,7 @@ class CallLog(BaseModel):
 
     seq: int
     agent: str
+    model: str = ""
     started_at: str  # ISO 8601, UTC
     duration_s: float
     attempt: int
@@ -348,9 +350,38 @@ class PipelineResult(BaseModel):
     stories: dict[str, UserStory]
     usage: UsageReport
     model: str
+    #: Model and effort of each agent for this run (empty for older results).
+    config: dict[str, dict[str, str]] = Field(default_factory=dict)
     generated_at: str
     is_demo: bool = False
     source_text: str = ""
+
+
+def ranking_summary(result: PipelineResult) -> list[dict[str, Any]]:
+    """Compact prioritisation of a run (rank order), stored to compare runs side by side."""
+    return [
+        {
+            "id": s.feature.id,
+            "title": s.feature.title,
+            "rank": s.rank,
+            "rice": s.rice_score,
+            "moscow": s.moscow,
+            "reach_percent": s.assessment.reach_percent,
+            "impact": s.assessment.impact,
+            "confidence": s.assessment.confidence,
+            "effort": s.assessment.effort,
+            "mandatory": s.assessment.is_mandatory,
+        }
+        for s in sorted(result.scored_features, key=lambda s: s.rank)
+    ]
+
+
+def config_label(config: dict[str, dict[str, str]]) -> str:
+    """The model of a run: its id when every agent shares it, else the per-agent list."""
+    models = [c.get("model", "") for c in config.values()]
+    if len(set(models)) == 1:
+        return models[0]
+    return " / ".join(models)
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -480,6 +511,10 @@ def backlog_order(scored: Sequence[ScoredFeature]) -> list[ScoredFeature]:
 ModelT = TypeVar("ModelT", bound=BaseModel)
 
 
+#: Model id → ``(input, output)`` USD per million tokens, or ``None`` if unknown.
+PriceLookup = Callable[[str], "tuple[float, float] | None"]
+
+
 class UsageTracker:
     """Thread-safe accumulator of token usage and latency per agent."""
 
@@ -493,10 +528,10 @@ class UsageTracker:
         with self._lock:
             self._calls.append(CallLog(seq=len(self._calls) + 1, **fields))
 
-    def record(self, agent: str, usage: anthropic.types.Usage | None, seconds: float) -> None:
+    def record(self, agent: str, model: str, usage: anthropic.types.Usage | None, seconds: float) -> None:
         """Add one API call to the running totals."""
         with self._lock:
-            entry = self._per_agent.setdefault(agent, AgentUsage())
+            entry = self._per_agent.setdefault(agent, AgentUsage(model=model))
             entry.calls += 1
             entry.seconds += seconds
             if usage is not None:
@@ -506,18 +541,22 @@ class UsageTracker:
                 entry.output_tokens += usage.output_tokens
 
     @staticmethod
-    def _cost(per_agent: dict[str, AgentUsage], pricing: tuple[float, float] | None) -> float | None:
-        if not pricing:
+    def _cost(per_agent: dict[str, AgentUsage], price_of: PriceLookup) -> float | None:
+        """Cost in USD, each agent at its own model's price (``None`` if no price is known)."""
+        prices = {name: price_of(u.model) for name, u in per_agent.items()}
+        if per_agent and not any(prices.values()):
             return None
-        input_price, output_price = pricing
-        return sum(u.input_tokens * input_price + u.output_tokens * output_price for u in per_agent.values()) / 1e6
+        return (
+            sum(u.input_tokens * p[0] + u.output_tokens * p[1] for name, u in per_agent.items() if (p := prices[name]))
+            / 1e6
+        )
 
-    def cost_usd(self, pricing: tuple[float, float] | None) -> float:
-        """Running cost in USD (0 when the model price is unknown)."""
+    def cost_usd(self, price_of: PriceLookup) -> float:
+        """Running cost in USD (0 when no model price is known)."""
         with self._lock:
-            return self._cost(self._per_agent, pricing) or 0.0
+            return self._cost(self._per_agent, price_of) or 0.0
 
-    def report(self, wall_clock_s: float, pricing: tuple[float, float] | None) -> UsageReport:
+    def report(self, wall_clock_s: float, price_of: PriceLookup) -> UsageReport:
         """Freeze the totals into a serialisable :class:`UsageReport`."""
         with self._lock:
             per_agent = {name: usage.model_copy() for name, usage in self._per_agent.items()}
@@ -525,7 +564,7 @@ class UsageTracker:
         return UsageReport(
             per_agent=per_agent,
             wall_clock_s=wall_clock_s,
-            estimated_cost_usd=self._cost(per_agent, pricing),
+            estimated_cost_usd=self._cost(per_agent, price_of),
             calls=calls,
         )
 
@@ -563,6 +602,9 @@ class ClaudeGateway:
     VALIDATION_RETRIES = 1
     #: Minimum delay between two live updates of a streamed response (seconds).
     STREAM_INTERVAL_S = 0.25
+    #: Beta enabling ``fallbacks="default"``: a request declined by a safety
+    #: classifier is re-run server-side on the model Anthropic recommends.
+    FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
     def __init__(
         self, settings: Settings, tracker: UsageTracker | None = None, budget_usd: float | None = None
@@ -602,6 +644,7 @@ class ClaudeGateway:
         effort: Effort,
         validator: Callable[[ModelT], None] | None = None,
         on_stream: StreamCallback | None = None,
+        model: str | None = None,
     ) -> ModelT:
         """Ask Claude for a JSON answer that conforms to ``schema``.
 
@@ -621,6 +664,7 @@ class ClaudeGateway:
             on_stream: When given, the response is streamed and this callback
                 receives the summarised reasoning and the partial JSON as they
                 arrive (throttled, called from the current thread).
+            model: Claude model for this call (default: ``settings.model``).
 
         Returns:
             A validated instance of ``schema``.
@@ -628,6 +672,7 @@ class ClaudeGateway:
         Raises:
             AgentError: Any API, refusal, truncation or validation failure.
         """
+        model = model or self.settings.model
         output_config = {
             "effort": effort,
             "format": {"type": "json_schema", "schema": anthropic.transform_schema(schema)},
@@ -638,10 +683,11 @@ class ClaudeGateway:
         for attempt in range(self.VALIDATION_RETRIES + 1):
             started_at = datetime.now(timezone.utc).isoformat(timespec="milliseconds")
             clock = time.perf_counter()
-            log = {"agent": agent, "started_at": started_at, "attempt": attempt + 1}
+            log = {"agent": agent, "model": model, "started_at": started_at, "attempt": attempt + 1}
             try:
                 response = self._create(
                     agent=agent,
+                    model=model,
                     system=system,
                     messages=messages,
                     output_config=output_config,
@@ -699,30 +745,22 @@ class ClaudeGateway:
         self,
         *,
         agent: str,
+        model: str,
         system: str,
         messages: list[anthropic.types.MessageParam],
         output_config: dict,
         on_stream: Callable[[str, str], None] | None = None,
     ) -> anthropic.types.Message:
         """Send one Messages API request (streamed when ``on_stream`` is given), translating SDK errors."""
-        if self.budget_usd is not None and self.tracker.cost_usd(self.settings.pricing) >= self.budget_usd:
+        if self.budget_usd is not None and self.tracker.cost_usd(self.settings.price_of) >= self.budget_usd:
             raise AgentBudgetError(
                 "Budget de la requête atteint : l'exécution a été interrompue pour respecter votre quota.",
                 agent=agent,
             )
         started = time.perf_counter()
         try:
-            params: dict[str, Any] = {
-                "model": self.settings.model,
-                "max_tokens": self.settings.max_tokens,
-                "system": system,
-                "messages": messages,
-                # "summarized" returns a readable summary of the reasoning for the
-                # admin agent journal (the raw chain of thought is never exposed).
-                "thinking": {"type": "adaptive", "display": "summarized"},
-                "output_config": output_config,
-            }
-            response = self._client.messages.create(**params) if on_stream is None else self._stream(params, on_stream)
+            endpoint, params = self._request(model, system, messages, output_config)
+            response = endpoint.create(**params) if on_stream is None else self._stream(endpoint, params, on_stream)
         except anthropic.AuthenticationError as exc:
             raise AgentAuthError(
                 "Clé API Anthropic invalide ou révoquée. Vérifiez ANTHROPIC_API_KEY.",
@@ -731,13 +769,13 @@ class ClaudeGateway:
             ) from exc
         except anthropic.PermissionDeniedError as exc:
             raise AgentAuthError(
-                f"Cette clé API n'a pas accès au modèle « {self.settings.model} ».",
+                f"Cette clé API n'a pas accès au modèle « {model} ».",
                 agent=agent,
                 request_id=exc.request_id,
             ) from exc
         except anthropic.NotFoundError as exc:
             raise AgentError(
-                f"Modèle « {self.settings.model} » introuvable. Vérifiez ANTHROPIC_MODEL.",
+                f"Modèle « {model} » introuvable. Vérifiez ANTHROPIC_MODEL.",
                 agent=agent,
                 request_id=exc.request_id,
             ) from exc
@@ -781,10 +819,40 @@ class ClaudeGateway:
         finally:
             elapsed = time.perf_counter() - started
 
-        self.tracker.record(agent, response.usage, elapsed)
+        self.tracker.record(agent, model, response.usage, elapsed)
         return response
 
-    def _stream(self, params: dict[str, Any], on_stream: Callable[[str, str], None]) -> anthropic.types.Message:
+    def _request(
+        self, model: str, system: str, messages: list[anthropic.types.MessageParam], output_config: dict
+    ) -> tuple[Any, dict[str, Any]]:
+        """Endpoint and parameters for ``model``, adapted to what the model supports."""
+        spec = MODELS.get(model)
+        params: dict[str, Any] = {
+            "model": model,
+            "max_tokens": self.settings.max_tokens,
+            "system": system,
+            "messages": messages,
+            "output_config": output_config,
+        }
+        if spec is None or spec.adaptive_thinking:
+            # "summarized" returns a readable summary of the reasoning for the live
+            # panel and the agent journal (the raw chain of thought is never exposed).
+            params["thinking"] = {"type": "adaptive", "display": "summarized"}
+        else:
+            # No effort parameter on this model: the effort becomes a thinking budget.
+            config = dict(output_config)
+            budget = THINKING_BUDGETS.get(config.pop("effort", "medium"))
+            params["output_config"] = config
+            if budget:
+                params["thinking"] = {"type": "enabled", "budget_tokens": budget}
+        if spec is not None and spec.refusal_fallback:
+            params |= {"betas": [self.FALLBACK_BETA], "fallbacks": "default"}
+            return self._client.beta.messages, params
+        return self._client.messages, params
+
+    def _stream(
+        self, endpoint: Any, params: dict[str, Any], on_stream: Callable[[str, str], None]
+    ) -> anthropic.types.Message:
         """Same request as ``messages.create``, streamed so progress can be shown live.
 
         The live display is best effort: a failing callback is logged and
@@ -800,7 +868,7 @@ class ClaudeGateway:
                 logger.exception("Live progress callback failed; muting it for this request.")
                 on_stream = lambda _thinking, _text: None  # noqa: E731
 
-        with self._client.messages.stream(**params) as stream:
+        with endpoint.stream(**params) as stream:
             for event in stream:
                 if event.type == "thinking":
                     thinking = event.snapshot
@@ -850,9 +918,10 @@ class BaseAgent:
 
     name: str = "BaseAgent"
 
-    def __init__(self, gateway: ClaudeGateway, effort: Effort) -> None:
+    def __init__(self, gateway: ClaudeGateway, effort: Effort, model: str | None = None) -> None:
         self.gateway = gateway
         self.effort = effort
+        self.model = model or gateway.settings.model
 
     @staticmethod
     def _context_block(context: ProductContext) -> str:
@@ -954,6 +1023,7 @@ class FeedbackAnalyst(BaseAgent):
             effort=self.effort,
             validator=self._validate,
             on_stream=on_stream,
+            model=self.model,
         )
         return self._normalise(analysis)
 
@@ -1082,6 +1152,7 @@ class PrioritizationStrategist(BaseAgent):
             effort=self.effort,
             validator=validator,
             on_stream=on_stream,
+            model=self.model,
         )
         by_id = {a.feature_id: a for a in output.assessments}
         scored = score_portfolio([(f, by_id[f.id]) for f in features], context.active_users)
@@ -1163,6 +1234,7 @@ class UserStoryWriter(BaseAgent):
             schema=UserStory,
             effort=self.effort,
             validator=validator,
+            model=self.model,
         )
         return story.model_copy(update={"feature_id": scored.feature.id})
 
@@ -1269,9 +1341,11 @@ class POAssistantPipeline:
         self.settings = settings
         self.tracker = UsageTracker()
         self.gateway = ClaudeGateway(settings, self.tracker, budget_usd=budget_usd)
-        self.analyst = FeedbackAnalyst(self.gateway, settings.efforts.analyst)
-        self.strategist = PrioritizationStrategist(self.gateway, settings.efforts.strategist)
-        self.writer = UserStoryWriter(self.gateway, settings.efforts.writer)
+        self.analyst = FeedbackAnalyst(self.gateway, settings.efforts.analyst, settings.model_for("analyst"))
+        self.strategist = PrioritizationStrategist(
+            self.gateway, settings.efforts.strategist, settings.model_for("strategist")
+        )
+        self.writer = UserStoryWriter(self.gateway, settings.efforts.writer, settings.model_for("writer"))
         self._on_event = on_event or (lambda _event: None)
         self._on_live = on_live
 
@@ -1337,8 +1411,9 @@ class POAssistantPipeline:
             portfolio_insight=prioritization.portfolio_insight,
             scored_features=prioritization.scored_features,
             stories=stories,
-            usage=self.tracker.report(time.perf_counter() - started, self.settings.pricing),
-            model=self.settings.model,
+            usage=self.tracker.report(time.perf_counter() - started, self.settings.price_of),
+            model=config_label(config := self.settings.run_config()),
+            config=config,
             generated_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
             source_text=raw_feedback,
         )
@@ -1379,4 +1454,4 @@ class POAssistantPipeline:
 
     def usage_report(self, wall_clock_s: float = 0.0) -> UsageReport:
         """Current usage totals (e.g. after an on-demand story)."""
-        return self.tracker.report(wall_clock_s, self.settings.pricing)
+        return self.tracker.report(wall_clock_s, self.settings.price_of)

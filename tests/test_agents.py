@@ -276,7 +276,7 @@ def test_budget_cap_stops_the_pipeline() -> None:
     pipeline.gateway._client = SimpleNamespace(messages=FakeMessages(router=demo_router))  # type: ignore[assignment]
     with pytest.raises(AgentBudgetError):
         pipeline.run("x" * 200, DEMO.context)
-    assert pipeline.tracker.cost_usd(SETTINGS.pricing) > 0  # the first call was made and is accounted for
+    assert pipeline.tracker.cost_usd(SETTINGS.price_of) > 0  # the first call was made and is accounted for
 
 
 def test_every_request_is_journaled_with_its_reasoning() -> None:
@@ -288,7 +288,7 @@ def test_every_request_is_journaled_with_its_reasoning() -> None:
     gateway.structured(
         agent="PrioritizationStrategist", system="s", prompt="p", schema=PrioritizationOutput, effort="low"
     )
-    calls = gateway.tracker.report(0.0, None).calls
+    calls = gateway.tracker.report(0.0, SETTINGS.price_of).calls
     assert [(c.seq, c.attempt, c.status) for c in calls] == [(1, 1, "retry"), (2, 2, "success")]
     assert calls[1].thinking == "fixed it" and calls[1].input_tokens == 100 and calls[1].output_excerpt
 

@@ -88,3 +88,39 @@ def test_inbox_starts_empty_with_a_prompt() -> None:
     next(b for b in app.button if b.key == "load_mobile").click().run()
     assert any(b.label == "Lancer l'analyse" for b in app.button)
     assert any("Tri instantané" in e.label for e in app.expander)
+
+
+def test_admin_picks_models_and_sees_runs_with_their_configuration(tmp_path) -> None:
+    import os
+    from pathlib import Path
+
+    from agents import PipelineResult, ranking_summary
+    from config import PRESETS
+    from store import RunDetails, RunRecord, SQLiteRepository
+
+    demo = PipelineResult.model_validate_json(Path("data/demo_result.json").read_text(encoding="utf-8"))
+    repo = SQLiteRepository(os.environ["LOCAL_DB_PATH"])
+    admin = repo.ensure_user("admin@local.dev", PASSWORD, role="admin")
+    for preset in ("reference", "writer_haiku"):
+        details = RunDetails("Notifications & churn", PRESETS[preset].config, ranking_summary(demo))
+        repo.record_run(RunRecord(user_id=admin, kind="pipeline", status="success", model="m", duration_s=100.0,
+                                  cost_eur=0.15, details=details))  # fmt: skip
+
+    app = login("admin@local.dev")
+    assert not app.exception
+    picker = app.selectbox(key="adm_preset")
+    assert picker.value == "reference"
+    picker.select("strategist_opus").run()
+    assert not app.exception
+    assert any("Coût estimé" in c.value for c in app.sidebar.caption)
+    assert "Runs" in tab_labels(app)
+    frames = [d.value for d in app.dataframe if "Top 3" in d.value.columns]
+    assert frames and len(frames[0]) == 2
+    assert frames[0]["Configuration (analyste · stratège · rédacteur)"].str.contains("Haiku 4.5").any()
+
+
+def test_member_has_no_model_picker() -> None:
+    app = login("demo@local.dev")
+    assert not app.exception
+    assert not [s for s in app.selectbox if s.key == "adm_preset"]
+    assert any("Modèles : Sonnet 5" in c.value for c in app.sidebar.caption)

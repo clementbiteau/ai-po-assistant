@@ -15,11 +15,14 @@ _Aucune tâche en cours._
 
 ## À faire — prochaine session
 
-### Priorité 1 · Latence et adéquation au use case (le « point 3 »)
-- [ ] **Mesurer un run de référence** : 3 runs en direct sur « Notifications & churn », puis une requête SQL sur `agent_calls` pour obtenir la durée par agent, la part des corrections (tentative 2), les tokens et le coût par run. Vérifier au passage qu'un run reste sous le plafond de 0,50 € par requête du compte relecteur.
-- [ ] **Effort du stratège** : si c'est l'étape la plus lente, comparer `EFFORT_STRATEGIST` en `high` et en `medium` sur la durée et la stabilité du classement RICE.
+### Priorité 1 · Latence et adéquation au use case (le « point 3 ») : terminée
 
 Écartés : `max_tokens` (plafond de sécurité, sans effet sur la vitesse) et `STORY_WORKERS` (les 3 stories tournent déjà en parallèle).
+
+### Priorité 1 bis · Comparer les runs devant le CTO
+- [ ] **Exécuter la migration** `supabase/migrations/20260927000000_run_details.sql` dans Supabase › SQL Editor (Clément), puis la requête qui complète les deux runs du 26/09.
+- [ ] **Préparer la démonstration** : lancer « Notifications & churn » avec 3 ou 4 configurations (Référence, Rédaction sur Haiku, Priorisation sur Opus, éventuellement Plancher de coût), puis les comparer deux à deux dans *Admin › Runs*. Budget : environ 0,60 à 1 €.
+- [ ] **Vérifier Haiku 4.5 en réel** : format JSON strict et réflexion avec budget, au premier run.
 
 ### Priorité 2 · Démo
 - [ ] **Remplacer le résultat de démo rédigé à la main par un vrai run** : lancer en direct le cas « Notifications & churn », télécharger *Export › JSON typé*, l'enregistrer sous `data/demo_result.json`, puis commit.
@@ -31,6 +34,7 @@ _Aucune tâche en cours._
 - [ ] **Résister à un rafraîchissement de page** : aujourd'hui, F5 déconnecte l'utilisateur et fait disparaître l'analyse affichée. Les dépenses, elles, restent en base. Piste : garder la session et recharger le dernier résultat.
 - [ ] **Bouton « Actualiser » dans Admin** : les chiffres de la console sont mis en cache 2 minutes par session.
 - [ ] Optimisations secondaires, à ne faire que si la mesure le justifie : modèle plus léger (Haiku 4.5) pour le rédacteur, entrée allégée pour le stratège, prompt caching (gain probablement faible).
+- [ ] **Modèles d'autres fournisseurs** (open source via une API compatible OpenAI, Mistral…) : hors consigne, qui impose Claude. À présenter comme feuille de route, puisque l'appel au modèle est isolé dans `agents.py`. Points à traiter : format JSON strict, réflexion résumée et effort, qui ne sont pas disponibles partout.
 - [ ] Connecteurs d'entrée (Zendesk, messagerie, outil NPS, Slack). Hors POC, à présenter comme roadmap.
 
 ### Actions côté Clément (configuration)
@@ -41,6 +45,12 @@ _Aucune tâche en cours._
 ## Terminé
 
 ### 2026-09-26
+- [x] **Admin › Runs** : chaque analyse enregistre sa configuration, son cas, son classement et son résultat (table `run_details`, RLS testée). Liste des runs avec la latence par étape, le coût et le top 3 ; comparaison de deux runs (durée, coût, étapes, classement et verdict) ; réouverture d'un résultat passé.
+- [x] **Choix du modèle Claude par agent (admin)** : 4 configurations argumentées (Référence, Rédaction sur Haiku, Priorisation sur Opus, Plancher de coût) ou réglage à la main, avec le coût estimé. Haiku : effort traduit en budget de réflexion. Opus : repli automatique en cas de refus. Coût calculé au prix de chaque modèle. Décisions D18 et D19 dans `HOWHY.md`.
+- [x] Stratège remis en effort élevé dans les secrets Streamlit (Clément).
+- [x] Test de l'effort du stratège : en `medium`, le run passe de 110,5 s à 100,2 s, dont seulement 6,3 s gagnées sur le stratège (49,9 → 43,6 s), soit l'ordre des variations d'un run à l'autre. Décision : garder `high`. Conclusion dans `HOWHY.md` (D8).
+- [x] Streamlit Cloud passé en Python 3.12, aligné sur la CI.
+- [x] Run de référence mesuré (« Notifications & churn », effort du stratège `high`) : 110,5 s au total = analyste 29,3 s + stratège 49,9 s + story la plus lente 31,3 s. Aucune correction. 0,163 €. Tokens de sortie : analyste 2 903, stratège 4 623, rédacteurs 7 721 pour 3 stories.
 - [x] Streaming vérifié en ligne sur un vrai run (« tout marche très bien »). Premier run réel : 0,163 €, bien sous le plafond de 0,50 € par requête.
 - [x] Retour à la palette vert et beige (accent vert profond, fond beige, titres Newsreader), à la demande de Clément : la charte Thiga faisait trop voyant. Fond beige plutôt que quasi blanc pour éviter l'éblouissement ; couleurs des graphiques revalidées sur les deux fonds.
 

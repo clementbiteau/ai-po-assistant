@@ -10,6 +10,7 @@ Run with:  streamlit run app.py
 from __future__ import annotations
 
 import time
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Literal
 
@@ -29,13 +30,14 @@ from agents import (
     UserStory,
     backlog_order,
     quote_in_source,
+    ranking_summary,
     score_portfolio,
 )
-from config import Settings, get_settings
+from config import AGENT_KEYS, EFFORTS, MODELS, PRESETS, Settings, get_settings
 from exporters import to_feature_files, to_jira_csv, to_json, to_markdown
 from governance import evaluate_quota
 from samples import DEMO_SAMPLE_KEY, SAMPLES
-from store import Profile, StoreError
+from store import Profile, RunDetails, StoreError
 from triage import InboxItem, triage
 from ui import session
 from ui.admin import render_admin
@@ -43,6 +45,7 @@ from ui.greeting import render_greeting
 from ui.live import demo_updates, live_html
 from ui.login import render_login
 from ui.onboarding import onboarding_dialog, reopen
+from ui.runs import AGENT_FR, EFFORT_FR, config_summary
 from ui.style import (
     ACCENT,
     CHART_TEXT,
@@ -117,6 +120,10 @@ def init_state() -> None:
     }
     for key, value in defaults.items():
         st.session_state.setdefault(key, value)
+    # A past run reopened from Admin › Runs: its result, and its feedback back in the inbox.
+    if (reopened := st.session_state.pop("reopen_result", None)) is not None:
+        store_result(reopened)
+        st.session_state.feedback_text = reopened.source_text
     if pending := st.session_state.pop("pending_nav", None):
         st.session_state.nav = pending
     # Set by the onboarding dialog; applied before the text area is instantiated.
@@ -307,7 +314,6 @@ def render_sidebar(base_settings: Settings, profile: Profile) -> tuple[Settings,
             value=not settings.has_api_key,
             help="Rejoue un run pré-calculé sur le cas « Notifications & churn » : utile si le réseau lâche.",
         )
-        st.caption(f"Modèle : `{settings.model}` · thinking adaptatif")
 
         st.divider()
         st.markdown("##### Contexte produit")
@@ -349,6 +355,10 @@ def render_sidebar(base_settings: Settings, profile: Profile) -> tuple[Settings,
             value=3,
             help="Dans l'ordre du backlog (MoSCoW puis RICE). Les autres restent générables à la demande.",
         )
+        if profile.is_admin:
+            settings = _model_picker(settings)
+        else:
+            st.caption(f"Modèles : {config_summary(settings.run_config())}")
 
         st.divider()
         with st.expander("Sous le capot"):
@@ -360,6 +370,45 @@ def render_sidebar(base_settings: Settings, profile: Profile) -> tuple[Settings,
                 "- Stories rédigées **en parallèle**"
             )
     return settings, context, top_n, demo_mode
+
+
+def _model_picker(settings: Settings) -> Settings:
+    """Admin only: a named configuration (or a model and effort per agent) for the next runs."""
+    st.markdown("##### Modèles Claude · admin")
+    options = [*PRESETS, "custom"]
+    choice = st.selectbox(
+        "Configuration",
+        options,
+        format_func=lambda k: PRESETS[k].label if k in PRESETS else "Personnalisée",
+        key="adm_preset",
+        help="S'applique à vos prochains runs uniquement. Les membres gardent la configuration par défaut.",
+    )
+    if choice in PRESETS:
+        config = PRESETS[choice].config
+        st.caption(PRESETS[choice].rationale)
+    else:
+        pitch = "\n\n".join(f"**{m.label}** : {m.pitch}" for m in MODELS.values())
+        config = {}
+        for agent in AGENT_KEYS:
+            left, right = st.columns([1.25, 1])
+            current = settings.model_for(agent)
+            model = left.selectbox(
+                AGENT_FR[agent], list(MODELS), index=list(MODELS).index(current) if current in MODELS else 0,
+                format_func=lambda m: MODELS[m].label, key=f"adm_model_{agent}", help=pitch,
+            )  # fmt: skip
+            effort = right.selectbox(
+                "Effort", EFFORTS, index=EFFORTS.index(getattr(settings.efforts, agent)),
+                format_func=EFFORT_FR.get, key=f"adm_effort_{agent}",
+            )  # fmt: skip
+            config[agent] = {"model": model, "effort": effort}
+    chosen = settings.with_agent_config(config)
+    usd = chosen.estimated_run_usd()
+    if usd is not None:
+        st.caption(
+            f"Coût estimé : **{euros(usd * settings.usd_to_eur, digits=3)}** par run, au volume de texte du run "
+            "de référence. Comparez ensuite les runs dans **Admin › Runs**."
+        )
+    return chosen
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -574,6 +623,8 @@ def run_live(text: str, settings: Settings, profile: Profile, context: ProductCo
     except QuotaBlocked:
         return
     labels = {key: f"**0{i} · {name}**" for i, (key, name, _label, _desc) in enumerate(AGENTS_META, start=1)}
+    case = current_case(text)
+    details = RunDetails(case_label=SAMPLES[case].label if case else None, config=settings.run_config())
     pipeline: POAssistantPipeline | None = None
     started = time.perf_counter()
     with st.status("Analyse en cours", expanded=True) as status:
@@ -601,18 +652,19 @@ def run_live(text: str, settings: Settings, profile: Profile, context: ProductCo
         except AgentError as exc:
             status.update(label="Le pipeline s'est arrêté", state="error", expanded=True)
             show_agent_error(exc)
-            _record_failure(settings, pipeline, started, len(text), top_n, exc)
+            _record_failure(settings, pipeline, started, len(text), top_n, exc, details)
             return
         except Exception as exc:  # noqa: BLE001 — last-resort guard for the demo
             status.update(label="Erreur inattendue", state="error", expanded=True)
             st.error("Une erreur inattendue est survenue. Détails techniques ci-dessous.")
             st.exception(exc)
-            _record_failure(settings, pipeline, started, len(text), top_n, exc)
+            _record_failure(settings, pipeline, started, len(text), top_n, exc, details)
             return
         status.update(label="Analyse terminée", state="complete", expanded=False)
+    details = replace(details, ranking=ranking_summary(result), result=result.model_dump(mode="json"))
     session.record_usage(
         settings, result.usage, kind="pipeline", status="success", input_chars=len(text),
-        features_count=len(result.scored_features), stories_count=len(result.stories),
+        features_count=len(result.scored_features), stories_count=len(result.stories), details=details,
     )  # fmt: skip
     store_result(result)
     st.toast("Analyse terminée. Suivez les onglets dans l'ordre.")
@@ -620,14 +672,20 @@ def run_live(text: str, settings: Settings, profile: Profile, context: ProductCo
 
 
 def _record_failure(
-    settings: Settings, pipeline: POAssistantPipeline | None, started: float, chars: int, stories: int, exc: Exception
+    settings: Settings,
+    pipeline: POAssistantPipeline | None,
+    started: float,
+    chars: int,
+    stories: int,
+    exc: Exception,
+    details: RunDetails | None = None,
 ) -> None:
     """Log the tokens already spent by a failed run: they count towards quotas too."""
     usage = pipeline.usage_report(time.perf_counter() - started) if pipeline else None
     status = "blocked" if isinstance(exc, AgentBudgetError) else "error"
     message = exc.user_message if isinstance(exc, AgentError) else type(exc).__name__
     session.record_usage(settings, usage, kind="pipeline", status=status, input_chars=chars,
-                         stories_count=stories, error=message)  # fmt: skip
+                         stories_count=stories, error=message, details=details)  # fmt: skip
 
 
 def show_agent_error(exc: AgentError) -> None:
