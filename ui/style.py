@@ -112,6 +112,18 @@ h1, h2, h3, h4 {letter-spacing: -0.005em;}
 .step .t {font-weight: 600; margin-top: 4px;}
 .step .d {font-size: .84rem; opacity: var(--muted); margin-top: 2px;}
 
+/* Recurring themes: one compact row each (description in the tooltip) */
+.themes {display: grid; border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+  padding: 4px 16px; margin-bottom: 8px;}
+.trow {display: grid; grid-template-columns: minmax(150px, 1.3fr) 92px 2fr 28px; gap: 12px; align-items: center;
+  padding: 8px 0; border-top: 1px solid var(--line); cursor: help;}
+.trow:first-child {border-top: 0;}
+.trow .tn {font-weight: 600; font-size: .92rem;}
+.trow .chip {margin: 0;}
+.trow .bar {margin-top: 0;}
+.trow .tc {font-family: 'Geist Mono', ui-monospace, monospace; font-size: .82rem; text-align: right; opacity: .8;}
+@media (max-width: 640px) {.trow {grid-template-columns: 1fr auto 28px;} .trow .bar {display: none;}}
+
 /* Live progress panel (agent reasoning and findings while it runs) */
 .live {border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin: 2px 0 12px;
   background: var(--surface-2);}

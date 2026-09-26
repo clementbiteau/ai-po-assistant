@@ -12,7 +12,7 @@ import streamlit as st
 
 from connectors import PHASES, Connector, by_phase
 from triage import channel_for
-from ui.style import ACCENT, STATUS, chip, esc, intro, render_html
+from ui.style import ACCENT, STATUS, chip, esc, render_html
 
 _DIRECTION = {"in": "Entrée", "out": "Sortie", "both": "Entrée et sortie"}
 
@@ -36,10 +36,9 @@ _CSS = """
 def render_connectors() -> None:
     """Integration roadmap: flow, connectors by phase, production principles."""
     render_html(_CSS)
-    intro(
-        "Vers la production",
-        "Dans le POC, les retours sont collés à la main. En production, ils arriveraient seuls depuis les outils où "
-        "ils vivent déjà, et le backlog validé partirait dans Jira. Aucun connecteur n'est actif ici.",
+    st.caption(
+        "En production, les retours arriveraient seuls depuis vos outils, et le backlog validé partirait dans Jira. "
+        "Aucun connecteur n'est actif dans ce POC."
     )
     steps = [
         ("Connecteurs", "Zendesk, email, Slack…"),
@@ -56,24 +55,33 @@ def render_connectors() -> None:
 
     for phase, connectors in by_phase().items():
         title, why = PHASES[phase]
-        st.markdown(f"#### {title}")
-        st.caption(why)
-        cols = st.columns(3)
-        for i, connector in enumerate(connectors):
-            with cols[i % 3], st.container(border=True):
-                _card(connector)
+        if phase == 1:
+            st.markdown(f"#### {title}")
+            st.caption(why)
+            _cards(connectors)
+        else:
+            with st.expander(f"{title} · {', '.join(c.name for c in connectors)}"):
+                st.caption(why)
+                _cards(connectors)
 
-    st.markdown("#### Principes pour la production")
-    st.markdown(
-        "- **Lecture seule et accès minimal** : chaque connecteur ne lit que ce dont il a besoin "
-        "(une boîte partagée, un canal, une vue de tickets).\n"
-        "- **Jetons dans un coffre-fort** : les autorisations OAuth sont gérées côté serveur, jamais saisies ni "
-        "stockées dans l'application.\n"
-        "- **Données personnelles pseudonymisées** avant l'envoi à Claude (RGPD) : noms et emails remplacés, "
-        "entreprise et rôle conservés.\n"
-        "- **Dédoublonnage** : un même client qui écrit au support et en parle à son CSM ne compte qu'une fois.\n"
-        "- **Le PO garde la main** : rien ne part dans Jira sans sa validation."
-    )
+    with st.expander("Principes pour la production"):
+        st.markdown(
+            "- **Lecture seule et accès minimal** : chaque connecteur ne lit que ce dont il a besoin "
+            "(une boîte partagée, un canal, une vue de tickets).\n"
+            "- **Jetons dans un coffre-fort** : les autorisations OAuth sont gérées côté serveur, jamais saisies ni "
+            "stockées dans l'application.\n"
+            "- **Données personnelles pseudonymisées** avant l'envoi à Claude (RGPD) : noms et emails remplacés, "
+            "entreprise et rôle conservés.\n"
+            "- **Dédoublonnage** : un même client qui écrit au support et en parle à son CSM ne compte qu'une fois.\n"
+            "- **Le PO garde la main** : rien ne part dans Jira sans sa validation."
+        )
+
+
+def _cards(connectors: list[Connector]) -> None:
+    cols = st.columns(3)
+    for i, connector in enumerate(connectors):
+        with cols[i % 3], st.container(border=True):
+            _card(connector)
 
 
 def _card(connector: Connector) -> None:

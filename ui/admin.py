@@ -188,7 +188,8 @@ def _usage_section(settings: Settings, runs: pd.DataFrame, agents: pd.DataFrame,
         else:
             chart = (
                 alt.Chart(by_agent)
-                .mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3)
+                # Fixed-width bars: readable even when the usage spans a single day.
+                .mark_bar(size=18, cornerRadiusTopLeft=3, cornerRadiusTopRight=3)
                 .encode(
                     x=alt.X("day:T", title=None, axis=alt.Axis(format="%d %b")),
                     y=alt.Y("sum(cost_eur):Q", title="€", stack="zero"),
@@ -219,7 +220,8 @@ def _usage_section(settings: Settings, runs: pd.DataFrame, agents: pd.DataFrame,
             tokens["type"] = tokens["type"].map({"input_tokens": "Entrée", "output_tokens": "Sortie"})
             chart = (
                 alt.Chart(tokens)
-                .mark_area(opacity=0.75, interpolate="monotone")
+                # Bars, not an area: an area needs two days to have any width.
+                .mark_bar(size=18, cornerRadiusTopLeft=3, cornerRadiusTopRight=3)
                 .encode(
                     x=alt.X("day:T", title=None, axis=alt.Axis(format="%d %b")),
                     y=alt.Y("value:Q", title="tokens", stack="zero", axis=alt.Axis(format="~s")),

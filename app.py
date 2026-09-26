@@ -50,7 +50,7 @@ from ui.greeting import render_greeting
 from ui.live import demo_updates, live_html
 from ui.login import render_login
 from ui.onboarding import onboarding_dialog, reopen
-from ui.runs import AGENT_FR, EFFORT_FR, config_summary
+from ui.runs import AGENT_FR, EFFORT_FR
 from ui.style import (
     ACCENT,
     CHART_TEXT,
@@ -64,7 +64,6 @@ from ui.style import (
     dollars,
     esc,
     euros,
-    intro,
     moscow_chip,
     render_html,
     shorten,
@@ -263,35 +262,11 @@ def effective_scoring(result: PipelineResult) -> tuple[list[ScoredFeature], set[
 # ══════════════════════════════════════════════════════════════════════════
 
 
-def render_account(settings: Settings, profile: Profile) -> None:
-    """Signed-in user, quota gauges, API credit (admins), theme toggle and sign-out."""
-    try:
-        used = session.consumption(settings)
-    except StoreError:
-        used = None
+def render_account(profile: Profile) -> None:
+    """Signed-in user, theme toggle, sign-out and the guide. Spend and credit live in the admin console."""
     role = chip("Admin", ACCENT, solid=True) if profile.is_admin else chip("Membre", STATUS["neutral"])
-    rows = f'<div class="qrow"><span>Max / requête</span><span>{euros(profile.quota.max_eur_per_request)}</span></div>'
-    if used is not None:
-        for label, spent, limit in (
-            ("Aujourd'hui", used.day_eur, profile.quota.daily_eur),
-            ("Semaine", used.week_eur, profile.quota.weekly_eur),
-            ("Mois", used.month_eur, profile.quota.monthly_eur),
-        ):
-            ratio = min(spent / limit, 1.0) if limit else 0.0
-            color = STATUS["critical"] if ratio >= 0.9 else STATUS["warning"] if ratio >= 0.7 else STATUS["good"]
-            rows += (
-                f'<div class="qrow"><span>{label}</span><span>{euros(spent)} / {euros(limit)}</span></div>'
-                f'<div class="bar" style="margin-top:4px"><span style="width:{ratio * 100:.0f}%;background:{color}">'
-                "</span></div>"
-            )
-    if profile.is_admin and (credit := session.credit_status(settings)) is not None:
-        rows += (
-            f'<div class="qrow"><span>Crédit API restant</span><span>≈ {dollars(credit.remaining_usd)}</span></div>'
-            f'<div class="bar" style="margin-top:4px"><span style="width:{credit.ratio_left * 100:.0f}%;'
-            f'background:{ACCENT}"></span></div>'
-        )
-    render_html(f'<div class="userbox"><div class="mail">{esc(profile.email)}</div>{role}{rows}</div>')
-    left, right = st.columns([1.25, 1], vertical_alignment="center", gap="small")
+    render_html(f'<div class="userbox"><div class="mail">{esc(profile.email)}</div>{role}</div>')
+    left, right = st.columns([1, 1], vertical_alignment="center", gap="small")
     with left:
         theme_toggle("sidebar")
     with right:
@@ -302,15 +277,13 @@ def render_account(settings: Settings, profile: Profile) -> None:
 
 
 def render_sidebar(base_settings: Settings, profile: Profile) -> tuple[Settings, ProductContext, int, bool]:
-    """Account, connection, product context and generation options."""
+    """Account, analysis options and, for admins, the model settings."""
     with st.sidebar:
         render_html('<div class="eyebrow">AI Product Owner</div><p class="brand">Assistant</p>')
-        render_account(base_settings, profile)
+        render_account(profile)
 
-        st.markdown("##### Connexion")
-        if base_settings.has_api_key:
-            st.badge("Clé API configurée", color="green")
-        else:
+        st.divider()
+        if not base_settings.has_api_key:
             st.text_input(
                 "Clé API Anthropic",
                 key="api_key_input",
@@ -322,64 +295,20 @@ def render_sidebar(base_settings: Settings, profile: Profile) -> tuple[Settings,
         demo_mode = st.toggle(
             "Mode démo hors-ligne",
             value=not settings.has_api_key,
-            help="Rejoue un run pré-calculé sur le cas « Notifications & churn » : utile si le réseau lâche.",
+            help="Rejoue un vrai run enregistré sur le cas « Notifications & churn », sans appel à l'IA : "
+            "utile si le réseau lâche.",
         )
-
-        st.divider()
-        st.markdown("##### Contexte produit")
-        defaults = ProductContext()
-        context = ProductContext(
-            product_name=st.text_input("Produit", value=defaults.product_name),
-            product_description=st.text_area("Description", value=defaults.product_description, height=90),
-            active_users=int(
-                st.number_input(
-                    "Utilisateurs actifs / mois",
-                    min_value=100,
-                    max_value=10_000_000,
-                    value=defaults.active_users,
-                    step=500,
-                    help="Ancre le « R » de RICE : Reach = % de la base touchée × ce nombre.",
-                )
-            ),
-            strategic_goal=st.text_area(
-                "Objectif stratégique du trimestre",
-                value=defaults.strategic_goal,
-                height=80,
-                help="L'Impact est évalué au regard de cet objectif.",
-            ),
-            language=st.segmented_control(
-                "Langue des livrables",
-                options=["fr", "en"],
-                default="fr",
-                required=True,
-                format_func=lambda code: {"fr": "Français", "en": "English"}[code],
-            ),
-        )
-
-        st.divider()
-        st.markdown("##### Génération")
         top_n = st.slider(
-            "User stories générées d'office",
+            "User stories rédigées d'office",
             min_value=1,
             max_value=6,
             value=3,
-            help="Dans l'ordre du backlog (MoSCoW puis RICE). Les autres restent générables à la demande.",
+            help="Dans l'ordre du backlog (MoSCoW puis RICE). Les autres restent rédigeables à la demande.",
         )
         if profile.is_admin:
+            st.divider()
             settings = _model_picker(settings)
-        else:
-            st.caption(f"Modèles : {config_summary(settings.run_config())}")
-
-        st.divider()
-        with st.expander("Sous le capot"):
-            st.markdown(
-                "- **3 agents spécialisés**, un contrat Pydantic chacun\n"
-                "- **Structured outputs** natifs : JSON validé par schéma\n"
-                "- **Le LLM estime, le code calcule** : score RICE & MoSCoW déterministes\n"
-                "- **Auto-correction** : 1 retry guidé si la sortie viole une règle métier\n"
-                "- Stories rédigées **en parallèle**"
-            )
-    return settings, context, top_n, demo_mode
+    return settings, ProductContext(), top_n, demo_mode
 
 
 def _model_picker(settings: Settings) -> Settings:
@@ -733,37 +662,33 @@ def _quote_html(quote: str, source: str) -> str:
 def render_analysis(result: PipelineResult) -> None:
     """Executive summary, themes, feature candidates and other signals."""
     analysis = result.analysis
-    intro("Étape 1 sur 4", "Lisez la synthèse, puis ouvrez les feature requests : chacune est formulée comme un "
-          "problème utilisateur et reste reliée aux verbatims d'origine.")  # fmt: skip
     render_html(f'<div class="summary">{esc(analysis.executive_summary)}</div>')
     st.write("")
     render_html(" ".join(chip(c, STATUS["neutral"]) for c in analysis.channels))
 
     st.markdown("#### Thèmes récurrents")
     max_mentions = max((t.mention_count for t in analysis.themes), default=1) or 1
-    cols = st.columns(3)
-    for i, theme in enumerate(sorted(analysis.themes, key=lambda t: t.mention_count, reverse=True)):
+    rows = []
+    for theme in sorted(analysis.themes, key=lambda t: t.mention_count, reverse=True):
         label, color = SENTIMENT_STYLE.get(theme.sentiment, ("—", STATUS["neutral"]))
         width = int(100 * theme.mention_count / max_mentions)
-        with cols[i % 3]:
-            render_html(
-                f'<div class="card" style="margin-bottom:12px"><div class="h">{esc(theme.name)}</div>'
-                f"{chip(label, color)}{chip(f'{theme.mention_count} mention(s)', STATUS['neutral'])}"
-                f'<div class="muted">{esc(theme.description)}</div>'
-                f'<div class="bar"><span style="width:{width}%;background:{color}"></span></div></div>'
-            )
+        rows.append(
+            f'<div class="trow" title="{esc(theme.description)}"><span class="tn">{esc(theme.name)}</span>'
+            f"{chip(label, color)}"
+            f'<div class="bar"><span style="width:{width}%;background:{color}"></span></div>'
+            f'<span class="tc">{theme.mention_count}</span></div>'
+        )
+    render_html(f'<div class="themes">{"".join(rows)}</div>')
+    with st.expander("Ce que disent les clients, thème par thème"):
+        for theme in sorted(analysis.themes, key=lambda t: t.mention_count, reverse=True):
+            st.markdown(f"**{theme.name}** · {theme.description}")
 
     source = result.source_text or (SAMPLES[DEMO_SAMPLE_KEY].text if result.is_demo else "")
     quotes = [q for f in analysis.feature_requests for q in f.evidence_quotes]
     found = sum(quote_in_source(q, source) for q in quotes) if source else 0
-    st.markdown("#### Feature requests isolées")
-    check = (
-        f" Contrôle automatique (sans IA) : **{found} verbatims sur {len(quotes)}** retrouvés mot pour mot "
-        "dans les messages d'origine."
-        if source
-        else ""
-    )
-    st.caption("Formulées comme des problèmes utilisateurs, dédoublonnées, avec des verbatims comme preuve." + check)
+    st.markdown("#### Demandes de fonctionnalités")
+    if source:
+        st.caption(f"{found} verbatims sur {len(quotes)} retrouvés mot pour mot dans les messages d'origine.")
     for feature in analysis.feature_requests:
         with st.expander(f"**{feature.id} · {feature.title}** — {feature.mention_count} mention(s) · {feature.theme}"):
             left, right = st.columns([3, 2])
@@ -782,15 +707,13 @@ def render_analysis(result: PipelineResult) -> None:
                     st.caption(f"• {source}")
 
     if analysis.other_signals:
-        st.markdown("#### Autres signaux — hors roadmap, à router")
-        cols = st.columns(len(SIGNAL_GROUPS))
-        for col, (kind, title, hint) in zip(cols, SIGNAL_GROUPS, strict=True):
-            items = [s for s in analysis.other_signals if s.type == kind]
-            with col, st.container(border=True):
-                st.markdown(f"**{title}** · {len(items)}")
-                st.caption(hint)
-                for item in items:
-                    st.markdown(f"- {item.summary}", help=f"« {item.quote} »")
+        with st.expander(f"Autres signaux · {len(analysis.other_signals)} (bugs, frictions, questions, points forts)"):
+            for kind, title, hint in SIGNAL_GROUPS:
+                items = [s for s in analysis.other_signals if s.type == kind]
+                if items:
+                    st.markdown(f"**{title}** · {hint}")
+                    for item in items:
+                        st.markdown(f"- {item.summary}", help=f"« {item.quote} »")
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -814,9 +737,7 @@ Une contrainte non négociable (sécurité, légal, contrat) force **Must**.
 
 
 def render_prioritization(result: PipelineResult, scored: list[ScoredFeature], modified: set[str]) -> None:
-    """RICE table, value/effort matrix, MoSCoW board and justifications."""
-    intro("Étape 2 sur 4", "Le modèle estime chaque critère et le justifie ; le score et le classement sont "
-          "calculés par le code. Vous pouvez corriger une estimation, tout se recalcule.")  # fmt: skip
+    """Recommendation, MoSCoW board, RICE table; charts, adjustments and justifications on demand."""
     head_left, head_right = st.columns([3, 1], vertical_alignment="center")
     with head_left:
         render_html(
@@ -828,6 +749,26 @@ def render_prioritization(result: PipelineResult, scored: list[ScoredFeature], m
     st.write("")
     render_html(f'<div class="summary">{esc(result.portfolio_insight)}</div>')
     st.write("")
+
+    # MoSCoW board ------------------------------------------------------
+    st.markdown("#### Décision MoSCoW")
+    cols = st.columns(4)
+    for col, bucket in zip(cols, MOSCOW_ORDER, strict=True):
+        items = [s for s in scored if s.moscow == bucket]
+        cards = (
+            "".join(
+                f'<div class="mini"><b>{esc(s.feature.id)}</b> · {esc(s.feature.title)}'
+                f'<div class="s">RICE {s.rice_score:,.0f}{" · contrainte" if s.assessment.is_mandatory else ""}</div></div>'
+                for s in items
+            )
+            or '<div class="s" style="color:#9CA3AF;font-size:.8rem;margin-top:8px">—</div>'
+        )
+        with col:
+            render_html(
+                f'<div class="moscow-col" style="border-top:4px solid {MOSCOW_COLORS[bucket]}">'
+                f'<div class="head"><span>{bucket}</span>{chip(str(len(items)), MOSCOW_COLORS[bucket])}</div>'
+                f'<div class="hint">{MOSCOW_HINTS[bucket]}</div>{cards}</div>'
+            )
 
     # Ranked table ------------------------------------------------------
     best = max((s.rice_score for s in scored), default=1.0) or 1.0
@@ -892,117 +833,103 @@ def render_prioritization(result: PipelineResult, scored: list[ScoredFeature], m
                 st.session_state.pop(editor_key(), None)
                 st.rerun()
 
-    # Charts ----------------------------------------------------------------
-    chart_left, chart_right = st.columns(2)
-    frame = pd.DataFrame(
-        [
-            {
-                "label": f"{s.feature.id} · {s.feature.title}",
-                "short": shorten(f"{s.feature.id} · {s.feature.title}", 34),
-                "id": s.feature.id,
-                "rice": s.rice_score,
-                "moscow": s.moscow,
-                "impact": s.assessment.impact,
-                "effort": s.assessment.effort,
-                "reach": s.reach_users,
-            }
-            for s in scored
-        ]
-    )
-    color = alt.Color(
-        "moscow:N",
-        title="MoSCoW",
-        scale=alt.Scale(domain=MOSCOW_ORDER, range=[MOSCOW_COLORS[m] for m in MOSCOW_ORDER]),
-        legend=alt.Legend(orient="bottom"),
-    )
-    with chart_left, st.container(border=True):
-        st.markdown("**Classement RICE**")
-        bar_base = alt.Chart(frame).encode(
-            y=alt.Y("short:N", sort=list(frame["short"]), title=None, axis=alt.Axis(labelLimit=240, labelFontSize=12)),
-            x=alt.X("rice:Q", title="Score RICE", axis=alt.Axis(format="~s")),
-        )
-        bars = bar_base.mark_bar(cornerRadiusEnd=6).encode(
-            color=alt.Color(
-                "moscow:N",
-                scale=alt.Scale(domain=MOSCOW_ORDER, range=[MOSCOW_COLORS[m] for m in MOSCOW_ORDER]),
-                legend=None,
-            ),
-            tooltip=[
-                alt.Tooltip("label:N", title="Feature"),
-                alt.Tooltip("rice:Q", title="RICE", format=",.0f"),
-                alt.Tooltip("moscow:N", title="MoSCoW"),
-            ],
-        )
-        values = bar_base.mark_text(align="left", dx=6, fontWeight="bold", fontSize=12, color=CHART_TEXT).encode(
-            text=alt.Text("rice:Q", format=",.0f")
-        )
-        st.altair_chart((bars + values).properties(height=alt.Step(40)), width="stretch")
-    with chart_right, st.container(border=True):
-        st.markdown("**Matrice valeur / effort**")
-        base = alt.Chart(frame)
-        left_quadrants = pd.DataFrame([{"x": 0.6, "y": 5.6, "t": "Quick wins"}, {"x": 0.6, "y": 0.4, "t": "Fill-ins"}])
-        right_quadrants = pd.DataFrame([{"x": 5.4, "y": 5.6, "t": "Big bets"}, {"x": 5.4, "y": 0.4, "t": "Money pits"}])
-        points = base.mark_circle(opacity=0.8, stroke="#fff", strokeWidth=2).encode(
-            x=alt.X(
-                "effort:Q",
-                title="Effort →",
-                scale=alt.Scale(domain=[0.5, 5.5]),
-                axis=alt.Axis(values=[1, 2, 3, 4, 5], format="d"),
-            ),
-            y=alt.Y(
-                "impact:Q",
-                title="Impact →",
-                scale=alt.Scale(domain=[0.2, 5.8]),
-                axis=alt.Axis(values=[1, 2, 3, 4, 5], format="d"),
-            ),
-            size=alt.Size("reach:Q", scale=alt.Scale(range=[120, 900]), legend=None),
-            color=color,
-            tooltip=[
-                alt.Tooltip("label:N", title="Feature"),
-                alt.Tooltip("impact:Q", title="Impact"),
-                alt.Tooltip("effort:Q", title="Effort"),
-                alt.Tooltip("reach:Q", title="Reach", format=","),
-                alt.Tooltip("rice:Q", title="RICE", format=",.0f"),
-            ],
-        )
-        labels = base.mark_text(dx=20, align="left", fontWeight="bold", fontSize=12, color=CHART_TEXT).encode(
-            x="effort:Q", y="impact:Q", text="id:N"
-        )
-        rules = alt.Chart(pd.DataFrame({"x": [3]})).mark_rule(strokeDash=[4, 4], color="#CBD5E1").encode(x="x:Q")
-        hrule = alt.Chart(pd.DataFrame({"y": [3]})).mark_rule(strokeDash=[4, 4], color="#CBD5E1").encode(y="y:Q")
-        quad_text = alt.layer(
-            *[
-                alt.Chart(data)
-                .mark_text(color="#94A3B8", fontSize=11, fontWeight="bold", align=align)
-                .encode(x="x:Q", y="y:Q", text="t:N")
-                for data, align in ((left_quadrants, "left"), (right_quadrants, "right"))
+    # Charts (on demand) --------------------------------------------------
+    with st.expander("Graphiques : classement RICE et matrice valeur / effort"):
+        chart_left, chart_right = st.columns(2)
+        frame = pd.DataFrame(
+            [
+                {
+                    "label": f"{s.feature.id} · {s.feature.title}",
+                    "short": shorten(f"{s.feature.id} · {s.feature.title}", 34),
+                    "id": s.feature.id,
+                    "rice": s.rice_score,
+                    "moscow": s.moscow,
+                    "impact": s.assessment.impact,
+                    "effort": s.assessment.effort,
+                    "reach": s.reach_users,
+                }
+                for s in scored
             ]
         )
-        st.altair_chart((rules + hrule + quad_text + points + labels).properties(height=300), width="stretch")
-
-    # MoSCoW board ------------------------------------------------------
-    st.markdown("#### Tableau MoSCoW")
-    cols = st.columns(4)
-    for col, bucket in zip(cols, MOSCOW_ORDER, strict=True):
-        items = [s for s in scored if s.moscow == bucket]
-        cards = (
-            "".join(
-                f'<div class="mini"><b>{esc(s.feature.id)}</b> · {esc(s.feature.title)}'
-                f'<div class="s">RICE {s.rice_score:,.0f}{" · contrainte" if s.assessment.is_mandatory else ""}</div></div>'
-                for s in items
-            )
-            or '<div class="s" style="color:#9CA3AF;font-size:.8rem;margin-top:8px">—</div>'
+        color = alt.Color(
+            "moscow:N",
+            title="MoSCoW",
+            scale=alt.Scale(domain=MOSCOW_ORDER, range=[MOSCOW_COLORS[m] for m in MOSCOW_ORDER]),
+            legend=alt.Legend(orient="bottom"),
         )
-        with col:
-            render_html(
-                f'<div class="moscow-col" style="border-top:4px solid {MOSCOW_COLORS[bucket]}">'
-                f'<div class="head"><span>{bucket}</span>{chip(str(len(items)), MOSCOW_COLORS[bucket])}</div>'
-                f'<div class="hint">{MOSCOW_HINTS[bucket]}</div>{cards}</div>'
+        with chart_left, st.container(border=True):
+            st.markdown("**Classement RICE**")
+            bar_base = alt.Chart(frame).encode(
+                y=alt.Y(
+                    "short:N", sort=list(frame["short"]), title=None, axis=alt.Axis(labelLimit=240, labelFontSize=12)
+                ),
+                x=alt.X("rice:Q", title="Score RICE", axis=alt.Axis(format="~s")),
             )
+            bars = bar_base.mark_bar(cornerRadiusEnd=6).encode(
+                color=alt.Color(
+                    "moscow:N",
+                    scale=alt.Scale(domain=MOSCOW_ORDER, range=[MOSCOW_COLORS[m] for m in MOSCOW_ORDER]),
+                    legend=None,
+                ),
+                tooltip=[
+                    alt.Tooltip("label:N", title="Feature"),
+                    alt.Tooltip("rice:Q", title="RICE", format=",.0f"),
+                    alt.Tooltip("moscow:N", title="MoSCoW"),
+                ],
+            )
+            values = bar_base.mark_text(align="left", dx=6, fontWeight="bold", fontSize=12, color=CHART_TEXT).encode(
+                text=alt.Text("rice:Q", format=",.0f")
+            )
+            st.altair_chart((bars + values).properties(height=alt.Step(40)), width="stretch")
+        with chart_right, st.container(border=True):
+            st.markdown("**Matrice valeur / effort**")
+            base = alt.Chart(frame)
+            left_quadrants = pd.DataFrame(
+                [{"x": 0.6, "y": 5.6, "t": "Quick wins"}, {"x": 0.6, "y": 0.4, "t": "Fill-ins"}]
+            )
+            right_quadrants = pd.DataFrame(
+                [{"x": 5.4, "y": 5.6, "t": "Big bets"}, {"x": 5.4, "y": 0.4, "t": "Money pits"}]
+            )
+            points = base.mark_circle(opacity=0.8, stroke="#fff", strokeWidth=2).encode(
+                x=alt.X(
+                    "effort:Q",
+                    title="Effort →",
+                    scale=alt.Scale(domain=[0.5, 5.5]),
+                    axis=alt.Axis(values=[1, 2, 3, 4, 5], format="d"),
+                ),
+                y=alt.Y(
+                    "impact:Q",
+                    title="Impact →",
+                    scale=alt.Scale(domain=[0.2, 5.8]),
+                    axis=alt.Axis(values=[1, 2, 3, 4, 5], format="d"),
+                ),
+                size=alt.Size("reach:Q", scale=alt.Scale(range=[120, 900]), legend=None),
+                color=color,
+                tooltip=[
+                    alt.Tooltip("label:N", title="Feature"),
+                    alt.Tooltip("impact:Q", title="Impact"),
+                    alt.Tooltip("effort:Q", title="Effort"),
+                    alt.Tooltip("reach:Q", title="Reach", format=","),
+                    alt.Tooltip("rice:Q", title="RICE", format=",.0f"),
+                ],
+            )
+            labels = base.mark_text(dx=20, align="left", fontWeight="bold", fontSize=12, color=CHART_TEXT).encode(
+                x="effort:Q", y="impact:Q", text="id:N"
+            )
+            rules = alt.Chart(pd.DataFrame({"x": [3]})).mark_rule(strokeDash=[4, 4], color="#CBD5E1").encode(x="x:Q")
+            hrule = alt.Chart(pd.DataFrame({"y": [3]})).mark_rule(strokeDash=[4, 4], color="#CBD5E1").encode(y="y:Q")
+            quad_text = alt.layer(
+                *[
+                    alt.Chart(data)
+                    .mark_text(color="#94A3B8", fontSize=11, fontWeight="bold", align=align)
+                    .encode(x="x:Q", y="y:Q", text="t:N")
+                    for data, align in ((left_quadrants, "left"), (right_quadrants, "right"))
+                ]
+            )
+            st.altair_chart((rules + hrule + quad_text + points + labels).properties(height=300), width="stretch")
 
     # Justifications ----------------------------------------------------
     st.markdown("#### Pourquoi ces scores ?")
-    st.caption("Chaque estimation cite le niveau de la grille et la preuve qui la justifie.")
     for s in scored:
         a = s.assessment
         with st.expander(f"#{s.rank} · {s.feature.id} · {s.feature.title} — RICE {s.rice_score:,.0f} · {s.moscow}"):
@@ -1044,27 +971,24 @@ def render_story(story: UserStory, scored: ScoredFeature) -> None:
         f'<span class="k">So that</span>{esc(story.benefit)}.</div>'
     )
 
-    left, right = st.columns([1, 1.35], gap="large")
-    with left:
-        render_html('<div class="kicker">Contexte</div>')
+    render_html(
+        f'<div class="kicker">Critères d\'acceptation · {len(story.acceptance_criteria)} scénarios Gherkin</div>'
+    )
+    st.code(story.to_gherkin_feature(), language="gherkin", wrap_lines=True, height=320)
+    sections = [
+        ("Hors périmètre", story.out_of_scope),
+        ("Dépendances", story.dependencies),
+        ("Questions ouvertes pour le PO", story.open_questions),
+    ]
+    with st.expander("Contexte, découpage et questions ouvertes"):
         st.write(story.context)
-        sections = [
-            ("Hors périmètre", story.out_of_scope),
-            ("Dépendances", story.dependencies),
-            ("Questions ouvertes pour le PO", story.open_questions),
-        ]
+        if story.split_suggestion:
+            render_html('<div class="kicker">Découpage suggéré</div>')
+            st.write(story.split_suggestion)
         for title, items in sections:
             if items:
                 render_html(f'<div class="kicker">{title}</div>')
                 st.markdown("\n".join(f"- {item}" for item in items))
-        if story.split_suggestion:
-            render_html('<div class="kicker">Découpage suggéré</div>')
-            st.info(story.split_suggestion)
-    with right:
-        render_html(
-            f'<div class="kicker">Critères d\'acceptation · {len(story.acceptance_criteria)} scénarios Gherkin</div>'
-        )
-        st.code(story.to_gherkin_feature(), language="gherkin", wrap_lines=True)
         st.download_button(
             "Télécharger le .feature",
             data=story.to_gherkin_feature(),
@@ -1078,8 +1002,6 @@ def render_stories(
     result: PipelineResult, scored: list[ScoredFeature], settings: Settings, profile: Profile, demo_mode: bool
 ) -> None:
     """Story picker, story detail and on-demand generation."""
-    intro("Étape 3 sur 4", "Chaque story suit le format As a / I want to / So that, avec des critères "
-          "d'acceptation Gherkin testables. Choisissez une story dans l'ordre du backlog.")  # fmt: skip
     by_id = {s.feature.id: s for s in scored}
     ordered = [s.feature.id for s in backlog_order(scored) if s.feature.id in result.stories]
     ordered += [fid for fid in result.stories if fid not in ordered]
@@ -1101,7 +1023,19 @@ def render_stories(
     missing = [s for s in scored if s.feature.id not in result.stories]
     if not missing:
         return
-    st.markdown("#### Générer une story à la demande")
+    with st.expander(f"Rédiger une autre story · {len(missing)} feature(s) sans story"):
+        _on_demand_story(result, missing, by_id, settings, profile, demo_mode)
+
+
+def _on_demand_story(
+    result: PipelineResult,
+    missing: list[ScoredFeature],
+    by_id: dict[str, ScoredFeature],
+    settings: Settings,
+    profile: Profile,
+    demo_mode: bool,
+) -> None:
+    """Write the story of a feature that did not get one at run time."""
     pick_col, button_col = st.columns([3, 1], vertical_alignment="bottom")
     target_id = pick_col.selectbox(
         "Feature",
@@ -1141,9 +1075,7 @@ def render_stories(
 
 
 def render_export(result: PipelineResult) -> None:
-    """Download cards and run telemetry."""
-    intro("Étape 4 sur 4", "Exportez le backlog : CSV importable dans Jira, rapport Markdown pour Confluence ou "
-          "Notion, fichiers Gherkin pour les tests.")  # fmt: skip
+    """Download cards; import help and run telemetry on demand."""
     slug = result.context.product_name.lower().replace(" ", "-") or "backlog"
     exports = [
         (
@@ -1198,7 +1130,11 @@ def render_export(result: PipelineResult) -> None:
             "4. Les critères Gherkin arrivent dans la description, dans un bloc `noformat`."
         )
 
-    st.markdown("#### Observabilité du run")
+    with st.expander("Détails techniques du run : tokens, latence, coût"):
+        _run_telemetry(result)
+
+
+def _run_telemetry(result: PipelineResult) -> None:
     usage = result.usage
     rows = [
         {

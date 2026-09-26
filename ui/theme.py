@@ -2,7 +2,8 @@
 
 Streamlit has no Python API to change the theme at runtime, but since 1.5x
 its main menu exposes a native System / Light / Dark switcher. This widget
-drives that switcher from a friendly two-button toggle:
+drives that switcher from a two-icon toggle (sun / moon, drawn in CSS: the
+HTML sanitiser strips inline SVG):
 
 * no page reload — the session (and the user's login) is preserved;
 * the choice is persisted by Streamlit itself (browser local storage);
@@ -21,15 +22,21 @@ _TEMPLATE = """
 #{id} {{display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px;
   border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
   background: color-mix(in srgb, currentColor 6%, transparent);}}
-#{id} button {{all: unset; cursor: pointer; font-family: inherit; font-size: .76rem; font-weight: 500;
-  line-height: 1; white-space: nowrap; padding: 6px 11px; border-radius: 999px; color: inherit; opacity: .7;
-  transition: all .15s ease;}}
+#{id} button {{all: unset; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 26px; border-radius: 999px; color: inherit; opacity: .6; transition: all .15s ease;}}
 #{id} button:hover {{opacity: 1;}}
+#{id} button:focus-visible {{outline: 2px solid #1F6E57; outline-offset: 1px;}}
 #{id} button.on {{background: #1F6E57; color: #F2EEE4; opacity: 1;}}
+#{id} .sun {{width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+  box-shadow: 0 -6px 0 -1.5px currentColor, 0 6px 0 -1.5px currentColor, 6px 0 0 -1.5px currentColor,
+    -6px 0 0 -1.5px currentColor, 4.3px 4.3px 0 -1.5px currentColor, -4.3px -4.3px 0 -1.5px currentColor,
+    4.3px -4.3px 0 -1.5px currentColor, -4.3px 4.3px 0 -1.5px currentColor;}}
+#{id} .moon {{width: 12px; height: 12px; border-radius: 50%; box-shadow: inset -4px -2px 0 0 currentColor;
+  transform: rotate(-20deg);}}
 </style>
 <div id="{id}" role="group" aria-label="Thème">
-  <button type="button" data-mode="Light" aria-label="Thème clair">Clair</button>
-  <button type="button" data-mode="Dark" aria-label="Thème sombre">Sombre</button>
+  <button type="button" data-mode="Light" aria-label="Thème clair" title="Thème clair"><span class="sun"></span></button>
+  <button type="button" data-mode="Dark" aria-label="Thème sombre" title="Thème sombre"><span class="moon"></span></button>
 </div>
 <script>
 (() => {{
@@ -71,5 +78,5 @@ _TEMPLATE = """
 
 
 def theme_toggle(key: str = "sidebar") -> None:
-    """Render the Clair / Sombre toggle. ``key`` must be unique per page location."""
+    """Render the light / dark icon toggle. ``key`` must be unique per page location."""
     st.html(_TEMPLATE.format(id=f"po-theme-{key}"), unsafe_allow_javascript=True)

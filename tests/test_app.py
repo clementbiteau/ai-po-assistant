@@ -122,7 +122,8 @@ def test_member_has_no_model_picker() -> None:
     app = login("demo@local.dev")
     assert not app.exception
     assert not [s for s in app.selectbox if s.key == "adm_preset"]
-    assert any("Modèles : Sonnet 5" in c.value for c in app.sidebar.caption)
+    sidebar = " ".join(m.value for m in app.sidebar.markdown)
+    assert "Contexte produit" not in sidebar and "Aujourd'hui" not in sidebar  # spend lives in the admin console
 
 
 def test_connectors_tab_is_a_roadmap_with_no_live_connection() -> None:

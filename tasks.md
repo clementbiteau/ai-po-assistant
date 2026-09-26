@@ -7,6 +7,22 @@ Dernière mise à jour : 2026-09-26
 
 ---
 
+## Référence absolue : la consigne de Thiga
+
+Le texte intégral est en tête du [README](README.md#la-consigne-de-thiga--la-référence-du-projet). Toute tâche se vérifie d'abord contre lui.
+
+- **Objectif** : un agent IA qui assiste un PO au quotidien : analyser les retours, prioriser, aider à rédiger les user stories.
+- **9 fonctionnalités attendues** :
+  - analyse : traiter les retours (emails, tickets, commentaires), repérer tendances et récurrences, extraire les demandes ;
+  - priorisation : noter selon plusieurs critères, appliquer des méthodes (MoSCoW, RICE…), justifier les recommandations ;
+  - rédaction : user stories selon les standards, critères d'acceptation, complexité relative.
+- **Livrables** : code source, démonstration avec des cas concrets, documentation de l'approche et des choix, tests.
+- **Présentation de 15 min** : démonstration 8-10 min, architecture 3-4 min, défis et solutions 2-3 min.
+- **Aucune contrainte technique.**
+- **Critères** : compréhension du PO, qualité technique, expérience utilisateur (simplicité, efficacité), complétude, présentation.
+
+---
+
 ## En cours
 
 _Aucune tâche en cours._
@@ -35,6 +51,7 @@ _Aucune tâche en cours._
 - [ ] **Connecteurs réels** (phase 1 : Zendesk, Jira, Outlook / Gmail) : hors POC. La feuille de route est visible dans l'onglet Connecteurs (D20).
 
 ### Actions côté Clément (configuration)
+- [ ] **Rôles des invités** : passer renaud@thiga.test et sebastien@thiga.test en admin (Admin › Quotas, ou la requête SQL fournie) ; laura@thiga.test reste membre.
 - [ ] *Admin › Quotas* : relever les limites du compte relecteur `test@thiga.com` pour le jour de l'entretien, une fois le coût d'un run connu.
 
 ---
@@ -42,6 +59,10 @@ _Aucune tâche en cours._
 ## Terminé
 
 ### 2026-09-26
+- [x] **Interface épurée** : bandeaux « Étape x sur 4 » retirés ; thèmes en lignes compactes ; graphiques, justifications, détails des stories, rédaction à la demande, détails techniques, autres signaux et phases 2-3 des connecteurs dans des sections repliées. Barre latérale réduite au compte, au thème (icônes soleil et lune dessinées en CSS), au mode démo et au nombre de stories ; contexte produit, « Sous le capot », quotas et crédit retirés (ces derniers restent dans Admin).
+- [x] **Graphique « Tokens consommés par jour »** : il était tracé en aire, invisible avec des données sur un ou deux jours ; passé en barres (idem pour la dépense quotidienne).
+- [x] **Consigne Thiga en tête du README** (texte intégral) **et de `tasks.md`** (résumé), comme référence absolue du projet.
+- [x] Comptes invités créés par Clément : renaud@thiga.test, sebastien@thiga.test, laura@thiga.test.
 - [x] **Doc et déroulé alignés sur la vraie consigne Thiga** : aucune contrainte technique (Streamlit et Claude sont des choix, plus « imposés »), MoSCoW explicitement demandé, adéquation revue sur les 9 fonctionnalités attendues et les 4 livrables (`HOWHY.md` sections 1 et 7). Seul point partiel : les tendances dans le temps. Déroulé refait au format réel : démo 8-10 min, architecture 3-4 min, défis 2-3 min, avec la correspondance aux critères du jury.
 - [x] **Orbit renommé en EwokAI** : cas de démo, contexte produit, guide, docs, et dans le run de démo enregistré de façon cohérente (14/14 verbatims toujours exacts).
 - [x] **Guide de démarrage une seule fois par utilisateur** : mémorisé dans les métadonnées du compte Supabase (en local, dans la base SQLite), testé.

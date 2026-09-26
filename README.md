@@ -7,7 +7,76 @@ POC réalisé pour **Thiga**. Cas d'usage : une startup SaaS qui édite une plat
 
 L'architecture et **les raisons de chaque décision** sont détaillées dans **[HOWHY.md](HOWHY.md)**, qui contient aussi un glossaire.
 
- Stack : Python · Streamlit · API Anthropic (Claude Sonnet 5) · Supabase (Auth + PostgreSQL/RLS) · DuckDB.
+ Stack (choix libre, la consigne n'impose aucune technologie) : Python · Streamlit · API Anthropic (Claude Sonnet 5) · Supabase (Auth + PostgreSQL/RLS) · DuckDB.
+
+---
+
+## La consigne de Thiga : la référence du projet
+
+Le texte ci-dessous est la consigne reçue de Thiga, reproduite telle quelle. **Toute décision de périmètre se vérifie d'abord contre elle.** Sa correspondance point par point avec le POC est dans [HOWHY.md, section 7](HOWHY.md#7-adéquation-à-la-consigne).
+
+<details open>
+<summary><b>Technical Test for Agent Builder: Create a Product Owner Agent</b></summary>
+
+### Objective
+
+Create an AI agent that assists a Product Owner in their daily tasks. The agent must be able to analyze user feedback, prioritize features, and help with writing user stories.
+
+### Context
+
+You work for a SaaS startup that develops a project management platform. The Product Owner is overwhelmed with client feedback, feature requests, and must constantly prioritize the backlog. They need an intelligent assistant to help with their decisions.
+
+### Expected Features
+
+| Category | Features | Description |
+|----------|----------|-------------|
+| **Feedback Analysis** | Client feedback processing | Process client feedback (emails, tickets, comments) |
+| | Pattern identification | Identify patterns and trends in feedback |
+| | Feature extraction | Extract feature requests from feedback |
+| **Prioritization Support** | Feature scoring | Propose feature scoring based on different criteria |
+| | Prioritization frameworks | Apply frameworks (MoSCoW, RICE, etc.) |
+| | Recommendation justification | Explain and justify prioritization recommendations |
+| **Assisted Writing** | User story generation | Generate structured user stories according to standards |
+| | Acceptance criteria | Propose relevant acceptance criteria |
+| | Complexity estimation | Estimate relative development complexity |
+
+### Deliverables
+
+- **Source code** of your agent (language and framework of your choice)
+- **Functional demonstration** with concrete examples
+- **Documentation** explaining your approach and technical choices
+- **Tests** that you deem necessary
+
+### Presentation
+
+| Element | Duration | Content |
+|---------|----------|---------|
+| **Total time** | 15 minutes | Complete presentation of your solution |
+| **Demonstration** | 8-10 min | Show your agent in action with concrete cases |
+| **Architecture** | 3-4 min | Explain your architecture and technical choices |
+| **Challenges & Solutions** | 2-3 min | Present challenges encountered and solutions provided |
+
+### Technical Constraints
+
+None.
+
+### Evaluation Criteria
+
+| Criterion | What we evaluate |
+|-----------|------------------|
+| **Business understanding** | Did you grasp the challenges of a PO? |
+| **Technical quality** | Architecture, code, tests |
+| **User experience** | Simplicity and efficiency of use |
+| **Completeness** | How far did you go in your thinking? |
+| **Presentation** | Clarity and pedagogy |
+
+---
+
+Feel free to contact us for clarifications.
+
+**Happy coding!**
+
+</details>
 
 ---
 
@@ -125,7 +194,7 @@ Tokens, latence et coût estimé par agent sont affichés dans l'onglet Export.
 - **Inbox** : les messages sont listés avec leur canal et un indicateur d'urgence, calculés par des règles avant tout appel à l'IA. Le message d'accueil (« Bonjour … tu as 10 notifications, dont 5 en urgence ») s'appuie sur ce tri.
 
 **13. Design et thème clair / sombre.**
-Direction éditoriale et sobre : fond beige, un seul accent vert profond (`#1F6E57`), titres en serif (Newsreader), interface en Geist, chiffres en Geist Mono ; aucun emoji. Le mode clair utilise un fond beige (pas de blanc pur) et des cartes papier plus claires pour un contraste confortable. Les couleurs des graphiques ont été validées pour les daltonismes et le contraste, dans les deux thèmes. Une bascule Clair / Sombre se trouve dans la barre latérale et sur l'écran de connexion. Elle pilote le sélecteur de thème natif de Streamlit : pas de rechargement, la session est conservée, le choix est mémorisé. Les deux palettes sont définies dans `.streamlit/config.toml` et le CSS custom s'adapte aux deux thèmes.
+Direction éditoriale et sobre : fond beige, un seul accent vert profond (`#1F6E57`), titres en serif (Newsreader), interface en Geist, chiffres en Geist Mono ; aucun emoji. Le mode clair utilise un fond beige (pas de blanc pur) et des cartes papier plus claires pour un contraste confortable. Les couleurs des graphiques ont été validées pour les daltonismes et le contraste, dans les deux thèmes. Une bascule clair / sombre (icônes soleil et lune) se trouve dans la barre latérale et sur l'écran de connexion. Elle pilote le sélecteur de thème natif de Streamlit : pas de rechargement, la session est conservée, le choix est mémorisé. Les deux palettes sont définies dans `.streamlit/config.toml` et le CSS custom s'adapte aux deux thèmes.
 
 ---
 
@@ -168,7 +237,7 @@ Direction éditoriale et sobre : fond beige, un seul accent vert profond (`#1F6E
 | `LOCAL_DEV_PASSWORD` | — | Mot de passe des comptes locaux |
 | `USD_TO_EUR` | `0.86` | Taux utilisé pour tous les montants en € |
 | `APP_TIMEZONE` | `Europe/Paris` | Calendrier des quotas jour / semaine / mois |
-| `ANTHROPIC_CREDITS_USD` | — | Crédit chargé sur la Console Claude : affiche le **crédit restant estimé** (barre latérale admin et onglet Admin) |
+| `ANTHROPIC_CREDITS_USD` | — | Crédit chargé sur la Console Claude : affiche le **crédit restant estimé** dans l'onglet Admin |
 
 Sur Streamlit Community Cloud, déclarez ces variables dans *Secrets* : elles sont exposées comme variables d'environnement.
 
